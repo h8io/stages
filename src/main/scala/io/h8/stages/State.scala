@@ -27,7 +27,7 @@ object State {
     private[stages] def ~>[NO](next: => Behavior[O, NO]): Done[I, NO] = Done(() => next <~ onSuccess())
   }
 
-  class Failure[-I, +O, +E](val cause: E, val onFailure: () => Behavior[I, O]) extends Break[I, O] {
+  final case class Failure[-I, +O, +E](val cause: E, val onFailure: () => Behavior[I, O]) extends Break[I, O] {
     override private[stages] def <~[PI](previous: Yield[PI, I]): State[PI, O] =
       new Failure(cause, () => onFailure() <~ previous.onFailure(this))
 
@@ -35,8 +35,7 @@ object State {
       new Failure(cause, () => next <~ onFailure())
   }
 
-  final case class Defect[-I, +O](override val cause: Exception)
-      extends Failure[I, O, Exception](cause, () => Behavior.Complete)
+  def Defect(cause: Exception): Failure[Any, Nothing, Exception] = Failure(cause, () => Behavior.Complete)
 
-  case object UndefinedBehavior extends Failure[Any, Nothing, None.type](None, () => Behavior.Complete)
+  val UndefinedBehavior: Failure[Any, Nothing, None.type] = Failure(None, () => Behavior.Complete)
 }
