@@ -33,6 +33,8 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
 
   final def ~>[NO](f: O => NO): Stage[I, NO] = ~>(Stage(f))
 
+  final def &&[II <: I, OO](that: Stage[II, OO]): Stage[II, (O, OO)] = util.SeqFork(this, that)
+
   @tailrec
   final def execute(in: I): State[I, O] = {
     val state = Stage.safe(this)(in)
@@ -51,7 +53,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
     def loop(current: Stage[I, O], previous: State[I, O], in: I): State[I, O] = Stage.safe(current)(in) match {
       case state: State.Failure[I, O, ?] => state
       case _: State.Done[I, O] => previous
-      case state@State.Yield(out, onSuccess, _) =>
+      case state @ State.Yield(out, onSuccess, _) =>
         onSuccess() match {
           case Behavior.Redo(next) => loop(next, state, out)
           case _ => state
