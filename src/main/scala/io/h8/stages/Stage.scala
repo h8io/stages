@@ -40,7 +40,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
     }
   }
 
-  final def loop(in: I)(implicit ev: O <:< I): State[I, O] = {
+  final def recursion(in: I)(implicit ev: O <:< I): State[I, O] = {
     @tailrec
     def loop(current: Stage[I, O], previous: State[I, O], in: I): State[I, O] = current.safe(in) match {
       case state: State.Failure[I, O, ?] => state

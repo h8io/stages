@@ -42,7 +42,7 @@ class StageTest extends AnyFlatSpec with Matchers {
   }
 
   it should "loop the execution correctly" in {
-    (AppendStage("a") ~> AppendStage("b") ~> AppendStage("c") ~> CompleteOnLengthStage(10)).loop("x") match {
+    (AppendStage("a") ~> AppendStage("b") ~> AppendStage("c") ~> CompleteOnLengthStage(10)).recursion("x") match {
       case State.Yield("xabcabcabc", _, _) => succeed
       case unexpected => fail(s"Unexpected state $unexpected")
     }
