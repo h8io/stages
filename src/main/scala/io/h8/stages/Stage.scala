@@ -11,23 +11,15 @@ object Stage {
       }
   }
 
-  trait Safe[-I, +O] extends Stage[I, O]
-
-  private def safe[I, O](stage: Stage[I, O]): Safe[I, O] = stage match {
-    case stage: Safe[I, O] => stage
-    case stage =>
-      (in: I) =>
-        try stage(in)
-        catch {
-          case e: Exception => State.Defect(e)
-        }
+  trait Safe[-I, +O] extends Stage[I, O] {
+    override def safe: Safe[I, O] = this
   }
 }
 
 trait Stage[-I, +O] extends (I => State[I, O]) {
   final def ~>[NO](next: Stage[O, NO]): Stage.Safe[I, NO] = (in: I) =>
-    Stage.safe(this)(in) match {
-      case state: State.Yield[I, O] => Stage.safe(next)(state.out) <~ state
+    this.safe(in) match {
+      case state: State.Yield[I, O] => next.safe(state.out) <~ state
       case state: State.Break[I, O] => state ~> Behavior.Undefined(next)
     }
 
@@ -37,7 +29,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
 
   @tailrec
   final def execute(in: I): State[I, O] = {
-    val state = Stage.safe(this)(in)
+    val state = safe(in)
     (state match {
       case failure: State.Failure[I, O, ?] => failure.onFailure()
       case success: State.Success[I, O] => success.onSuccess()
@@ -50,7 +42,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
 
   final def loop(in: I)(implicit ev: O <:< I): State[I, O] = {
     @tailrec
-    def loop(current: Stage[I, O], previous: State[I, O], in: I): State[I, O] = Stage.safe(current)(in) match {
+    def loop(current: Stage[I, O], previous: State[I, O], in: I): State[I, O] = current.safe(in) match {
       case state: State.Failure[I, O, ?] => state
       case _: State.Done[I, O] => previous
       case state @ State.Yield(out, onSuccess, _) =>
@@ -61,4 +53,10 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
     }
     loop(this, State.Done[I, O](() => Behavior.Complete), in)
   }
+
+  def safe: Stage.Safe[I, O] = (in: I) =>
+    try this(in)
+    catch {
+      case e: Exception => State.Defect(e)
+    }
 }
