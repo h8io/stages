@@ -12,12 +12,12 @@ final case class SeqFork[-I, +LO, +RO](left: Stage[I, LO], right: Stage[I, RO]) 
             { () =>
               val leftBehavior = leftOnSuccess()
               val rightBehavior = rightOnSuccess()
-              (leftBehavior.kind & rightBehavior.kind)(SeqFork(leftBehavior.stage, rightBehavior.stage))
+              leftBehavior.combine(rightBehavior)(SeqFork(_, _))
             },
             { failure =>
               val leftBehavior = leftOnFailure(failure)
               val rightBehavior = rightOnFailure(failure)
-              (leftBehavior.kind & rightBehavior.kind)(SeqFork(leftBehavior.stage, rightBehavior.stage))
+              leftBehavior.combine(rightBehavior)(SeqFork(_, _))
             }
           )
         case State.Done(rightOnSuccess) => State.Done(() => fromBoth(leftOnSuccess(), rightOnSuccess()))
@@ -28,11 +28,11 @@ final case class SeqFork[-I, +LO, +RO](left: Stage[I, LO], right: Stage[I, RO]) 
     case State.Failure(leftCause, leftOnFailure) => State.Failure(leftCause, () => fromLeft(leftOnFailure()))
   }
 
-  private def fromLeft[II <: I, LOO >: LO](behavior: Behavior[II, LOO]): Behavior[II, (LOO, RO)] =
-    behavior.kind(SeqFork(behavior.stage, right))
+  private def fromLeft[II <: I, LOO >: LO](leftBehavior: Behavior[II, LOO]): Behavior[II, (LOO, RO)] =
+    leftBehavior.map(SeqFork(_, right))
 
   private def fromBoth[II <: I, LOO >: LO, ROO >: RO](
       leftBehavior: Behavior[II, LOO],
       rightBehavior: Behavior[II, ROO]): Behavior[II, (LOO, ROO)] =
-    (leftBehavior.kind & rightBehavior.kind)(SeqFork(leftBehavior.stage, rightBehavior.stage))
+    leftBehavior.combine(rightBehavior)(SeqFork(_, _))
 }
