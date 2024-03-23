@@ -1,7 +1,7 @@
 package io.h8.stages.util
 
 import io.h8.stages.State
-import io.h8.stages.test.{AppendStage, CompleteStage, Counter}
+import io.h8.stages.test.{AppendStage, CompleteStage, Counter, StageExtension}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
