@@ -7,13 +7,11 @@ import org.scalatest.matchers.should.Matchers
 
 class SeqForkTest extends AnyFlatSpec with Matchers {
   classOf[SeqFork[?, ?, ?]].getSimpleName should "produce correct results" in {
-    val counter = new Counter
+    implicit val counter: Counter = new Counter
     (SeqFork(
-      counter.exactly(1) ~> AppendStage("a") ~> counter.exactly(1) ~> AppendStage("b"),
-      counter.exactly(1) ~> AppendStage("1") ~>
-        counter.exactly(1) ~> AppendStage("2") ~>
-        counter.exactly(1) ~> AppendStage("3")
-    ) ~> counter.exactly(1) ~> CompleteStage[(String, String)]).execute("x") match {
+      AppendStage("a").once ~> AppendStage("b").once,
+      AppendStage("1").once ~> AppendStage("2").once ~> AppendStage("3").once
+    ) ~> CompleteStage[(String, String)].once ~> counter.once).execute("x") match {
       case State.Yield(("xab", "x123"), _, _) => counter.validate()
       case unexpected => fail(s"Unexpected state $unexpected")
     }
