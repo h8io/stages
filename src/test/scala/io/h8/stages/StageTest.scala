@@ -19,17 +19,17 @@ class StageTest extends AnyFlatSpec with Matchers {
 
   it should "redo the execution correctly" in {
     implicit val counter: Counter = new Counter
-    (AppendStage("a").repeat(4) ~>
-      (RedoStage(1, AppendStage("1")).repeat(4) ~> AppendStage("b").repeat(3)) ~>
-      (RedoStage(1, AppendStage("2")).repeat(3) ~> AppendStage("c").repeat(2)) ~>
-      RedoStage(1, AppendStage("3")).repeat(2) ~>
-      CompleteStage[String].repeat(1) ~>
+    (AppendStage("a").repeat(7) ~>
+      (RedoStage(1, AppendStage("1")).repeat(7) ~> AppendStage("b").repeat(6)) ~>
+      (RedoStage(2, AppendStage("2")).repeat(6) ~> AppendStage("c").repeat(4)) ~>
+      RedoStage(3, AppendStage("3")).repeat(4) ~>
+      CompleteStage[String].once ~>
       counter.once).execute("x") match {
       case State.Yield("xa1b2c3", _, _) => counter.validate()
       case unexpected => fail(s"Unexpected state $unexpected")
     }
   }
-
+  
   it should "done the execution correctly" in {
     implicit val counter: Counter = new Counter
     (AppendStage("a").once ~> DoneStage.once ~> AppendStage("b").never).execute("x") shouldBe a[State.Done[?, ?]]
