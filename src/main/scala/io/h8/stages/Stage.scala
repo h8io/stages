@@ -23,9 +23,9 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
       case state: State.Break[I, O] => state ~> Behavior.Undefined(next)
     }
 
-  final def ~>[NO](f: O => NO): Stage[I, NO] = ~>(Stage(f))
+  @inline final def ~>[NO](f: O => NO): Stage[I, NO] = ~>(Stage(f))
 
-  final def &&[II <: I, OO](that: Stage[II, OO]): Stage[II, (O, OO)] = util.SeqFork(this, that)
+  @inline final def &&[II <: I, OO](that: Stage[II, OO]): Stage[II, (O, OO)] = util.SeqFork(this, that)
 
   @tailrec
   final def execute(in: I): State[I, O] = {
