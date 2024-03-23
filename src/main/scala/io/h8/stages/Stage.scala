@@ -36,7 +36,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
     }) match {
       case Behavior.Complete => state
       case Behavior.Redo(next) => next.execute(in)
-      case _ => State.UndefinedBehavior
+      case Behavior.Undefined(stage) => State.UndefinedBehavior(state, stage)
     }
   }
 

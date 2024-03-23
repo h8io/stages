@@ -29,7 +29,7 @@ class StageTest extends AnyFlatSpec with Matchers {
       case unexpected => fail(s"Unexpected state $unexpected")
     }
   }
-  
+
   it should "done the execution correctly" in {
     implicit val counter: Counter = new Counter
     (AppendStage("a").once ~> DoneStage.once ~> AppendStage("b").never).execute("x") shouldBe a[State.Done[?, ?]]

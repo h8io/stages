@@ -37,5 +37,6 @@ object State {
 
   def Defect(cause: Exception): Failure[Any, Nothing, Exception] = Failure(cause, () => Behavior.Complete)
 
-  val UndefinedBehavior: Failure[Any, Nothing, None.type] = Failure(None, () => Behavior.Complete)
+  def UndefinedBehavior[I, O](state: State[I, O], stage: Stage[I, O]): Failure[I, O, (State[I, O], Stage[I, O])] =
+    Failure[I, O, (State[I, O], Stage[I, O])]((state, stage), () => Behavior.Complete)
 }
