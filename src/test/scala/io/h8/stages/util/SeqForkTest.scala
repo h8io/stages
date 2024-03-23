@@ -1,15 +1,20 @@
 package io.h8.stages.util
 
 import io.h8.stages.State
+import io.h8.stages.test.{AppendStage, CompleteStage, Counter}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class SeqForkTest extends AnyFlatSpec with Matchers {
   classOf[SeqFork[?, ?, ?]].getSimpleName should "produce correct results" in {
+    val counter = new Counter
     (SeqFork(
-      AppendStage("a") ~> AppendStage("b"),
-      AppendStage("1") ~> AppendStage("2") ~> AppendStage("3")) ~> CompleteStage[(String, String)]).execute("x") match {
-      case State.Yield(("xab", "x123"), _, _) => succeed
+      counter.exactly(1) ~> AppendStage("a") ~> counter.exactly(1) ~> AppendStage("b"),
+      counter.exactly(1) ~> AppendStage("1") ~>
+        counter.exactly(1) ~> AppendStage("2") ~>
+        counter.exactly(1) ~> AppendStage("3")
+    ) ~> counter.exactly(1) ~> CompleteStage[(String, String)]).execute("x") match {
+      case State.Yield(("xab", "x123"), _, _) => counter.validate()
       case unexpected => fail(s"Unexpected state $unexpected")
     }
   }

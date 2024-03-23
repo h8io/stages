@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 object Stage {
   def apply[I, O](f: I => O): Stage.Safe[I, O] = new Stage.Safe[I, O] {
     def apply(in: I): State[I, O] =
-      try State.Yield(f(in), () => Behavior.Undefined(this), _ => Behavior.Undefined(this))
+      try `yield`(f(in))
       catch {
         case e: Exception => State.Defect(e)
       }
@@ -59,4 +59,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
     catch {
       case e: Exception => State.Defect(e)
     }
+
+  def `yield`[OO >: O](v: OO): State.Yield[I, OO] =
+    State.Yield(v, () => Behavior.Undefined(this), _ => Behavior.Undefined(this))
 }
