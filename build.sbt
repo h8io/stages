@@ -35,5 +35,10 @@ val root = project
       "--unchecked",
       "-Xfatal-warnings"),
     crossScalaVersions := Seq(Scala2Version, Scala3Version),
-    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.18" % Test
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest" % "3.2.18" % Test,
+      "org.typelevel" %% "cats-laws" % "2.10.0" % Test,
+      "org.typelevel" %% "discipline-core" % "1.5.1" % Test,
+      "org.typelevel" %% "discipline-scalatest" % "2.2.0" % Test
+    )
   )

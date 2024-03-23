@@ -20,6 +20,8 @@ object BehaviorKind {
     }
   }
 
+  val values: Set[BehaviorKind] = Set(Complete, Redo, Undefined)
+
   case object Undefined extends BehaviorKind {
     def apply[I, O](stage: => Stage[I, O]): Behavior[I, O] = Behavior.Undefined(stage)
     override def &(other: BehaviorKind): BehaviorKind = other
