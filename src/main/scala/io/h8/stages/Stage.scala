@@ -40,15 +40,15 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
     }
   }
 
-  final def recursion[II >: O <: I](in: II): State[II, II] = {
+  final def recursion[T >: O <: I](in: T): State[T, T] = {
     @tailrec
-    def loop(current: Stage[II, II], previous: State.Yield[II, II]): State[II, II] = current.safe(previous.out) match {
-      case state: State.Failure[II, II, ?] => state.onFailure() match {
+    def loop(current: Stage[T, T], previous: State.Yield[T, T]): State[T, T] = current.safe(previous.out) match {
+      case state: State.Failure[T, T, ?] => state.onFailure() match {
         case Behavior.Complete => state
         case Behavior.Redo(stage) => loop(stage, previous)
         case Behavior.Undefined(stage) => State.UndefinedBehavior(state, stage)
       }
-      case state: State.Done[II, II] =>
+      case state: State.Done[T, T] =>
         state.onSuccess() match {
           case Behavior.Complete => previous
           case Behavior.Redo(stage) => loop(stage, previous)
@@ -61,7 +61,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
           case Behavior.Undefined(stage) => State.UndefinedBehavior(state, stage)
         }
     }
-    loop(this, State.Yield[II, II](in, () => Behavior.Complete, _ => Behavior.Complete))
+    loop(this, State.Yield[T, T](in, () => Behavior.Complete, _ => Behavior.Complete))
   }
 
   def safe: Stage.Safe[I, O] = (in: I) =>
