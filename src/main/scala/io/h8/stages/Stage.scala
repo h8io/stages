@@ -27,20 +27,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
 
   @inline final def &&[II <: I, OO](that: Stage[II, OO]): Stage[II, (O, OO)] = util.SeqFork(this, that)
 
-  @tailrec
-  final def execute(in: I): State[I, O] = {
-    val state = safe(in)
-    (state match {
-      case failure: State.Failure[I, O, ?] => failure.onFailure()
-      case success: State.Success[I, O] => success.onSuccess()
-    }) match {
-      case Behavior.Complete => state.withBehavior(Behavior.Complete)
-      case Behavior.Redo(next) => next.execute(in)
-      case behavior @ Behavior.Undefined(stage) => State.UndefinedBehavior(state.withBehavior(behavior), stage)
-    }
-  }
-
-  final def recursion[T >: O <: I](in: T): State[T, T] = {
+  final def recursion[T >: O <: I]: Stage[T, T] = {
     @tailrec
     def loop(current: Stage[T, T], previous: State.Yield[T, T]): State[T, T] = current.safe(previous.out) match {
       case state: State.Failure[T, T, ?] => state.onFailure() match {
@@ -61,7 +48,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
           case behavior: Behavior.Undefined[T, T] => state.withBehavior(behavior)
         }
     }
-    loop(this, State.Yield[T, T](in, () => Behavior.Complete, _ => Behavior.Complete))
+    in => loop(this, State.Yield[T, T](in, () => Behavior.Complete, _ => Behavior.Complete))
   }
 
   def safe: Stage.Safe[I, O] = (in: I) =>
@@ -72,4 +59,17 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
 
   def `yield`[OO >: O](v: OO): State.Yield[I, OO] =
     State.Yield(v, () => Behavior.Undefined(this), _ => Behavior.Undefined(this))
+
+  @tailrec
+  final def execute(in: I): State[I, O] = {
+    val state = safe(in)
+    (state match {
+      case failure: State.Failure[I, O, ?] => failure.onFailure()
+      case success: State.Success[I, O] => success.onSuccess()
+    }) match {
+      case Behavior.Complete => state.withBehavior(Behavior.Complete)
+      case Behavior.Redo(next) => next.execute(in)
+      case behavior @ Behavior.Undefined(stage) => State.UndefinedBehavior(state.withBehavior(behavior), stage)
+    }
+  }
 }
