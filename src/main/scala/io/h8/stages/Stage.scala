@@ -34,9 +34,9 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
       case failure: State.Failure[I, O, ?] => failure.onFailure()
       case success: State.Success[I, O] => success.onSuccess()
     }) match {
-      case Behavior.Complete => state
+      case Behavior.Complete => state.withBehavior(Behavior.Complete)
       case Behavior.Redo(next) => next.execute(in)
-      case Behavior.Undefined(stage) => State.UndefinedBehavior(state, stage)
+      case behavior @ Behavior.Undefined(stage) => State.UndefinedBehavior(state.withBehavior(behavior), stage)
     }
   }
 
@@ -44,21 +44,21 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
     @tailrec
     def loop(current: Stage[T, T], previous: State.Yield[T, T]): State[T, T] = current.safe(previous.out) match {
       case state: State.Failure[T, T, ?] => state.onFailure() match {
-        case Behavior.Complete => state
+        case Behavior.Complete => state.withBehavior(Behavior.Complete)
         case Behavior.Redo(stage) => loop(stage, previous)
-        case Behavior.Undefined(stage) => State.UndefinedBehavior(state, stage)
+        case behavior: Behavior.Undefined[T, T] => state.withBehavior(behavior)
       }
       case state: State.Done[T, T] =>
         state.onSuccess() match {
           case Behavior.Complete => previous
           case Behavior.Redo(stage) => loop(stage, previous)
-          case Behavior.Undefined(stage) => State.UndefinedBehavior(state, stage)
+          case behavior: Behavior.Undefined[T, T] => state.withBehavior(behavior)
         }
       case state @ State.Yield(_, onSuccess, _) =>
         onSuccess() match {
-          case Behavior.Complete => state
-          case Behavior.Redo(next) => loop(next, state)
-          case Behavior.Undefined(stage) => State.UndefinedBehavior(state, stage)
+          case Behavior.Complete => state.withBehavior(Behavior.Complete)
+          case behavior @ Behavior.Redo(next) => loop(next, state.withBehavior(behavior))
+          case behavior: Behavior.Undefined[T, T] => state.withBehavior(behavior)
         }
     }
     loop(this, State.Yield[T, T](in, () => Behavior.Complete, _ => Behavior.Complete))
