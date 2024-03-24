@@ -39,10 +39,7 @@ trait Stage[-I, +O] extends (I => State[I, O]) {
   @tailrec
   final def execute(in: I): State[I, O] = {
     val state = safe(in)
-    (state match {
-      case failure: State.Failure[I, O, ?] => failure.onFailure()
-      case success: State.Success[I, O] => success.onSuccess()
-    }) match {
+    state.conclude match {
       case Behavior.Complete => state
       case Behavior.Redo(next) => next.execute(in)
       case _: Behavior.Undefined[I, O] => State.UndefinedBehavior(state)
