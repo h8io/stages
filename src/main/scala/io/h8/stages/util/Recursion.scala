@@ -7,8 +7,7 @@ import scala.annotation.tailrec
 final case class Recursion[T](stage: Stage[T, T]) extends Stage[T, T] {
   @tailrec
   private def loop(current: Stage[T, T], previous: State.Yield[T, T]): State[T, T] = {
-    val state = current.safe(previous.out)
-    val behavior = state.conclude()
+    val (state, behavior) = current.safe(previous.out).concluded()
     behavior match {
       case Behavior.Complete =>
         state match {

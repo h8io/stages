@@ -9,7 +9,7 @@ final class Logger {
   private val concludeLog: mutable.Buffer[String] = mutable.Buffer.empty
   private val onFailureLog: mutable.Buffer[String] = mutable.Buffer.empty
 
-  private[test] case class LoggerStage[I, O](id: String, stage: Stage[I, O]) extends Stage[I, O] {
+  private[test] case class LoggerStage[-I, +O](id: String, stage: Stage[I, O]) extends Stage[I, O] {
     override def apply(in: I): State[I, O] = {
       applyLog += id
       stage(in) match {
@@ -26,13 +26,13 @@ final class Logger {
       }
     }
 
-    private def overrideConclude(conclude: () => Behavior[I, O]): () => Behavior[I, O] = { () =>
+    private def overrideConclude[II <: I, OO >: O](conclude: () => Behavior[II, OO]): () => Behavior[II, OO] = { () =>
       concludeLog += id
       conclude().map(toLoggerStage)
     }
 
-    private def toLoggerStage(stage: Stage[I, O]) = stage match {
-      case stage: LoggerStage[I, O] => stage
+    private def toLoggerStage[II <: I, OO >: O](stage: Stage[II, OO]): LoggerStage[II, OO] = stage match {
+      case stage: LoggerStage[II, OO] => stage
       case stage => LoggerStage(id, stage)
     }
   }
