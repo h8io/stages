@@ -6,32 +6,60 @@ import org.scalatest.matchers.should.Matchers
 
 class StageTest extends AnyFlatSpec with Matchers {
   classOf[Stage[?, ?]].getSimpleName should "produce the correct result" in {
-    implicit val counter: Counter = new Counter
-    (AppendStage("a").once ~>
-      AppendStage("b").once ~>
-      AppendStage("c").once ~>
-      CompleteStage[String].once ~>
-      counter.once).execute("x") match {
-      case State.Yield("xabc", _, _) => counter.validate()
+    implicit val logger: Logger = new Logger
+    val expectedApplyLog = List("a", "b", "c", "complete")
+    (AppendStage("a").log("a") ~>
+      AppendStage("b").log("b") ~>
+      AppendStage("c").log("c") ~>
+      CompleteStage[String].log("complete"))("x") match {
+      case State.Yield("xabc", conclude, _) =>
+        logger.getApplyLog should contain theSameElementsInOrderAs expectedApplyLog
+        logger.getConcludeLog shouldBe empty
+        logger.getOnFailureLog shouldBe empty
+        conclude() shouldBe Behavior.Complete
+        logger.getApplyLog should contain theSameElementsInOrderAs expectedApplyLog
+        logger.getConcludeLog should contain theSameElementsInOrderAs expectedApplyLog.reverse
+        logger.getOnFailureLog shouldBe empty
       case unexpected => fail(s"Unexpected state $unexpected")
     }
   }
 
   it should "redo the execution correctly" in {
-    implicit val counter: Counter = new Counter
-    (AppendStage("a").repeat(7) ~>
-      (RedoStage(1, AppendStage("1")).repeat(7) ~> AppendStage("b").repeat(6)) ~>
-      (RedoStage(2, AppendStage("2")).repeat(6) ~> AppendStage("c").repeat(4)) ~>
-      RedoStage(3, AppendStage("3")).repeat(4) ~>
-      CompleteStage[String].once ~>
-      counter.once).execute("x") match {
-      case State.Yield("xa1b2c3", _, _) => counter.validate()
+    implicit val logger: Logger = new Logger
+    val expectedApplyLog = List(
+      List("a", "redo 1"),
+      List("a", "1", "b", "redo 2"),
+      List("a", "1", "b", "redo 2"),
+      List("a", "1", "b", "2", "c", "redo 3"),
+      List("a", "1", "b", "2", "c", "redo 3"),
+      List("a", "1", "b", "2", "c", "redo 3"),
+      List("a", "1", "b", "2", "c", "3", "complete")
+    )
+    (AppendStage("a").log("a") ~>
+      (RedoStage(1, AppendStage("1").log("1")).log("redo 1") ~> AppendStage("b").log("b")) ~>
+      (RedoStage(2, AppendStage("2").log("2")).log("redo 2") ~> AppendStage("c").log("c")) ~>
+      RedoStage(3, AppendStage("3").log("3")).log("redo 3") ~>
+      CompleteStage[String].log("complete")).execute("x") match {
+      case State.Yield("xa1b2c3", _, _) =>
+        logger.getApplyLog should contain theSameElementsInOrderAs expectedApplyLog.flatten
+        logger.getConcludeLog should contain theSameElementsInOrderAs expectedApplyLog.flatMap(_.reverse)
+        logger.getOnFailureLog shouldBe empty
       case unexpected => fail(s"Unexpected state $unexpected")
     }
   }
 
   it should "done the execution correctly" in {
-    implicit val counter: Counter = new Counter
-    (AppendStage("a").once ~> DoneStage.once ~> AppendStage("b").never).execute("x") shouldBe a[State.Done[?, ?]]
+    implicit val logger: Logger = new Logger
+    (AppendStage("a").log("a") ~> DoneStage.log("done") ~> AppendStage("b").log("b"))("x") match {
+      case State.Done(conclude) =>
+        logger.getApplyLog should contain theSameElementsInOrderAs List("a", "done")
+        logger.getConcludeLog shouldBe empty
+        logger.getOnFailureLog shouldBe empty
+        conclude() shouldBe Behavior.Complete
+        logger.getApplyLog should contain theSameElementsInOrderAs List("a", "done")
+        logger.getConcludeLog should contain theSameElementsInOrderAs List("done", "a")
+        logger.getOnFailureLog shouldBe empty
+      case unexpected => fail(s"Unexpected state $unexpected")
+    }
   }
 }
