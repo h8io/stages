@@ -1,6 +1,5 @@
-package io.h8.stages.util
+package io.h8.stages
 
-import io.h8.stages.State
 import io.h8.stages.test.{AppendStage, CompleteStage, Logger, RedoStage, StageExtension}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -13,14 +12,12 @@ class SeqForkTest extends AnyFlatSpec with Matchers {
       AppendStage("a").log("a") ~> AppendStage("b").log("b"),
       AppendStage("1").log("1") ~> AppendStage("2").log("2") ~> AppendStage("3").log("3")
     ) ~> CompleteStage[(String, String)].log("complete"))("x") match {
-      case State.Yield(("xab", "x123"), conclude, _) =>
+      case State.Yield(("xab", "x123"), conclude) =>
         logger.getApplyLog should contain theSameElementsInOrderAs expectedApplyLog
         logger.getConcludeLog shouldBe empty
-        logger.getOnFailureLog shouldBe empty
-        conclude()
+        conclude(None)
         logger.getApplyLog should contain theSameElementsInOrderAs expectedApplyLog
         logger.getConcludeLog shouldBe expectedApplyLog.reverse
-        logger.getOnFailureLog shouldBe empty
       case unexpected => fail(s"Unexpected state $unexpected")
     }
   }
@@ -42,10 +39,9 @@ class SeqForkTest extends AnyFlatSpec with Matchers {
         RedoStage(2, AppendStage("3").log("3")).log("redo 3") ~>
         AppendStage("4").log("4")
     ) ~> CompleteStage[(String, String)].log("complete")).execute("x") match {
-      case State.Yield(("xabc", "x1234"), _, _) =>
+      case Result.Yield(("xabc", "x1234"), _) =>
         logger.getApplyLog should contain theSameElementsInOrderAs expectedApplyLog.flatten
         logger.getConcludeLog should contain theSameElementsInOrderAs expectedApplyLog.flatMap(_.reverse)
-        logger.getOnFailureLog shouldBe empty
       case unexpected => fail(s"Unexpected state $unexpected")
     }
   }
