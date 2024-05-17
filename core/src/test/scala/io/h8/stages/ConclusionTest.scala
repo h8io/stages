@@ -14,5 +14,5 @@ class ConclusionTest extends AnyFlatSpec with Configuration with FlatSpecDiscipl
     (x combine y)((_, _) => Identity[String])
   implicit private val BehaviorEq: Eq[Conclusion[String, String]] = Eq.fromUniversalEquals[Conclusion[String, String]]
 
-  checkAll("Semilattice[Behavior]", SemilatticeTests[Conclusion[String, String]].semilattice)
+  checkAll("Semilattice[Conclusion]", SemilatticeTests[Conclusion[String, String]].semilattice)
 }

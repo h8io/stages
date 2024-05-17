@@ -3,8 +3,8 @@ package io.h8
 import scala.annotation.tailrec
 
 package object stages {
-  implicit class SymmetricStage[T](val stage: Stage[T, T]) extends AnyVal {
-    final def loop(in: T): Result[T, T] = loop(Result.Yield[T, T](in, Conclusion.Complete), stage)
+  implicit final class SymmetricStage[T](val stage: Stage[T, T]) extends AnyVal {
+    def loop(in: T): Result[T, T] = loop(Result.Yield[T, T](in, Conclusion.Complete), stage)
 
     @tailrec
     private def loop(in: Result.Yield[T, T], stage: Stage[T, T]): Result[T, T] = {

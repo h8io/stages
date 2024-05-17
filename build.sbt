@@ -45,7 +45,11 @@ ThisBuild / libraryDependencies ++= Seq(
 
 val core = project.in(file("core")).settings(name := "stages-core")
 
-val root = project
-  .in(file("."))
-  .settings(name := "stages-all")
-  .aggregate(core)
+val SparkVersion = "3.5.1"
+
+val spark = project.in(file("spark")).settings(
+  name := "stages-spark",
+  ThisBuild / libraryDependencies ++= Seq("org.apache.spark" %% "spark-sql" % SparkVersion)
+).dependsOn(core)
+
+val root = project.in(file(".")).settings(name := "stages-all").aggregate(core, spark)
