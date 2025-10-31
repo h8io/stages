@@ -1,4 +1,4 @@
-package h8io.stages.projections
+package h8io.stages.cats
 
 import h8io.stages.{Signal, Yield}
 import org.scalamock.scalatest.MockFactory
