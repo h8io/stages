@@ -1,0 +1,17 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+
+jobs:
+  test:
+    secrets: inherit
+    uses: h8io/gha/.github/workflows/test.yaml@v3
+    with:
+      timeout-minutes: 5

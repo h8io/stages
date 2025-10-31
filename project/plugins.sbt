@@ -1,0 +1,5 @@
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.5")
+addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.2")
+addSbtPlugin("io.h8.sbt" %% "sbt-dependencies" % "1.0.7")
+addSbtPlugin("io.h8.sbt" % "sbt-scoverage-summary" % "1.0.1")
+addSbtPlugin("io.h8.sbt" % "sbt-testkit" % "0.0.2")
