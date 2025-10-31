@@ -45,13 +45,12 @@ ThisBuild / libraryDependencies ++= TestBundle % Test
 
 val core = (project in file("core")).settings(
   name := "stages-core",
-  libraryDependencies ++= TestBundle % TestKit,
-  testkitPublishClassifier := true
-).enablePlugins(TestKitPlugin)
+  libraryDependencies ++= TestBundle % TestKitClassifierConfiguration
+).enablePlugins(TestKitClassifierPlugin)
 
 val std =
-  (project in file("std")).settings(name := "stages-std", libraryDependencies ++= Cats)
-    .dependsOn(core, core % "test->testkit")
+  (project in file("std")).settings(name := "stages-std", libraryDependencies ++= Cats % CatsClassifierConfiguration)
+    .dependsOn(core, core % "test->testkit").enablePlugins(CatsClassifierPlugin)
 
 val examples = (project in file("examples")).settings(
   name := "stages-examples",
@@ -63,7 +62,8 @@ val examples = (project in file("examples")).settings(
   Compile / doc / skip := true
 ).dependsOn(core, std, core % "test->testkit")
 
-val root = (project in file(".")).settings(name := "stages")
+val root = (project in file("."))
+  .settings(name := "stages", libraryDependencies += ((std / projectID).value % "compile").classifier("cats"))
   .dependsOn(core, std)
   .aggregate(core, std, examples)
   .enablePlugins(ScoverageSummaryPlugin)
