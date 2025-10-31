@@ -1,3 +1,3 @@
-[![GitHub release](https://img.shields.io/github/v/release/h8io/xi)](https://github.com/h8io/xi/releases/latest)
+[![GitHub release](https://img.shields.io/github/v/release/h8io/stages)](https://github.com/h8io/stages/releases/latest)
 
-# Xi Query Language
+# Stages
