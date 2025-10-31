@@ -1,0 +1,14 @@
+name: Snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    secrets: inherit
+    uses: h8io/gha/.github/workflows/snapshot.yaml@v3
+    with:
+      java-version: 17
