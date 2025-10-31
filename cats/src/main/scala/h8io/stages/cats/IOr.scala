@@ -1,8 +1,10 @@
-package h8io.stages.binops
+package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages
-import stages.{Stage, Yield}
+import h8io.stages.binops.BinaryOp
+import h8io.stages.projections.{LeftProjection, RightProjection}
+import h8io.stages.{Stage, Yield}
 
 final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
     extends BinaryOp[I, LO, RO, Ior[LO, RO], E] {
@@ -25,5 +27,15 @@ object IOr {
     def onSuccess(): Stage[I, Ior[LO, RO], E] = IOr(left.onSuccess(), right.onSuccess())
     def onComplete(): Stage[I, Ior[LO, RO], E] = IOr(left.onComplete(), right.onComplete())
     def onError(): Stage[I, Ior[LO, RO], E] = IOr(left.onError(), right.onError())
+  }
+
+  object Left extends LeftProjection[Ior] {
+    def apply(in: Ior[Any, ?]): Yield[Ior[Any, ?], Any, Nothing] =
+      in.fold(out => some(out), _ => none, (out, _) => some(out))
+  }
+
+  object Right extends RightProjection[Ior] {
+    def apply(in: Ior[?, Any]): Yield[Ior[?, Any], Any, Nothing] =
+      in.fold(_ => none, out => some(out), (_, out) => some(out))
   }
 }
