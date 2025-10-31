@@ -43,14 +43,17 @@ ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / libraryDependencies ++= TestBundle % Test
 
-val core = (project in file("core")).settings(
-  name := "stages-core",
-  libraryDependencies ++= TestBundle % TestKitClassifierConfiguration
-).enablePlugins(TestKitClassifierPlugin)
+val core = (project in file("core"))
+  .settings(name := "stages-core", libraryDependencies ++= TestBundle % TestKitClassifierConfiguration)
+  .enablePlugins(TestKitClassifierPlugin)
 
-val std =
-  (project in file("std")).settings(name := "stages-std", libraryDependencies ++= Cats % CatsClassifierConfiguration)
-    .dependsOn(core, core % "test->testkit").enablePlugins(CatsClassifierPlugin)
+val std = (project in file("std"))
+  .settings(name := "stages-std")
+  .dependsOn(core, core % "test->testkit")
+
+val cats = (project in file("cats"))
+  .settings(name := "stages-cats", libraryDependencies ++= Cats)
+  .dependsOn(core, core % "test->testkit", std)
 
 val examples = (project in file("examples")).settings(
   name := "stages-examples",
@@ -60,10 +63,10 @@ val examples = (project in file("examples")).settings(
   Compile / packageDoc / mappings := Nil,
   Compile / packageSrc / mappings := Nil,
   Compile / doc / skip := true
-).dependsOn(core, std, core % "test->testkit")
+).dependsOn(core, core % "test->testkit", std)
 
 val root = (project in file("."))
-  .settings(name := "stages", libraryDependencies += ((std / projectID).value % "compile").classifier("cats"))
-  .dependsOn(core, std)
-  .aggregate(core, std, examples)
+  .settings(name := "stages")
+  .dependsOn(core, std, cats)
+  .aggregate(core, std, cats, examples)
   .enablePlugins(ScoverageSummaryPlugin)
