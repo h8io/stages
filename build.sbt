@@ -44,7 +44,7 @@ ThisBuild / javacOptions ++= Seq("-target", "8")
 ThisBuild / libraryDependencies ++= TestBundle % Test
 
 val core = (project in file("core"))
-  .settings(name := "stages-core", libraryDependencies ++= TestBundle % TestKitClassifierConfiguration)
+  .settings(name := "stages-core", libraryDependencies ++= TestBundle % testkit.Variant)
   .enablePlugins(TestKitClassifierPlugin)
 
 val lib = (project in file("lib"))
