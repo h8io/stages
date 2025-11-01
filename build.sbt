@@ -1,14 +1,19 @@
 import Dependencies.*
 import h8io.sbt.dependencies.*
 
+val ProjectName = "stages"
+
 ThisBuild / organization := "io.h8"
 ThisBuild / organizationName := "H8IO"
 ThisBuild / organizationHomepage := Some(url("https://github.com/h8io/"))
-ThisBuild / homepage := Some(url("https://github.com/h8io/stages"))
+ThisBuild / homepage := Some(url(s"https://github.com/h8io/$ProjectName"))
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url(s"https://github.com/h8io/$ProjectName"),
+    s"scm:git@github.com:h8io/$ProjectName.git"))
 
 ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
-
-ThisBuild / versionScheme := Some("semver-spec")
 
 ThisBuild / developers := List(
   Developer(
@@ -17,16 +22,10 @@ ThisBuild / developers := List(
     email = "tjano.xibalba@gmail.com",
     url = url("https://github.com/eshu/")))
 
-ThisBuild / scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/h8io/sbt-scoverage-summary"),
-    "scm:git@github.com:h8io/sbt-scoverage-summary.git"))
+ThisBuild / versionScheme := Some("semver-spec")
 
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
-
-ThisBuild / scalaVersion := "2.13.17"
-ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / scalacOptions ++=
   Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
@@ -40,6 +39,9 @@ ThisBuild / scalacOptions ++=
   })
 
 ThisBuild / javacOptions ++= Seq("-target", "8")
+
+ThisBuild / scalaVersion := "2.13.17"
+ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / libraryDependencies ++= TestBundle % Test
 
@@ -66,7 +68,7 @@ val examples = (project in file("examples")).settings(
 ).dependsOn(core, core % "test->testkit", lib)
 
 val root = (project in file("."))
-  .settings(name := "stages")
+  .settings(name := ProjectName)
   .dependsOn(core, lib, cats)
   .aggregate(core, lib, cats, examples)
   .enablePlugins(ScoverageSummaryPlugin)
