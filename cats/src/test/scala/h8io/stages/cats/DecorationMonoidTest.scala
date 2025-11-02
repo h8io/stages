@@ -1,7 +1,8 @@
-package h8io.stages.alterations
+package h8io.stages.cats
 
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid}
+import h8io.stages.alterations.Identity
 import h8io.stages.{Alteration, AlterationCompose, AlterationOps, Decoration, Stage}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuite
@@ -10,7 +11,7 @@ import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
 import scala.annotation.tailrec
 
-class DecorationsMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers {
+class DecorationMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers {
   private implicit def decorationMonoid[I, O, E]: Monoid[Decoration[I, O, E]] =
     new Monoid[Decoration[I, O, E]] {
       def empty: Decoration[I, O, E] = Identity[I, O, E]

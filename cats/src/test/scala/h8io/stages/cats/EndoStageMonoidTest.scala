@@ -1,9 +1,10 @@
-package h8io.stages.std
+package h8io.stages.cats
 
 import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
 import h8io.stages.*
+import h8io.stages.std.Identity
 import org.scalacheck.{Arbitrary, Prop, Shrink, Test}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
@@ -11,7 +12,7 @@ import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
 import scala.annotation.tailrec
 
-class EndoStagesMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with StagesCoreArbitraries {
+class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with StagesCoreArbitraries {
   private val parameters = Test.Parameters.default
 
   private implicit def stageMonoid[T, E]: Monoid[Stage.Endo[T, E]] =
