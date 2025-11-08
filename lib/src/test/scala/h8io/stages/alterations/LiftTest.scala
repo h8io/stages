@@ -30,7 +30,7 @@ class LiftTest
     }
 
   it should "transform Yield.None to Yield.Some" in
-    forAll { (in: Int, yieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
+    forAll { (in: Long, yieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
       val stage = mock[Stage[Long, Instant, String]]
       val onDone = mock[OnDone[Long, Instant, String]]
       val yld = yieldSupplier(onDone)
