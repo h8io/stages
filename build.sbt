@@ -40,7 +40,7 @@ ThisBuild / scalacOptions ++=
 
 ThisBuild / javacOptions ++= Seq("-target", "8")
 
-ThisBuild / scalaVersion := "2.13.17"
+ThisBuild / scalaVersion := "2.13.18"
 ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / libraryDependencies ++= TestBundle % Test
