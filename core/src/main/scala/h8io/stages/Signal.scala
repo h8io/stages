@@ -46,7 +46,7 @@ object Signal {
 
     @inline override def toList: List[E] = head :: tail
 
-    override def iterator: Iterator[E] = toList.iterator
+    def iterator: Iterator[E] = toList.iterator
 
     override def isEmpty: Boolean = false
   }
