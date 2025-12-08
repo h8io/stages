@@ -1,6 +1,6 @@
 package h8io.stages
 
-sealed trait Signal[+E] extends Iterable[E] {
+sealed trait Signal[+E] {
   private[stages] def ++[_E >: E](next: Signal[_E]): Signal[_E]
 
   private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E]
@@ -19,12 +19,6 @@ object Signal {
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onSuccess()
 
     private[stages] def break: Signal[Nothing] = Complete
-
-    @inline override def toList: List[Nothing] = Nil
-
-    override def iterator: Iterator[Nothing] = Iterator.empty
-
-    override def isEmpty: Boolean = true
   }
 
   sealed trait Break[+E] extends Signal[E] {
@@ -39,15 +33,9 @@ object Signal {
       }
 
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onComplete()
-
-    @inline override def toList: List[Nothing] = Nil
-
-    override def iterator: Iterator[Nothing] = Iterator.empty
-
-    override def isEmpty: Boolean = true
   }
 
-  final case class Error[+E](override val head: E, override val tail: List[E] = Nil) extends Break[E] {
+  final case class Error[+E](override val head: E, override val tail: List[E] = Nil) extends Break[E] with Iterable[E] {
     private[stages] def ++[_E >: E](next: Signal[_E]): Signal[_E] =
       next match {
         case Success | Complete => this
