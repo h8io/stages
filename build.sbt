@@ -1,36 +1,36 @@
 import Dependencies.*
 import h8io.sbt.dependencies.*
+import sbt.url
 
 val ProjectName = "stages"
 
-ThisBuild / organization := "io.h8"
-ThisBuild / organizationName := "H8IO"
-ThisBuild / organizationHomepage := Some(url("https://github.com/h8io/"))
-ThisBuild / homepage := Some(url(s"https://github.com/h8io/$ProjectName"))
+inThisBuild(
+  List(
+    organization := "io.h8",
+    organizationName := "H8IO",
+    organizationHomepage := Some(url("https://github.com/h8io/")),
+    homepage := Some(url(s"https://github.com/h8io/$ProjectName")),
+    scmInfo := Some(ScmInfo(url(s"https://github.com/h8io/$ProjectName"), s"scm:git@github.com:h8io/$ProjectName.git")),
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+    developers := List(
+      Developer(
+        id = "eshu",
+        name = "Pavel",
+        email = "tjano.xibalba@gmail.com",
+        url = url("https://github.com/eshu/")))
+  ))
 
-ThisBuild / scmInfo := Some(
-  ScmInfo(
-    url(s"https://github.com/h8io/$ProjectName"),
-    s"scm:git@github.com:h8io/$ProjectName.git"))
-
-ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
-
-ThisBuild / developers := List(
-  Developer(
-    id = "eshu",
-    name = "Pavel",
-    email = "tjano.xibalba@gmail.com",
-    url = url("https://github.com/eshu/")))
+ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / crossScalaVersions += "2.12.21"
+ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / versionScheme := Some("semver-spec")
-
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
 ThisBuild / scalacOptions ++=
   Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
     "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings")
-
 ThisBuild / scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 13)) => Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
@@ -38,16 +38,13 @@ ThisBuild / scalacOptions ++=
     case _ => Nil
   })
 
-ThisBuild / javacOptions ++= Seq("-target", "8")
-
-ThisBuild / scalaVersion := "2.13.18"
-ThisBuild / crossScalaVersions += "2.12.21"
-
 ThisBuild / libraryDependencies ++= TestBundle % Test
 
 val core = (project in file("core"))
-  .settings(name := "stages-core", libraryDependencies ++= TestBundle % testkit.Variant)
-  .enablePlugins(TestKitClassifierPlugin)
+  .settings(
+    name := "stages-core",
+    libraryDependencies ++= TestBundle % testkit.Variant
+  ).enablePlugins(TestKitClassifierPlugin)
 
 val lib = (project in file("lib"))
   .settings(name := "stages-lib")

@@ -35,7 +35,7 @@ object Signal {
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onComplete()
   }
 
-  final case class Error[+E](override val head: E, override val tail: List[E] = Nil) extends Break[E] with Iterable[E] {
+  final case class Error[+E](override val head: E, override val tail: List[E]) extends Break[E] with Iterable[E] {
     private[stages] def ++[_E >: E](next: Signal[_E]): Signal[_E] =
       next match {
         case Success | Complete => this
@@ -49,5 +49,9 @@ object Signal {
     def iterator: Iterator[E] = toList.iterator
 
     override def isEmpty: Boolean = false
+  }
+
+  object Error {
+    def apply[E](head: E): Error[E] = new Error(head, Nil)
   }
 }
