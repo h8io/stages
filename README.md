@@ -24,7 +24,8 @@ libraryDependencies ++= Seq(
 
 - `Stage[I, O, E]`: a step from input `I` to output `O` that can produce errors of type `E`.
   It is also a function `I => Yield[I, O, E]`. A stage may be stateless, but can also hold
-  resources (files, sockets) and evolve into a new stage via `OnDone`.
+  resources (files, sockets) and evolve into a new stage via `OnDone`. It also provides
+  `dispose` for final cleanup when the pipeline is fully finished.
 - `Yield`: the result of a step. `Yield.Some(out, signal, onDone)` returns output, while
   `Yield.None(signal, onDone)` does not. Both carry a `Signal` and the next `OnDone`.
 - `Signal`: a control signal for the pipeline.
@@ -32,18 +33,22 @@ libraryDependencies ++= Seq(
   - `Complete` stops the pipeline (a soft break).
   - `Error` accumulates one or more errors and switches to the error branch.
 - `OnDone`: describes the next `Stage` to run after success, completion, or error. It is the
-  result of a stage's evolution and is also responsible for resource release and transitions.
+  result of a stage's evolution and handles cleanup between stage evolutions.
 - `Alteration` / `Decoration`: functions that wrap or transform stages (e.g., loop, repeat,
   deadlines, lifting to `Option`, etc.). They compose via `~>` and apply via `⋅` or `<|`.
 
 ## Glossary
 
 - `Yield`: a step-level result that still carries the continuation (`OnDone`).
-- `Outcome`: a finalized result with a `Signal` and `dispose`, without a continuation.
+- `Outcome`: a finalized result with a `Signal` and a `dispose` thunk, without a continuation.
+  The `dispose` thunk is the final cleanup hook of the stage that produced the outcome.
 - `Signal.Success`: normal continuation signal.
 - `Signal.Complete`: a soft stop (break) for the pipeline.
 - `Signal.Error`: an error signal that can accumulate multiple errors.
-- `OnDone`: the evolution/continuation of a stage and the holder of cleanup logic.
+- `OnDone`: the evolution/continuation of a stage and the holder of cleanup logic between
+  stage evolutions.
+- `dispose`: a `Stage` method used for final cleanup when the pipeline is fully finished and
+  no further runs of the evolved pipeline will happen.
 - `Alteration`: a transformation `Stage => Stage`.
 - `Decoration`: an `Alteration` that preserves input/output types.
 - `Alterator`: a `Stage` wrapper that holds the altered stage (`alterand`) and delegates disposal.
