@@ -8,6 +8,18 @@ Each processing step is a `Stage` that produces a `Yield` with a `Signal` and a 
 The evolution model keeps the pipeline explicit and restartable, and makes it easy to
 decorate with behaviors like loops, retries, deadlines, and branching.
 
+## Maven Central
+
+Add to `build.sbt`:
+
+```scala
+libraryDependencies ++= Seq(
+  "io.h8" %% "stages-core" % "0.0.4",
+  "io.h8" %% "stages-lib" % "0.0.4",
+  "io.h8" %% "stages-cats" % "0.0.4"
+)
+```
+
 ## Core concepts
 
 - `Stage[I, O, E]`: a step from input `I` to output `O` that can produce errors of type `E`.
@@ -69,17 +81,6 @@ The standard library includes:
 - Control flow: `Break`, `BreakIfNone`, `BreakIfSome`, `DeadEnd`.
 - Output shaping: `Lift`, `KeepLastOutput`, `Unlift`.
 - Binary combinators: `And`, `IAnd`, `Or` and projections for tuples and either types.
-
-## Building and testing
-
-This is an sbt multi-project build. Common commands:
-
-```bash
-sbt test
-sbt core/test
-sbt lib/test
-sbt cats/test
-```
 
 ## License
 
