@@ -167,7 +167,6 @@ class StageTest
       val nextStage = mock[Stage[String, Long, String]]
       inSequence {
         (previousStage.apply _).expects(in).returns(Yield.None(previousSignal, previousOnDone))
-        (() => nextStage.skip).expects().returns(nextStage)
       }
       inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousSignal`, onDone) =>
         val evolvedPreviousStage = mock[Stage[Int, String, String]]
