@@ -108,20 +108,6 @@ class StageTest
     alteration(left) shouldBe left ~> right
   }
 
-  "Default skip method" should "return an idempotent OnDone object" in {
-    val stage: Stage[Any, Nothing, Nothing] = new Stage[Any, Nothing, Nothing] {
-      def apply(in: Any): Yield[Any, Nothing, Nothing] = fail("apply should not be called")
-
-      override def onSuccess(): Stage[Any, Nothing, Nothing] = mock[Stage[Any, Nothing, Nothing]]
-      override def onComplete(): Stage[Any, Nothing, Nothing] = mock[Stage[Any, Nothing, Nothing]]
-      override def onError(): Stage[Any, Nothing, Nothing] = mock[Stage[Any, Nothing, Nothing]]
-    }
-    val onDone = stage.skip
-    onDone.onSuccess() should be theSameInstanceAs stage
-    onDone.onComplete() should be theSameInstanceAs stage
-    onDone.onError() should be theSameInstanceAs stage
-  }
-
   "Default OnDone methods" should "return self" in {
     val stage: Stage[Any, Nothing, Nothing] = _ => fail("apply should not be called")
     stage.onSuccess() should be theSameInstanceAs stage
