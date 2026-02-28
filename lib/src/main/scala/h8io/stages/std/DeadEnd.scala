@@ -7,7 +7,7 @@ sealed case class DeadEnd(_dispose: () => Unit) extends StageWithOnDone[Any, Not
   final val Yield: stages.Yield.None[Any, Nothing, Nothing] =
     stages.Yield.None[Any, Nothing, Nothing](Signal.Complete, this)
 
-  final def apply(in: Any): stages.Yield.None[Any, Nothing, Nothing] = Yield
+  override final def apply(in: Any): stages.Yield.None[Any, Nothing, Nothing] = Yield
 
   override final def dispose(): Unit = _dispose()
 }

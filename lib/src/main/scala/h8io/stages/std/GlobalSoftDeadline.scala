@@ -9,7 +9,7 @@ final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
     extends Fruitful.Endo[T, Nothing] with StageWithOnDone.Endo[T, Nothing] {
   private val ts: Long = now()
 
-  def apply(in: T): Yield.Some[T, T, Nothing] =
+  override def apply(in: T): Yield.Some[T, T, Nothing] =
     Yield.Some(in, if (now() - ts < duration) Signal.Success else Signal.Complete, this)
 }
 

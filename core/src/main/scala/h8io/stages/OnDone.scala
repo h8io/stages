@@ -9,23 +9,23 @@ trait OnDone[-I, +O, +E] {
 
   @inline private[stages] final def compose[_O, _E >: E](that: OnDone[O, _O, _E]): OnDone[I, _O, _E] =
     new OnDone[I, _O, _E] {
-      def onSuccess(): Stage[I, _O, _E] = that.onSuccess() <~ self.onSuccess()
-      def onComplete(): Stage[I, _O, _E] = that.onComplete() <~ self.onComplete()
-      def onError(): Stage[I, _O, _E] = that.onError() <~ self.onError()
+      override def onSuccess(): Stage[I, _O, _E] = that.onSuccess() <~ self.onSuccess()
+      override def onComplete(): Stage[I, _O, _E] = that.onComplete() <~ self.onComplete()
+      override def onError(): Stage[I, _O, _E] = that.onError() <~ self.onError()
     }
 
   final def map[_I, _O, _E](f: Stage[I, O, E] => Stage[_I, _O, _E]): OnDone[_I, _O, _E] =
     new OnDone[_I, _O, _E] {
-      def onSuccess(): Stage[_I, _O, _E] = f(self.onSuccess())
-      def onComplete(): Stage[_I, _O, _E] = f(self.onComplete())
-      def onError(): Stage[_I, _O, _E] = f(self.onError())
+      override def onSuccess(): Stage[_I, _O, _E] = f(self.onSuccess())
+      override def onComplete(): Stage[_I, _O, _E] = f(self.onComplete())
+      override def onError(): Stage[_I, _O, _E] = f(self.onError())
     }
 }
 
 object OnDone {
   final case class FromStage[I, O, E](stage: Stage[I, O, E]) extends OnDone[I, O, E] {
-    def onSuccess(): Stage[I, O, E] = stage
-    def onComplete(): Stage[I, O, E] = stage
-    def onError(): Stage[I, O, E] = stage
+    override def onSuccess(): Stage[I, O, E] = stage
+    override def onComplete(): Stage[I, O, E] = stage
+    override def onError(): Stage[I, O, E] = stage
   }
 }

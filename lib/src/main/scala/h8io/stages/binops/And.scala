@@ -19,15 +19,15 @@ final case class And[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
 object And {
   private final case class LeftOnDone[-I, +LO, +RO, +E](leftOnDone: OnDone[I, LO, E], right: Stage[I, RO, E])
       extends OnDone[I, (LO, RO), E] {
-    def onSuccess(): Stage[I, (LO, RO), E] = And(leftOnDone.onSuccess(), right)
-    def onComplete(): Stage[I, (LO, RO), E] = And(leftOnDone.onComplete(), right)
-    def onError(): Stage[I, (LO, RO), E] = And(leftOnDone.onError(), right)
+    override def onSuccess(): Stage[I, (LO, RO), E] = And(leftOnDone.onSuccess(), right)
+    override def onComplete(): Stage[I, (LO, RO), E] = And(leftOnDone.onComplete(), right)
+    override def onError(): Stage[I, (LO, RO), E] = And(leftOnDone.onError(), right)
   }
 
   private final case class BothOnDone[-I, +LO, +RO, +E](leftOnDone: OnDone[I, LO, E], rightOnDone: OnDone[I, RO, E])
       extends OnDone[I, (LO, RO), E] {
-    def onSuccess(): Stage[I, (LO, RO), E] = And(leftOnDone.onSuccess(), rightOnDone.onSuccess())
-    def onComplete(): Stage[I, (LO, RO), E] = And(leftOnDone.onComplete(), rightOnDone.onComplete())
-    def onError(): Stage[I, (LO, RO), E] = And(leftOnDone.onError(), rightOnDone.onError())
+    override def onSuccess(): Stage[I, (LO, RO), E] = And(leftOnDone.onSuccess(), rightOnDone.onSuccess())
+    override def onComplete(): Stage[I, (LO, RO), E] = And(leftOnDone.onComplete(), rightOnDone.onComplete())
+    override def onError(): Stage[I, (LO, RO), E] = And(leftOnDone.onError(), rightOnDone.onError())
   }
 }

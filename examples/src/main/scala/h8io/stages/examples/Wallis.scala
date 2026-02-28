@@ -8,7 +8,7 @@ import scala.concurrent.duration.FiniteDuration
 
 object Wallis {
   final case class Pi(n: Long) extends StageWithOnDone.Endo[Double, Nothing] {
-    def apply(in: Double): Yield.Some[Double, Double, Nothing] = {
+    override def apply(in: Double): Yield.Some[Double, Double, Nothing] = {
       val k = 4d * n * n
       Yield.Some(in * k / (k - 1), Signal.Success, this)
     }
