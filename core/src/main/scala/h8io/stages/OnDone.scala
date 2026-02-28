@@ -5,6 +5,9 @@ package h8io.stages
   * A value of `OnDone` selects the next stage to run after success, completion, or error. It is typically produced by a
   * [[Yield]] and composed when stages are chained.
   *
+  * When an `OnDone` is also a `Stage` (since `Stage` extends `OnDone`), these methods may be called even if that
+  * stage's `apply` was never invoked.
+  *
   * @tparam I
   *   input type of the next stage
   * @tparam O

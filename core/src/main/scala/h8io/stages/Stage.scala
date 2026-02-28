@@ -6,6 +6,10 @@ package h8io.stages
   * A `Stage` is both a function `I => Yield[I, O, E]` and an `OnDone` handler, which enables pipeline composition
   * (`~>`, `<~`) and alteration application (`|>`).
   *
+  * Because `Stage` also implements `OnDone`, its `onSuccess`, `onComplete`, and `onError` methods may be invoked even
+  * when `apply` has not been called on that instance (for example, when a previous stage yields [[Yield.None]]).
+  * Implementations must not assume `apply` was run.
+  *
   * @tparam I
   *   input type (contravariant)
   * @tparam O
