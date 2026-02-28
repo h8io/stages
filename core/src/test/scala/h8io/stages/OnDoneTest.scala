@@ -57,4 +57,12 @@ class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
     (f.apply _).expects(onErrorStage).returns(onErrorMappedStage)
     onDone.map(f).onError() shouldBe onErrorMappedStage
   }
+
+  "FromStage" should "return the same stage for any signal" in {
+    val stage = mock[Stage[Int, String, UUID]]
+    val onDone = OnDone.FromStage(stage)
+    onDone.onSuccess() should be theSameInstanceAs stage
+    onDone.onComplete() should be theSameInstanceAs stage
+    onDone.onError() should be theSameInstanceAs stage
+  }
 }
