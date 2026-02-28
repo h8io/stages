@@ -2,7 +2,8 @@ package h8io.stages.std
 
 import h8io.stages.{Signal, Stage, Yield}
 
-final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing] {
+final case class Countdown[T](i: Long, n: Long)
+    extends Fruitful.Endo[T, Nothing] with StageWithOnDone.Endo[T, Nothing] {
   assume(n > 0, s"n must be positive, got n = $n")
   assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 

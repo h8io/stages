@@ -1,11 +1,11 @@
 package h8io.stages.examples
 
-import h8io.stages.alterations.Loop
 import h8io.stages.*
-import h8io.stages.std.{Const, Countdown}
+import h8io.stages.alterations.Loop
+import h8io.stages.std.{Const, Countdown, StageWithOnDone}
 
 object Factorial1 {
-  sealed case class Agg(n: Long) extends Stage.Endo[BigInt, Nothing] {
+  sealed case class Agg(n: Long) extends StageWithOnDone.Endo[BigInt, Nothing] {
     override def apply(in: BigInt): Yield.Some[BigInt, BigInt, Nothing] = Yield.Some(in * n, Signal.Success, this)
 
     override def onSuccess(): Stage.Endo[BigInt, Nothing] = Agg(n + 1)

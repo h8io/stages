@@ -1,9 +1,9 @@
 package h8io.stages.std
 
 import h8io.stages
-import stages.{Signal, Stage}
+import h8io.stages.Signal
 
-sealed case class DeadEnd(_dispose: () => Unit) extends Stage[Any, Nothing, Nothing] {
+sealed case class DeadEnd(_dispose: () => Unit) extends StageWithOnDone[Any, Nothing, Nothing] {
   final val Yield: stages.Yield.None[Any, Nothing, Nothing] =
     stages.Yield.None[Any, Nothing, Nothing](Signal.Complete, this)
 
