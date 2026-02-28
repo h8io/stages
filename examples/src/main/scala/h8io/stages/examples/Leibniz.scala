@@ -8,7 +8,7 @@ import scala.concurrent.duration.FiniteDuration
 
 object Leibniz {
   final case class Pi(n: Long, t: Double, s: Double) extends StageWithOnDone[Unit, Double, Nothing] {
-    def apply(in: Unit): Yield.Some[Unit, Double, Nothing] = Yield.Some(4 * s, Signal.Success, this)
+    override def apply(in: Unit): Yield.Some[Unit, Double, Nothing] = Yield.Some(4 * s, Signal.Success, this)
 
     override def onSuccess(): Stage[Unit, Double, Nothing] = {
       val _t = -t * (2 * n + 1) / (2 * n + 3)

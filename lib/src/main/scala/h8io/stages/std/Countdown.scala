@@ -7,7 +7,7 @@ final case class Countdown[T](i: Long, n: Long)
   assume(n > 0, s"n must be positive, got n = $n")
   assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 
-  def apply(in: T): Yield.Some[T, T, Nothing] =
+  override def apply(in: T): Yield.Some[T, T, Nothing] =
     if (i == 1) Yield.Some(in, Signal.Complete, Countdown(n, n))
     else Yield.Some(in, Signal.Success, this)
 

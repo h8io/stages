@@ -32,7 +32,7 @@ object Stage {
   type Any = Stage[?, ?, ?]
 
   final case class AndThen[-I, OI, +O, +E](previous: Stage[I, OI, E], next: Stage[OI, O, E]) extends Stage[I, O, E] {
-    def apply(in: I): Yield[I, O, E] =
+    override def apply(in: I): Yield[I, O, E] =
       previous(in) match {
         case some @ Yield.Some(out, _, _) => some.compose(next(out))
         case none: Yield.None[I, OI, E] => none.compose(next.skip)
