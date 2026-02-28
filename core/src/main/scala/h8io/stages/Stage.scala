@@ -27,7 +27,7 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) with OnDone[I, O, E] {
 
   /** Releases any resources held by this stage.
     *
-    * Default implementation is a no-op.
+    * The default implementation is a no-op.
     */
   def dispose(): Unit = {}
 
