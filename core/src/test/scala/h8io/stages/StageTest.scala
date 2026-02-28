@@ -111,22 +111,11 @@ class StageTest
   "Default skip method" should "return an idempotent OnDone object" in {
     val stage: Stage[Any, Nothing, Nothing] = new Stage[Any, Nothing, Nothing] {
       def apply(in: Any): Yield[Any, Nothing, Nothing] = fail("apply should not be called")
-
-      override def onSuccess(): Stage[Any, Nothing, Nothing] = mock[Stage[Any, Nothing, Nothing]]
-      override def onComplete(): Stage[Any, Nothing, Nothing] = mock[Stage[Any, Nothing, Nothing]]
-      override def onError(): Stage[Any, Nothing, Nothing] = mock[Stage[Any, Nothing, Nothing]]
     }
     val onDone = stage.skip
     onDone.onSuccess() should be theSameInstanceAs stage
     onDone.onComplete() should be theSameInstanceAs stage
     onDone.onError() should be theSameInstanceAs stage
-  }
-
-  "Default OnDone methods" should "return self" in {
-    val stage: Stage[Any, Nothing, Nothing] = _ => fail("apply should not be called")
-    stage.onSuccess() should be theSameInstanceAs stage
-    stage.onComplete() should be theSameInstanceAs stage
-    stage.onError() should be theSameInstanceAs stage
   }
 
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
@@ -179,15 +168,16 @@ class StageTest
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
+      val nextOnDone = mock[OnDone[String, Long, String]]
       inSequence {
         (previousStage.apply _).expects(in).returns(Yield.None(previousSignal, previousOnDone))
-        (() => nextStage.skip).expects().returns(nextStage)
+        (() => nextStage.skip).expects().returns(nextOnDone)
       }
       inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousSignal`, onDone) =>
         val evolvedPreviousStage = mock[Stage[Int, String, String]]
         val evolvedNextStage = mock[Stage[String, Long, String]]
         inSequence {
-          armOnDone(nextStage, previousSignal, evolvedNextStage)
+          armOnDone(nextOnDone, previousSignal, evolvedNextStage)
           armOnDone(previousOnDone, previousSignal, evolvedPreviousStage)
         }
         previousSignal(onDone) shouldBe Stage.AndThen(evolvedPreviousStage, evolvedNextStage)
