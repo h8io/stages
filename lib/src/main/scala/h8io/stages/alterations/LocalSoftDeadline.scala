@@ -5,7 +5,7 @@ import h8io.stages.*
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class LocalSoftDeadline[-I, +O, +E](
+final case class LocalSoftDeadline[I, O, E](
     tsSupplier: () => Long, now: () => Long, duration: Long, alterand: Stage[I, O, E])
     extends Decorator[I, O, E] {
   override def apply(in: I): Yield[I, O, E] = {

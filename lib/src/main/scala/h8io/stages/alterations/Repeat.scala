@@ -5,7 +5,7 @@ import h8io.stages.std.StageWithOnDone
 
 import scala.annotation.tailrec
 
-final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] with StageWithOnDone[I, O, E] {
+final case class Repeat[I, O, E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] with StageWithOnDone[I, O, E] {
   override def apply(in: I): Yield[I, O, E] = {
     @tailrec def repeat(stage: Stage[I, O, E]): Yield[I, O, E] = {
       val yld = stage(in)
