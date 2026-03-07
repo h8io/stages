@@ -1,13 +1,15 @@
 package h8io.stages.alterations
 
-import h8io.stages.std.Fruitful
-import h8io.stages.{Alterator, Stage, Yield}
+import h8io.stages.base.{BaseAlterator, Fruitful}
+import h8io.stages.{Stage, Yield}
 
 final case class Lift[I, O, E](alterand: Stage[I, O, E])
-    extends Alterator[I, O, E, I, scala.Option[O], E] with Fruitful[I, scala.Option[O], E] {
+    extends BaseAlterator[I, O, E, I, scala.Option[O], E] with Fruitful[I, scala.Option[O], E] {
   override def apply(in: I): Yield.Some[I, scala.Option[O], E] =
     alterand(in) match {
       case Yield.Some(out, signal, onDone) => Yield.Some(Some(out), signal, onDone.map(Lift(_)))
       case Yield.None(signal, onDone) => Yield.Some(None, signal, onDone.map(Lift(_)))
     }
+
+  override protected def withAlterand(stage: Stage[I, O, E]): BaseAlterator[I, O, E, I, Option[O], E] = Lift(stage)
 }

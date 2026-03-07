@@ -1,9 +1,9 @@
 package h8io.stages.projections
 
-import h8io.stages.std.StageWithOnDone
+import h8io.stages.base.BaseStage
 import h8io.stages.{Signal, Yield}
 
-trait Projection[-I, O] extends StageWithOnDone[I, O, Nothing] {
+trait Projection[-I, O] extends BaseStage[I, O, Nothing] {
   protected def some(out: O): Yield.Some[I, O, Nothing] = Yield.Some(out, Signal.Success, this)
   protected val none: Yield.None[I, O, Nothing] = Yield.None(Signal.Success, this)
 }

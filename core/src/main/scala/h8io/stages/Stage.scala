@@ -1,12 +1,11 @@
 package h8io.stages
 
-@FunctionalInterface
 trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
   def apply(in: I): Yield[I, O, E]
 
-  def dispose(): Unit = {}
+  def skip: OnDone[I, O, E]
 
-  def skip: OnDone[I, O, E] = OnDone.FromStage(this)
+  def dispose(): Unit
 
   @inline final def outcome(in: I): Outcome[O, E] = this(in).outcome()
 
@@ -37,6 +36,8 @@ object Stage {
         case some @ Yield.Some(out, _, _) => some.compose(next(out))
         case none: Yield.None[I, OI, E] => none.compose(next.skip)
       }
+
+    override def skip: OnDone[I, O, E] = previous.skip.compose(next.skip)
 
     override def dispose(): Unit = {
       next.dispose()

@@ -2,12 +2,13 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.Loop
-import h8io.stages.std.{Const, GlobalSoftDeadline, StageWithOnDone}
+import h8io.stages.base.BaseStage
+import h8io.stages.std.{Const, GlobalSoftDeadline}
 
 import scala.concurrent.duration.FiniteDuration
 
 object Wallis {
-  final case class Pi(n: Long) extends StageWithOnDone.Endo[Double, Nothing] {
+  final case class Pi(n: Long) extends BaseStage.Endo[Double, Nothing] {
     override def apply(in: Double): Yield.Some[Double, Double, Nothing] = {
       val k = 4d * n * n
       Yield.Some(in * k / (k - 1), Signal.Success, this)

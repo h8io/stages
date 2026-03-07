@@ -2,12 +2,12 @@ package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages
-import h8io.stages.binops.BinaryOp
+import h8io.stages.base.BaseBinOp
 import h8io.stages.projections.{LeftProjection, RightProjection}
 import h8io.stages.{Stage, Yield}
 
-final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BinaryOp[I, LO, RO, Ior[LO, RO], E] {
+final case class IOr[I, LO, RO, E](left: Stage[I, LO, E], right: Stage[I, RO, E])
+    extends BaseBinOp[I, LO, RO, Ior[LO, RO], E] {
   override def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftSignal, leftOnDone), Yield.Some(rightOut, rightSignal, rightOnDone)) =>
@@ -19,6 +19,9 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
       case (Yield.None(leftSignal, leftOnDone), Yield.None(rightSignal, rightOnDone)) =>
         Yield.None(leftSignal ++ rightSignal, IOr.OnDone(leftOnDone, rightOnDone))
     }
+
+  override protected def withOperands(left: Stage[I, LO, E], right: Stage[I, RO, E]): Stage[I, Ior[LO, RO], E] =
+    IOr(left, right)
 }
 
 object IOr {

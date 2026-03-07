@@ -1,5 +1,6 @@
 package h8io.stages.std
 
+import h8io.stages.base.Fn
 import h8io.stages.{Signal, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec

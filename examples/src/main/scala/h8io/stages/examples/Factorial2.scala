@@ -2,12 +2,13 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.Loop
+import h8io.stages.base.BaseStage
 import h8io.stages.binops.And
 import h8io.stages.projections.Tuple2
-import h8io.stages.std.{Const, Identity, StageWithOnDone}
+import h8io.stages.std.{Const, Identity}
 
 object Factorial2 {
-  object Agg extends StageWithOnDone.Endo[(Int, BigInt), String] {
+  object Agg extends BaseStage.Endo[(Int, BigInt), String] {
     override def apply(in: (Int, BigInt)): Yield[(Int, BigInt), (Int, BigInt), String] =
       if (in._1 > 1) Yield.Some((in._1 - 1, in._2 * in._1), Signal.Success, this)
       else if (in._1 < 0) Yield.None(Signal.Error("negative number"), this)

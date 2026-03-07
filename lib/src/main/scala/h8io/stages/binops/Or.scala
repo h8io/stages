@@ -1,9 +1,10 @@
 package h8io.stages.binops
 
+import h8io.stages.base.BaseBinOp
 import h8io.stages.{OnDone, Stage, Yield}
 
-final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BinaryOp[I, LO, RO, Either[LO, RO], E] {
+final case class Or[I, LO, RO, E](left: Stage[I, LO, E], right: Stage[I, RO, E])
+    extends BaseBinOp[I, LO, RO, Either[LO, RO], E] {
   override def apply(in: I): Yield[I, Either[LO, RO], E] =
     left(in) match {
       case Yield.Some(out, signal, onDone) => Yield.Some(Left(out), signal, Or.LeftOnDone(onDone, right))
@@ -15,6 +16,9 @@ final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO,
             Yield.None(leftSignal ++ rightSignal, Or.BothOnDone(leftOnDone, rightOnDone))
         }
     }
+
+  override protected def withOperands(left: Stage[I, LO, E], right: Stage[I, RO, E]): Stage[I, Either[LO, RO], E] =
+    Or(left, right)
 }
 
 object Or {

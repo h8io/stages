@@ -18,12 +18,6 @@ class StageTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
-  "dispose" should "do nothing" in {
-    noException should be thrownBy new Stage[Instant, Timestamp, String] {
-      def apply(in: Instant): Yield[Instant, Timestamp, String] = throw new NotImplementedError
-    }.dispose()
-  }
-
   "outcome" should "run onDone and return Outcome.Some" in
     forAll { (in: Long, yieldSupplier: OnDoneToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
@@ -106,16 +100,6 @@ class StageTest
     val right = mock[Stage[Long, Duration, Exception]]
     val alteration: Alteration[Stage[Int, Long, Nothing], Stage[Int, Duration, Exception]] = right.rightAlteration
     alteration(left) shouldBe left ~> right
-  }
-
-  "Default skip method" should "return an idempotent OnDone object" in {
-    val stage: Stage[Any, Nothing, Nothing] = new Stage[Any, Nothing, Nothing] {
-      def apply(in: Any): Yield[Any, Nothing, Nothing] = fail("apply should not be called")
-    }
-    val onDone = stage.skip
-    onDone.onSuccess() should be theSameInstanceAs stage
-    onDone.onComplete() should be theSameInstanceAs stage
-    onDone.onError() should be theSameInstanceAs stage
   }
 
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in

@@ -2,14 +2,14 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.Repeat
-import h8io.stages.std.StageWithOnDone
+import h8io.stages.base.BaseStage
 
 object Factorial3 {
   trait FactorialError
 
   object NegativeNumberError extends FactorialError
 
-  final case class Factorial(i: Int, factorial: BigInt) extends StageWithOnDone[Int, BigInt, FactorialError] {
+  final case class Factorial(i: Int, factorial: BigInt) extends BaseStage[Int, BigInt, FactorialError] {
     override def apply(in: Int): Yield[Int, BigInt, FactorialError] =
       if (in < 0) Yield.None(Signal.Error(NegativeNumberError), InitialStage)
       else if (in < 2) Yield.Some(One, Signal.Complete, InitialStage)
