@@ -1,7 +1,7 @@
 package h8io.stages.alterations
 
 import h8io.stages.*
-import h8io.stages.std.StageWithOnDone
+import h8io.stages.base.{Decorator, StageWithOnDone}
 
 import scala.annotation.tailrec
 

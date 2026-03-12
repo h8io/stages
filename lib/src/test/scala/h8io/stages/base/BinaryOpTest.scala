@@ -1,4 +1,4 @@
-package h8io.stages.binops
+package h8io.stages.base
 
 import h8io.stages.{Stage, Yield}
 import org.scalamock.scalatest.MockFactory

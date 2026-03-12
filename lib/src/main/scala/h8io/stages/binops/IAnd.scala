@@ -1,6 +1,7 @@
 package h8io.stages.binops
 
 import h8io.stages
+import h8io.stages.base.BinaryOp
 import stages.{Stage, Yield}
 
 final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])

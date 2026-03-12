@@ -1,4 +1,4 @@
-package h8io.stages.std
+package h8io.stages.base
 
 import h8io.stages.{Signal, Yield}
 

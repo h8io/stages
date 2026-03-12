@@ -1,6 +1,6 @@
 package h8io.stages.alterations
 
-import h8io.stages.std.Fruitful
+import h8io.stages.base.{Alterator, Fruitful}
 import h8io.stages.{Stage, Yield}
 
 final case class Lift[I, O, E](alterand: Stage[I, O, E])

@@ -2,8 +2,7 @@ package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages
-import h8io.stages.binops.BinaryOp
-import h8io.stages.projections.{LeftProjection, RightProjection}
+import h8io.stages.base.{BinaryOp, LeftProjection, RightProjection}
 import h8io.stages.{Stage, Yield}
 
 final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])

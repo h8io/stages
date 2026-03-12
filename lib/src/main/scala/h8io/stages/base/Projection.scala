@@ -1,6 +1,5 @@
-package h8io.stages.projections
+package h8io.stages.base
 
-import h8io.stages.std.StageWithOnDone
 import h8io.stages.{Signal, Yield}
 
 trait Projection[-I, O] extends StageWithOnDone[I, O, Nothing] {

@@ -1,8 +1,7 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.alterations.Decorator
-import h8io.stages.std.{Fruitful, StageWithOnDone}
+import h8io.stages.base.{Decorator, Fruitful, StageWithOnDone}
 
 final case class Cache[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] with StageWithOnDone[I, O, E] {
   override def apply(in: I): Yield[I, O, E] =

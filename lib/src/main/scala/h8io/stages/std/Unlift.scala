@@ -1,5 +1,6 @@
 package h8io.stages.std
 
+import h8io.stages.base.StageWithOnDone
 import h8io.stages.{Signal, Stage, Yield}
 
 object Unlift extends StageWithOnDone[Option[Any], Any, Nothing] {
