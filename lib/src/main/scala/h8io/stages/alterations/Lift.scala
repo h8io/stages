@@ -1,6 +1,6 @@
 package h8io.stages.alterations
 
-import h8io.stages.base.{BaseAlterator, Fruitful}
+import h8io.stages.base.{Alterator, BaseAlterator, Fruitful}
 import h8io.stages.{Stage, Yield}
 
 final case class Lift[I, O, E](alterand: Stage[I, O, E])
@@ -11,5 +11,5 @@ final case class Lift[I, O, E](alterand: Stage[I, O, E])
       case Yield.None(signal, onDone) => Yield.Some(None, signal, onDone.map(Lift(_)))
     }
 
-  override protected def withAlterand(stage: Stage[I, O, E]): BaseAlterator[I, O, E, I, Option[O], E] = Lift(stage)
+  override protected def wrapAlterand(stage: Stage[I, O, E]): Alterator[I, O, E, I, Option[O], E] = Lift(stage)
 }

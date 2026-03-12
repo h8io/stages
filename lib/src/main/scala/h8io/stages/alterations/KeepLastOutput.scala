@@ -11,7 +11,7 @@ object KeepLastOutput {
         case Yield.None(signal, onDone) => Yield.None(signal, onDone.map(None(_)))
       }
 
-    override protected def withAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = None(stage)
+    override protected def wrapAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = None(stage)
   }
 
   private[alterations] final case class Some[I, O, E](out: O, alterand: Stage[I, O, E])
@@ -22,7 +22,7 @@ object KeepLastOutput {
         case Yield.None(signal, onDone) => Yield.Some(out, signal, onDone.map(Some(out, _)))
       }
 
-    override protected def withAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = Some(out, stage)
+    override protected def wrapAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = Some(out, stage)
   }
 
   def apply[I, O, E](stage: Stage[I, O, E]): Stage[I, O, E] = None(stage)

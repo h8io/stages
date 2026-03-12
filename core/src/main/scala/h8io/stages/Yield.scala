@@ -34,7 +34,10 @@ object Yield {
         mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.Some[_I, _O, _E] =
       Yield.Some(out, signal, mapOnDone(onDone))
 
-    private[stages] def outcome(): Outcome.Some[O, E] = Outcome.Some(out, signal, signal(onDone).dispose _)
+    private[stages] def outcome(): Outcome.Some[O, E] = {
+      signal(onDone).dispose()
+      Outcome.Some(out, signal)
+    }
   }
 
   final case class None[-I, +O, +E](signal: Signal[E], onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
@@ -50,6 +53,9 @@ object Yield {
         mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.None[_I, _O, _E] =
       Yield.None(signal, mapOnDone(onDone))
 
-    private[stages] def outcome(): Outcome.None[E] = Outcome.None(signal, signal(onDone).dispose _)
+    private[stages] def outcome(): Outcome.None[E] = {
+      signal(onDone).dispose()
+      Outcome.None(signal)
+    }
   }
 }

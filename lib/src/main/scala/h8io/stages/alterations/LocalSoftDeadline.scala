@@ -1,7 +1,7 @@
 package h8io.stages.alterations
 
 import h8io.stages.*
-import h8io.stages.base.BaseDecorator
+import h8io.stages.base.{BaseDecorator, Decoration}
 import h8io.stages.std.DeadEnd
 
 import scala.concurrent.duration.FiniteDuration
@@ -16,7 +16,7 @@ final case class LocalSoftDeadline[I, O, E](
     else yld.mapOnDone(LocalSoftDeadline._OnDone(() => ts, now, duration, _))
   }
 
-  override protected def withAlterand(stage: Stage[I, O, E]): Stage[I, O, E] =
+  override protected def wrapAlterand(stage: Stage[I, O, E]): Stage[I, O, E] =
     LocalSoftDeadline(tsSupplier, now, duration, stage)
 }
 

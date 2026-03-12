@@ -22,5 +22,5 @@ final case class Loop[T, E](alterand: Stage.Endo[T, E]) extends BaseDecorator[T,
     loop(alterand, in)
   }
 
-  override protected def withAlterand(stage: Stage[T, T, E]): Stage[T, T, E] = Loop(stage)
+  override protected def wrapAlterand(stage: Stage[T, T, E]): Stage[T, T, E] = Loop(stage)
 }

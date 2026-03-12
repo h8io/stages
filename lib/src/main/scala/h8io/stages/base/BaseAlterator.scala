@@ -1,13 +1,18 @@
 package h8io.stages.base
 
-import h8io.stages.{Alterator, OnDone, Stage}
+import h8io.stages.{OnDone, Stage}
 
-trait BaseAlterator[_I, _O, _E, -I, +O, +E] extends Alterator[Stage[_I, _O, _E], I, O, E] {
-  override val alterand: Stage[_I, _O, _E]
+trait BaseAlterator[_I, _O, _E, -I, +O, +E] extends Alterator[_I, _O, _E, I, O, E] {
+  override type SkipContext = Unit
 
-  protected def withAlterand(stage: Stage[_I, _O, _E]): Stage[I, O, E]
+  override protected def beforeSkip(): SkipContext = {}
+  override protected def afterSkip(context: SkipContext, onDone: OnDone[_I, _O, _E]): OnDone[I, O, E] =
+    onDone map wrapAlterand
 
-  override def skip: OnDone[I, O, E] = alterand.skip.map(withAlterand)
+  protected def wrapAlterand(stage: Stage[_I, _O, _E]): Stage[I, O, E]
 
-  override def dispose(): Unit = alterand.dispose()
+  override type DisposeContext = Unit
+
+  override protected def beforeDispose(): DisposeContext = {}
+  override protected def afterDispose(context: DisposeContext): Unit = {}
 }

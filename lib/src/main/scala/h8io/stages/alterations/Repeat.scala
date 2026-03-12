@@ -19,5 +19,5 @@ final case class Repeat[I, O, E](alterand: Stage[I, O, E]) extends BaseDecorator
     repeat(alterand)
   }
 
-  override protected def withAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = Repeat(stage)
+  override protected def wrapAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = Repeat(stage)
 }

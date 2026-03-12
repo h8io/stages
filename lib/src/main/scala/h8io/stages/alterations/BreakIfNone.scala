@@ -10,5 +10,5 @@ final case class BreakIfNone[I, O, E](alterand: Stage[I, O, E]) extends BaseDeco
       case other => other.mapOnDone(_.map(BreakIfNone(_)))
     }
 
-  override protected def withAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = BreakIfNone(stage)
+  override protected def wrapAlterand(stage: Stage[I, O, E]): Stage[I, O, E] = BreakIfNone(stage)
 }
