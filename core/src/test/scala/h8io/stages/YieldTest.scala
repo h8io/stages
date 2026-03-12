@@ -86,35 +86,24 @@ class YieldTest
         }
     }
 
-  it should "compose None and OnDone correctly" in
+  it should "compose None and Stage correctly" in
     forAll { (previousYieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
       val previousOnDone = mock[OnDone[Long, Instant, String]]("previous onDone")
-      val nextOnDone = mock[OnDone[Instant, String, String]]("next onDone")
+      val nextStage = mock[Stage[Instant, String, String]]("next stage")
       val previousYield = previousYieldSupplier(previousOnDone)
-      inside(previousYield.compose(nextOnDone)) {
+      inside(previousYield.compose(nextStage)) {
         case Yield.None(previousYield.`signal`, onDone) =>
-          val previousStage = mock[Stage[Long, Instant, String]]("previous stage")
+          val onSuccessStage = mock[Stage[Long, Instant, String]]("onSuccess stage")
+          (previousOnDone.onSuccess _).expects().returns(onSuccessStage)
+          onDone.onSuccess() shouldBe onSuccessStage ~> nextStage
 
-          val onSuccessStage = mock[Stage[Instant, String, String]]("onSuccess stage")
-          inSequence {
-            (nextOnDone.onSuccess _).expects().returns(onSuccessStage)
-            (previousOnDone.onSuccess _).expects().returns(previousStage)
-          }
-          onDone.onSuccess() shouldBe previousStage ~> onSuccessStage
+          val onCompleteStage = mock[Stage[Long, Instant, String]]("onComplete stage")
+          (previousOnDone.onComplete _).expects().returns(onCompleteStage)
+          onDone.onComplete() shouldBe onCompleteStage ~> nextStage
 
-          val onCompleteStage = mock[Stage[Instant, String, String]]("onComplete stage")
-          inSequence {
-            (nextOnDone.onComplete _).expects().returns(onCompleteStage)
-            (previousOnDone.onComplete _).expects().returns(previousStage)
-          }
-          onDone.onComplete() shouldBe previousStage ~> onCompleteStage
-
-          val onErrorStage = mock[Stage[Instant, String, String]]("onError stage")
-          inSequence {
-            (nextOnDone.onError _).expects().returns(onErrorStage)
-            (previousOnDone.onError _).expects().returns(previousStage)
-          }
-          onDone.onError() shouldBe previousStage ~> onErrorStage
+          val onErrorStage = mock[Stage[Long, Instant, String]]("onError stage")
+          (previousOnDone.onError _).expects().returns(onErrorStage)
+          onDone.onError() shouldBe onErrorStage ~> nextStage
       }
     }
 

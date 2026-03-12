@@ -22,7 +22,7 @@ class AlterationTest extends AnyFlatSpec with Matchers with MockFactory {
     inner <~ outer shouldBe outer ∘ inner
   }
 
-  "⋅ and <|" should "apply a alteration to a stage" in {
+  "⋅ and <|" should "apply an alteration to a stage" in {
     val alteration = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val stage = mock[Stage[ZoneOffset, OffsetDateTime, Exception]]
     val in = mock[Stage[UUID, Instant, Long]]
