@@ -35,6 +35,23 @@ class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
     onDone.onError() shouldBe stage
   }
 
+  it should "compose OnDone and Stage objects correctly" in {
+    val previousOnDone = mock[OnDone[String, Instant, Exception]]
+    val previousStage = mock[Stage[String, Instant, Exception]]
+    val nextStage = mock[Stage[Instant, Long, Exception]]
+    val onDone = previousOnDone.compose(nextStage)
+    val stage = previousStage ~> nextStage
+
+    (previousOnDone.onSuccess _).expects().returns(previousStage)
+    onDone.onSuccess() shouldBe stage
+
+    (previousOnDone.onComplete _).expects().returns(previousStage)
+    onDone.onComplete() shouldBe stage
+
+    (previousOnDone.onError _).expects().returns(previousStage)
+    onDone.onError() shouldBe stage
+  }
+
   "map" should "transform stages correctly" in {
     val onDone = mock[OnDone[Long, Instant, UUID]]
     val f = mock[Stage[Long, Instant, UUID] => Stage[ZoneId, ZonedDateTime, String]]

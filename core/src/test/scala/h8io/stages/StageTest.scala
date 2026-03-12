@@ -62,7 +62,7 @@ class StageTest
     previous ~> next shouldBe Stage.AndThen(previous, next)
   }
 
-  it should "produce a alteration with a alteration argument" in {
+  it should "produce an alteration when given an alteration argument" in {
     val stage = mock[Stage[Int, Long, UUID]]
     val alteration = mock[Alteration[Stage[ZoneId, ZonedDateTime, String], Stage[Long, String, Nothing]]]
     val in = mock[Stage[ZoneId, ZonedDateTime, String]]
@@ -94,31 +94,21 @@ class StageTest
     left.alteration(right) shouldBe left ~> right
   }
 
-  "leftAlteration" should "produce a composition with predefined left operand as an be alteration" in {
+  "leftAlteration" should "produce a composition with the predefined left operand as the alteration's left side" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
     val alteration: Alteration[Stage[Long, Duration, Exception], Stage[Int, Duration, Exception]] = left.leftAlteration
     alteration(right) shouldBe left ~> right
   }
 
-  "rightAlteration" should "produce a composition with predefined right operand as an be alteration" in {
+  "rightAlteration" should "produce a composition with the predefined right operand as the alteration's right side" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
     val alteration: Alteration[Stage[Int, Long, Nothing], Stage[Int, Duration, Exception]] = right.rightAlteration
     alteration(left) shouldBe left ~> right
   }
 
-  "Default skip method" should "return an idempotent OnDone object" in {
-    val stage: Stage[Any, Nothing, Nothing] = new Stage[Any, Nothing, Nothing] {
-      def apply(in: Any): Yield[Any, Nothing, Nothing] = fail("apply should not be called")
-    }
-    val onDone = stage.skip
-    onDone.onSuccess() should be theSameInstanceAs stage
-    onDone.onComplete() should be theSameInstanceAs stage
-    onDone.onError() should be theSameInstanceAs stage
-  }
-
-  "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
+  "AndThen" should "call stages sequentially and return the correct Yield for Some ~> Some" in
     forAll {
       (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, previousOut: String, nextOut: Long) =>
         val previousStage = mock[Stage[Int, String, String]]
@@ -141,7 +131,7 @@ class StageTest
         }
     }
 
-  it should "call sequentially stages and return the correct Yield for Some ~> None" in
+  it should "call stages sequentially and return the correct Yield for Some ~> None" in
     forAll { (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, out: String) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
@@ -163,24 +153,16 @@ class StageTest
       }
     }
 
-  it should "call the first stage only and return the correct Yield for None ~> any Yield" in
+  it should "call only the first stage and return the correct Yield for None ~> any yield" in
     forAll { (previousSignal: Signal[String], in: Int) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
-      val nextOnDone = mock[OnDone[String, Long, String]]
-      inSequence {
-        (previousStage.apply _).expects(in).returns(Yield.None(previousSignal, previousOnDone))
-        (() => nextStage.skip).expects().returns(nextOnDone)
-      }
+      (previousStage.apply _).expects(in).returns(Yield.None(previousSignal, previousOnDone))
       inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousSignal`, onDone) =>
         val evolvedPreviousStage = mock[Stage[Int, String, String]]
-        val evolvedNextStage = mock[Stage[String, Long, String]]
-        inSequence {
-          armOnDone(nextOnDone, previousSignal, evolvedNextStage)
-          armOnDone(previousOnDone, previousSignal, evolvedPreviousStage)
-        }
-        previousSignal(onDone) shouldBe Stage.AndThen(evolvedPreviousStage, evolvedNextStage)
+        armOnDone(previousOnDone, previousSignal, evolvedPreviousStage)
+        previousSignal(onDone) shouldBe Stage.AndThen(evolvedPreviousStage, nextStage)
       }
     }
 
@@ -196,7 +178,7 @@ class StageTest
     (onDone, stage)
   }
 
-  it should "call the method dispose in the reversed order" in {
+  it should "call dispose in reverse order" in {
     val previousStage = mock[Stage[Int, String, String]]
     val nextStage = mock[Stage[String, Long, String]]
     inSequence {

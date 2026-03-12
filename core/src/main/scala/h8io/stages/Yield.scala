@@ -38,7 +38,7 @@ object Yield {
   }
 
   final case class None[-I, +O, +E](signal: Signal[E], onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
-    private[stages] def compose[_O, _E >: E](next: OnDone[O, _O, _E]): Yield.None[I, _O, _E] =
+    private[stages] def compose[_O, _E >: E](next: Stage[O, _O, _E]): Yield.None[I, _O, _E] =
       Yield.None(signal, onDone.compose(next))
 
     private[stages] def mapOnDone[_I, _O >: O, _E](
