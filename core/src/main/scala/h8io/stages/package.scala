@@ -5,8 +5,6 @@ package object stages {
 
   type Decoration[I, O, E] = Alteration[Stage[I, O, E], Stage[I, O, E]]
 
-  type Decorator[-I, +O, +E] = Alterator[Stage[I, O, E], I, O, E]
-
   implicit final class AlterationOps[-IS <: Stage.Any, +OS <: Stage.Any](val alteration: Alteration[IS, OS])
       extends AnyVal {
     @inline def ∘[_IS <: Stage.Any](that: Alteration[_IS, IS]): Alteration[_IS, OS] =

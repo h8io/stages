@@ -1,7 +1,7 @@
 package h8io.stages.alterations
 
 import h8io.stages.std.Fruitful
-import h8io.stages.{Alterator, Stage, Yield}
+import h8io.stages.{Stage, Yield}
 
 final case class Lift[I, O, E](alterand: Stage[I, O, E])
     extends Alterator[Stage[I, O, E], I, scala.Option[O], E] with Fruitful[I, scala.Option[O], E] {
