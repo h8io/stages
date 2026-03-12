@@ -12,8 +12,6 @@ sealed trait Yield[-I, +O, +E] {
 
   private[stages] final def mapOnDoneAndBreak[_I, _O >: O, _E >: E](
       f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield[_I, _O, _E] = mapOnDone(signal.break, f)
-
-  private[stages] def outcome(): Outcome[O, E]
 }
 
 object Yield {
@@ -33,8 +31,6 @@ object Yield {
     private[stages] def mapOnDone[_I, _O >: O, _E >: E](
         mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.Some[_I, _O, _E] =
       Yield.Some(out, signal, mapOnDone(onDone))
-
-    private[stages] def outcome(): Outcome.Some[O, E] = Outcome.Some(out, signal, signal(onDone).dispose _)
   }
 
   final case class None[-I, +O, +E](signal: Signal[E], onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
@@ -49,7 +45,5 @@ object Yield {
     private[stages] def mapOnDone[_I, _O >: O, _E >: E](
         mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.None[_I, _O, _E] =
       Yield.None(signal, mapOnDone(onDone))
-
-    private[stages] def outcome(): Outcome.None[E] = Outcome.None(signal, signal(onDone).dispose _)
   }
 }

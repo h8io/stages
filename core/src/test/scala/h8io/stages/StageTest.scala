@@ -33,11 +33,9 @@ class StageTest
       inSequence {
         (stage.apply _).expects(in).returns(yld)
         onDoneMock(onDone, yld.signal, evolved)
-      }
-      inside(stage.outcome(in)) { case Outcome.Some(yld.out, yld.signal, dispose) =>
         (evolved.dispose _).expects()
-        dispose()
       }
+      stage.execute(in) shouldBe Outcome.Some(yld.out, yld.signal)
     }
 
   it should "run onDone and return Outcome.None" in
@@ -49,14 +47,12 @@ class StageTest
       inSequence {
         (stage.apply _).expects(in).returns(yld)
         onDoneMock(onDone, yld.signal, evolved)
-      }
-      inside(stage.outcome(in)) { case Outcome.None(yld.signal, dispose) =>
         (evolved.dispose _).expects()
-        dispose()
       }
+      stage.execute(in) shouldBe Outcome.None(yld.signal)
     }
 
-  "~>" should "produce Stage.AndThen object with a stage argument" in {
+  "~>" should "produce a Stage.AndThen with a stage argument" in {
     val previous = mock[Stage[String, Long, Nothing]]
     val next = mock[Stage[Long, Timestamp, String]]
     previous ~> next shouldBe Stage.AndThen(previous, next)
@@ -74,13 +70,13 @@ class StageTest
     stage ~> alteration <| in shouldBe stage ~> out
   }
 
-  "<~" should "produce Stage.AndThen object" in {
+  "<~" should "produce a Stage.AndThen" in {
     val previous = mock[Stage[Instant, Int, String]]
     val next = mock[Stage[Int, String, Nothing]]
     next <~ previous shouldBe Stage.AndThen(previous, next)
   }
 
-  "|>" should "apply alteration to stage" in {
+  "|>" should "apply an alteration to a stage" in {
     val stage = mock[Stage[ZoneOffset, OffsetDateTime, Exception]]
     val alteration = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val out = mock[Stage[UUID, Instant, Long]]
@@ -88,20 +84,20 @@ class StageTest
     stage |> alteration shouldBe out
   }
 
-  "alteration" should "be a leftAlteration" in {
+  "alteration" should "return leftAlteration" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
     left.alteration(right) shouldBe left ~> right
   }
 
-  "leftAlteration" should "produce a composition with the predefined left operand as the alteration's left side" in {
+  "leftAlteration" should "produce a composition with the predefined left operand on the left" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
     val alteration: Alteration[Stage[Long, Duration, Exception], Stage[Int, Duration, Exception]] = left.leftAlteration
     alteration(right) shouldBe left ~> right
   }
 
-  "rightAlteration" should "produce a composition with the predefined right operand as the alteration's right side" in {
+  "rightAlteration" should "produce a composition with the predefined right operand on the right" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
     val alteration: Alteration[Stage[Int, Long, Nothing], Stage[Int, Duration, Exception]] = right.rightAlteration
@@ -153,7 +149,7 @@ class StageTest
       }
     }
 
-  it should "call only the first stage and return the correct Yield for None ~> any yield" in
+  it should "call only the first stage and return the correct Yield for None ~> any Yield" in
     forAll { (previousSignal: Signal[String], in: Int) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]

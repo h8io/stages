@@ -169,28 +169,4 @@ class YieldTest
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
       Yield.None(signal, initialOnDone).mapOnDoneAndBreak(mapOnDone) shouldBe Yield.None(signal.break, mappedOnDone)
     }
-
-  "outcome" should "execute onDone and produce Outcome.Some for Yield.Some" in
-    forAll { (yieldSupplier: OnDoneToYieldSome[Int, Array[Byte], String]) =>
-      val onDone = mock[OnDone[Int, Array[Byte], String]]
-      val yld = yieldSupplier(onDone)
-      val stage = mock[Stage[Int, Array[Byte], String]]
-      onDoneMock(onDone, yld.signal, stage)
-      inside(yld.outcome()) { case Outcome.Some(yld.out, yld.signal, dispose) =>
-        (stage.dispose _).expects()
-        dispose()
-      }
-    }
-
-  it should "execute onDone and produce Outcome.None for Yield.None" in
-    forAll { (yieldSupplier: OnDoneToYieldNone[Int, Array[Byte], String]) =>
-      val onDone = mock[OnDone[Int, Array[Byte], String]]
-      val yld = yieldSupplier(onDone)
-      val stage = mock[Stage[Int, Array[Byte], String]]
-      onDoneMock(onDone, yld.signal, stage)
-      inside(yld.outcome()) { case Outcome.None(yld.signal, dispose) =>
-        (stage.dispose _).expects()
-        dispose()
-      }
-    }
 }
