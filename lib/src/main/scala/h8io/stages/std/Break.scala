@@ -1,5 +1,6 @@
 package h8io.stages.std
 
+import h8io.stages.base.{Fruitful, StageWithOnDone}
 import h8io.stages.{Signal, Yield}
 
 object Break extends Fruitful.Endo[Any, Nothing] with StageWithOnDone.Endo[Any, Nothing] {

@@ -1,4 +1,4 @@
-package h8io.stages.projections
+package h8io.stages.base
 
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec

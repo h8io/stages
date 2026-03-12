@@ -1,5 +1,6 @@
 package h8io.stages.alterations
 
+import h8io.stages.base.Decorator
 import h8io.stages.{Signal, Stage, Yield}
 
 final case class BreakIfNone[I, O, E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] {

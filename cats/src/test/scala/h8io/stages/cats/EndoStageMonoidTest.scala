@@ -4,7 +4,8 @@ import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
 import h8io.stages.*
-import h8io.stages.std.{Identity, StageWithOnDone}
+import h8io.stages.base.StageWithOnDone
+import h8io.stages.std.Identity
 import org.scalacheck.{Arbitrary, Prop, Shrink, Test}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers

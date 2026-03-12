@@ -2,7 +2,7 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.Repeat
-import h8io.stages.std.StageWithOnDone
+import h8io.stages.base.StageWithOnDone
 
 object Factorial3 {
   trait FactorialError

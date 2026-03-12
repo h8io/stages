@@ -2,9 +2,10 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.Loop
+import h8io.stages.base.StageWithOnDone
 import h8io.stages.binops.And
 import h8io.stages.projections.Tuple2
-import h8io.stages.std.{Const, Identity, StageWithOnDone}
+import h8io.stages.std.{Const, Identity}
 
 object Factorial2 {
   object Agg extends StageWithOnDone.Endo[(Int, BigInt), String] {

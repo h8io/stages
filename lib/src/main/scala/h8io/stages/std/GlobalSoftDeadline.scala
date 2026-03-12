@@ -1,6 +1,7 @@
 package h8io.stages.std
 
 import h8io.stages.*
+import h8io.stages.base.{Fruitful, StageWithOnDone}
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration

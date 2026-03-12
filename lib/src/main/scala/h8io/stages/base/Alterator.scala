@@ -1,4 +1,4 @@
-package h8io.stages.alterations
+package h8io.stages.base
 
 import h8io.stages.Stage
 

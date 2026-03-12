@@ -1,5 +1,6 @@
 package h8io.stages.std
 
+import h8io.stages.base.{Fruitful, StageWithOnDone}
 import h8io.stages.{Signal, Stage, Yield}
 
 final case class Countdown[T](i: Long, n: Long)

@@ -1,7 +1,7 @@
 package h8io.stages.cats
 
 import h8io.stages.Yield
-import h8io.stages.projections.{LeftProjection, RightProjection}
+import h8io.stages.base.{LeftProjection, RightProjection}
 
 object Validated {
   type Validated[+L, +R] = cats.data.Validated[L, R]

@@ -1,5 +1,6 @@
 package h8io.stages.binops
 
+import h8io.stages.base.BinaryOp
 import h8io.stages.{OnDone, Stage, Yield}
 
 final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])

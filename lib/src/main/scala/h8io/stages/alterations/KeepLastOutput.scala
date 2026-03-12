@@ -1,6 +1,6 @@
 package h8io.stages.alterations
 
-import h8io.stages.std.Fruitful
+import h8io.stages.base.{Decorator, Fruitful}
 import h8io.stages.{Stage, Yield}
 
 object KeepLastOutput {

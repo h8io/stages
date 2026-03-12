@@ -2,7 +2,8 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.Loop
-import h8io.stages.std.{Const, Countdown, StageWithOnDone}
+import h8io.stages.base.StageWithOnDone
+import h8io.stages.std.{Const, Countdown}
 
 object Factorial1 {
   sealed case class Agg(n: Long) extends StageWithOnDone.Endo[BigInt, Nothing] {

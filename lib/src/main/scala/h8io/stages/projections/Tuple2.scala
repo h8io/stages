@@ -1,6 +1,7 @@
 package h8io.stages.projections
 
 import h8io.stages.Yield
+import h8io.stages.base.{LeftProjection, RightProjection}
 
 object Tuple2 {
   object Left extends LeftProjection[Tuple2] {

@@ -2,7 +2,8 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.Loop
-import h8io.stages.std.{Const, GlobalSoftDeadline, StageWithOnDone}
+import h8io.stages.base.StageWithOnDone
+import h8io.stages.std.{Const, GlobalSoftDeadline}
 
 import scala.concurrent.duration.FiniteDuration
 
