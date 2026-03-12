@@ -1,7 +1,7 @@
 package h8io.stages.alterations
 
-import h8io.stages.std.DeadEnd
 import h8io.stages.*
+import h8io.stages.std.DeadEnd
 
 import scala.concurrent.duration.FiniteDuration
 

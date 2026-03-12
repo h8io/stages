@@ -1,7 +1,7 @@
 package h8io.stages.alterations
 
 import h8io.stages.std.Fruitful
-import h8io.stages.{Decorator, Stage, Yield}
+import h8io.stages.{Stage, Yield}
 
 object KeepLastOutput {
   private[alterations] final case class None[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] {
