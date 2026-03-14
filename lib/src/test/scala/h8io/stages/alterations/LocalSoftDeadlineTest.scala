@@ -54,13 +54,13 @@ class LocalSoftDeadlineTest
         Gen.choose(1L, Int.MaxValue),
         Gen.choose(1L, Int.MaxValue),
         Gen.uuid,
-        arbOnDoneToYield[UUID, Instant, Long].arbitrary)) {
+        arbEvolutionToYield[UUID, Instant, Long].arbitrary)) {
       case (ts, duration, overdue, in, yieldSupplier) =>
         val tsSupplier = mock[() => Long]("timestamp supplier")
         val now = mock[() => Long]("now")
         val stage = mock[Stage[UUID, Instant, Long]]("underlying stage")
-        val onDone = mock[OnDone[UUID, Instant, Long]]("onDone")
-        val yld = yieldSupplier(onDone)
+        val evolution = mock[Evolution[UUID, Instant, Long]]("evolution")
+        val yld = yieldSupplier(evolution)
         val lsd = LocalSoftDeadline(tsSupplier, now, duration, stage)
 
         def test(currentTS: Long): Unit = {
@@ -75,8 +75,8 @@ class LocalSoftDeadlineTest
             case (Yield.Some(expectedOut, _, _), Yield.Some(out, `expectedStatus`, _)) => out shouldEqual expectedOut
             case (Yield.None(_, _), Yield.None(`expectedStatus`, _)) => succeed
           }
-          testWrappedOnDone(
-            lsdYield.onDone, onDone, LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long]))
+          testWrappedEvolution(
+            lsdYield.evolution, evolution, LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long]))
         }
 
         test(ts + duration)
@@ -90,15 +90,15 @@ class LocalSoftDeadlineTest
         Gen.choose(1L, Int.MaxValue),
         Gen.choose(1L, Int.MaxValue),
         Arbitrary.arbitrary[ZoneId],
-        arbOnDoneToYield[ZoneId, ZonedDateTime, Exception].arbitrary
+        arbEvolutionToYield[ZoneId, ZonedDateTime, Exception].arbitrary
       )) {
       case (ts, spent, rest, in, yieldSupplier) =>
         val duration = spent + rest
         val tsSupplier = mock[() => Long]("timestamp supplier")
         val now = mock[() => Long]("now")
         val stage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("underlying stage")
-        val onDone = mock[OnDone[ZoneId, ZonedDateTime, Exception]]("onDone")
-        val yld = yieldSupplier(onDone)
+        val evolution = mock[Evolution[ZoneId, ZonedDateTime, Exception]]("evolution")
+        val yld = yieldSupplier(evolution)
         val lsd = LocalSoftDeadline(tsSupplier, now, duration, stage)
 
         def test(currentTS: Long): Assertion = {
@@ -114,33 +114,33 @@ class LocalSoftDeadlineTest
           }
 
           val onSuccessStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onSuccess stage")
-          (onDone.onSuccess _).expects().returns(onSuccessStage)
-          inside(lsdYield.onDone.onSuccess()) {
+          (evolution.onSuccess _).expects().returns(onSuccessStage)
+          inside(lsdYield.evolution.onSuccess()) {
             case LocalSoftDeadline(tsSupplier, `now`, `duration`, `onSuccessStage`) =>
               tsSupplier() shouldBe ts
           }
 
           val onCompleteStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onComplete stage")
-          (onDone.onComplete _).expects().returns(onCompleteStage)
-          lsdYield.onDone.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
+          (evolution.onComplete _).expects().returns(onCompleteStage)
+          lsdYield.evolution.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 
           val onErrorStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onError stage")
-          (onDone.onError _).expects().returns(onErrorStage)
-          lsdYield.onDone.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+          (evolution.onError _).expects().returns(onErrorStage)
+          lsdYield.evolution.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
         }
 
         test(ts)
         test(ts + spent)
     }
 
-  "_OnDone" should "return Tail on success and Head on complete and on error" in
+  "_Evolution" should "return Tail on success and Head on complete and on error" in
     forAll(Gen.zip(Gen.function0(Gen.long), Gen.posNum[Long])) { case (tsSupplier, duration) =>
       val now = mock[() => Long]("now")
-      val onDone = mock[OnDone[Any, Nothing, Nothing]]("onDone")
-      val _onDone = LocalSoftDeadline._OnDone(tsSupplier, now, duration, onDone)
-      testWrappedOnDone(
-        _onDone,
-        onDone,
+      val evolution = mock[Evolution[Any, Nothing, Nothing]]("evolution")
+      val _evolution = LocalSoftDeadline._Evolution(tsSupplier, now, duration, evolution)
+      testWrappedEvolution(
+        _evolution,
+        evolution,
         LocalSoftDeadline(tsSupplier, now, duration, _: Stage[Any, Nothing, Nothing]),
         LocalSoftDeadline(now, now, duration, _: Stage[Any, Nothing, Nothing]),
         LocalSoftDeadline(now, now, duration, _: Stage[Any, Nothing, Nothing])

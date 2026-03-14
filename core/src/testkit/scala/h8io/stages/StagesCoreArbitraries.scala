@@ -12,37 +12,37 @@ trait StagesCoreArbitraries {
   implicit def arbStatus[E: Arbitrary]: Arbitrary[Status[E]] =
     Arbitrary(Gen.oneOf(Gen.const(Status.Success: Status[E]), Gen.const(Status.Complete), arbStatusError[E].arbitrary))
 
-  type StatusAndOnDoneToYieldSome[I, O, E] = (Status[E], OnDone[I, O, E]) => Yield.Some[I, O, E]
+  type StatusAndEvolutionToYieldSome[I, O, E] = (Status[E], Evolution[I, O, E]) => Yield.Some[I, O, E]
 
-  implicit def arbStatusAndOnDoneToYieldSome[I, O: Arbitrary, E]: Arbitrary[StatusAndOnDoneToYieldSome[I, O, E]] =
-    Arbitrary(Arbitrary.arbitrary[O] map { out => Yield.Some(out, _: Status[E], _: OnDone[I, O, E]) })
+  implicit def arbStatusAndEvolutionToYieldSome[I, O: Arbitrary, E]: Arbitrary[StatusAndEvolutionToYieldSome[I, O, E]] =
+    Arbitrary(Arbitrary.arbitrary[O] map { out => Yield.Some(out, _: Status[E], _: Evolution[I, O, E]) })
 
-  type StatusAndOnDoneToYield[I, O, E] = (Status[E], OnDone[I, O, E]) => Yield[I, O, E]
+  type StatusAndEvolutionToYield[I, O, E] = (Status[E], Evolution[I, O, E]) => Yield[I, O, E]
 
-  implicit def arbStatusAndOnDoneToYield[I, O: Arbitrary, E]: Arbitrary[StatusAndOnDoneToYield[I, O, E]] =
+  implicit def arbStatusAndEvolutionToYield[I, O: Arbitrary, E]: Arbitrary[StatusAndEvolutionToYield[I, O, E]] =
     Arbitrary(
       Gen.oneOf(
-        Arbitrary.arbitrary[StatusAndOnDoneToYieldSome[I, O, E]],
-        Gen.const(Yield.None[I, O, E](_: Status[E], _: OnDone[I, O, E]))))
+        Arbitrary.arbitrary[StatusAndEvolutionToYieldSome[I, O, E]],
+        Gen.const(Yield.None[I, O, E](_: Status[E], _: Evolution[I, O, E]))))
 
-  type OnDoneToYieldSome[I, O, E] = OnDone[I, O, E] => Yield.Some[I, O, E]
+  type EvolutionToYieldSome[I, O, E] = Evolution[I, O, E] => Yield.Some[I, O, E]
 
-  implicit def arbOnDoneToYieldSome[I, O: Arbitrary, E: Arbitrary]: Arbitrary[OnDoneToYieldSome[I, O, E]] =
+  implicit def arbEvolutionToYieldSome[I, O: Arbitrary, E: Arbitrary]: Arbitrary[EvolutionToYieldSome[I, O, E]] =
     Arbitrary(
-      Gen.zip(Arbitrary.arbitrary[Status[E]], Arbitrary.arbitrary[StatusAndOnDoneToYieldSome[I, O, E]]).map {
-        case (status, yieldSupplier) => yieldSupplier(status, _: OnDone[I, O, E])
+      Gen.zip(Arbitrary.arbitrary[Status[E]], Arbitrary.arbitrary[StatusAndEvolutionToYieldSome[I, O, E]]).map {
+        case (status, yieldSupplier) => yieldSupplier(status, _: Evolution[I, O, E])
       })
 
-  type OnDoneToYieldNone[I, O, E] = OnDone[I, O, E] => Yield.None[I, O, E]
+  type EvolutionToYieldNone[I, O, E] = Evolution[I, O, E] => Yield.None[I, O, E]
 
-  implicit def arbOnDoneToYieldNone[I, O, E: Arbitrary]: Arbitrary[OnDoneToYieldNone[I, O, E]] =
-    Arbitrary(Arbitrary.arbitrary[Status[E]].map(status => Yield.None(status, _: OnDone[I, O, E])))
+  implicit def arbEvolutionToYieldNone[I, O, E: Arbitrary]: Arbitrary[EvolutionToYieldNone[I, O, E]] =
+    Arbitrary(Arbitrary.arbitrary[Status[E]].map(status => Yield.None(status, _: Evolution[I, O, E])))
 
-  type OnDoneToYield[I, O, E] = OnDone[I, O, E] => Yield[I, O, E]
+  type EvolutionToYield[I, O, E] = Evolution[I, O, E] => Yield[I, O, E]
 
-  implicit def arbOnDoneToYield[I, O: Arbitrary, E: Arbitrary]: Arbitrary[OnDoneToYield[I, O, E]] =
+  implicit def arbEvolutionToYield[I, O: Arbitrary, E: Arbitrary]: Arbitrary[EvolutionToYield[I, O, E]] =
     Arbitrary(
-      Gen.zip(Arbitrary.arbitrary[Status[E]], Arbitrary.arbitrary[StatusAndOnDoneToYield[I, O, E]]).map {
-        case (status, yieldSupplier) => yieldSupplier(status, _: OnDone[I, O, E])
+      Gen.zip(Arbitrary.arbitrary[Status[E]], Arbitrary.arbitrary[StatusAndEvolutionToYield[I, O, E]]).map {
+        case (status, yieldSupplier) => yieldSupplier(status, _: Evolution[I, O, E])
       })
 }

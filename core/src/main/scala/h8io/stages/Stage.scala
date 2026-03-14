@@ -8,7 +8,7 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   @inline final def execute(in: I): Outcome[O, E] = {
     val yld = this(in)
-    yld.status(yld.onDone).dispose()
+    yld.status(yld.evolution).dispose()
     yld match {
       case Yield.Some(out, status, _) => Outcome.Some(out, status)
       case Yield.None(status, _) => Outcome.None(status)

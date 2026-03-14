@@ -13,11 +13,11 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E])
       yld.status match {
         case Status.Success =>
           yld match {
-            case Yield.Some(out, _, _) => loop(yld.onDone.onSuccess(), out)
-            case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.onDone.onComplete()))
+            case Yield.Some(out, _, _) => loop(yld.evolution.onSuccess(), out)
+            case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.evolution.onComplete()))
           }
-        case Status.Complete => yld.mapOnDone(Status.Success, onDone => Loop(onDone.onComplete()))
-        case error: Status.Error[E] => yld.mapOnDone(error, onDone => Loop(onDone.onError()))
+        case Status.Complete => yld.mapEvolution(Status.Success, evolution => Loop(evolution.onComplete()))
+        case error: Status.Error[E] => yld.mapEvolution(error, evolution => Loop(evolution.onError()))
       }
     }
     loop(alterand, in)

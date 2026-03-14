@@ -24,29 +24,29 @@ class StageTest
     }.dispose()
   }
 
-  "outcome" should "run onDone and return Outcome.Some" in
-    forAll { (in: Long, yieldSupplier: OnDoneToYieldSome[Long, String, UUID]) =>
+  "outcome" should "run evolution and return Outcome.Some" in
+    forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
-      val onDone = mock[OnDone[Long, String, UUID]]
-      val yld = yieldSupplier(onDone)
+      val evolution = mock[Evolution[Long, String, UUID]]
+      val yld = yieldSupplier(evolution)
       val evolved = mock[Stage[Long, String, UUID]]
       inSequence {
         (stage.apply _).expects(in).returns(yld)
-        onDoneMock(onDone, yld.status, evolved)
+        evolutionMock(evolution, yld.status, evolved)
         (evolved.dispose _).expects()
       }
       stage.execute(in) shouldBe Outcome.Some(yld.out, yld.status)
     }
 
-  it should "run onDone and return Outcome.None" in
-    forAll { (in: Instant, yieldSupplier: OnDoneToYieldNone[Instant, Boolean, Long]) =>
+  it should "run evolution and return Outcome.None" in
+    forAll { (in: Instant, yieldSupplier: EvolutionToYieldNone[Instant, Boolean, Long]) =>
       val stage = mock[Stage[Instant, Boolean, Long]]
-      val onDone = mock[OnDone[Instant, Boolean, Long]]
-      val yld = yieldSupplier(onDone)
+      val evolution = mock[Evolution[Instant, Boolean, Long]]
+      val yld = yieldSupplier(evolution)
       val evolved = mock[Stage[Instant, Boolean, Long]]
       inSequence {
         (stage.apply _).expects(in).returns(yld)
-        onDoneMock(onDone, yld.status, evolved)
+        evolutionMock(evolution, yld.status, evolved)
         (evolved.dispose _).expects()
       }
       stage.execute(in) shouldBe Outcome.None(yld.status)
@@ -108,70 +108,70 @@ class StageTest
     forAll {
       (previousStatus: Status[String], nextStatus: Status[String], in: Int, previousOut: String, nextOut: Long) =>
         val previousStage = mock[Stage[Int, String, String]]
-        val previousOnDone = mock[OnDone[Int, String, String]]
+        val previousEvolution = mock[Evolution[Int, String, String]]
         val nextStage = mock[Stage[String, Long, String]]
-        val nextOnDone = mock[OnDone[String, Long, String]]
+        val nextEvolution = mock[Evolution[String, Long, String]]
         inSequence {
-          (previousStage.apply _).expects(in).returns(Yield.Some(previousOut, previousStatus, previousOnDone))
-          (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextStatus, nextOnDone))
+          (previousStage.apply _).expects(in).returns(Yield.Some(previousOut, previousStatus, previousEvolution))
+          (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextStatus, nextEvolution))
         }
-        inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, status, onDone) =>
+        inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, status, evolution) =>
           status shouldBe previousStatus ++ nextStatus
           val updatedPreviousStage = mock[Stage[Int, String, String]]
           val updatedNextStage = mock[Stage[String, Long, Nothing]]
           inSequence {
-            armOnDone(nextOnDone, status, updatedNextStage)
-            armOnDone(previousOnDone, status, updatedPreviousStage)
+            armEvolution(nextEvolution, status, updatedNextStage)
+            armEvolution(previousEvolution, status, updatedPreviousStage)
           }
-          status(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
+          status(evolution) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
         }
     }
 
   it should "call stages sequentially and return the correct Yield for Some ~> None" in
     forAll { (previousStatus: Status[String], nextStatus: Status[String], in: Int, out: String) =>
       val previousStage = mock[Stage[Int, String, String]]
-      val previousOnDone = mock[OnDone[Int, String, String]]
+      val previousEvolution = mock[Evolution[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
-      val nextOnDone = mock[OnDone[String, Long, String]]
+      val nextEvolution = mock[Evolution[String, Long, String]]
       inSequence {
-        (previousStage.apply _).expects(in).returns(Yield.Some(out, previousStatus, previousOnDone))
-        (nextStage.apply _).expects(out).returns(Yield.None(nextStatus, nextOnDone))
+        (previousStage.apply _).expects(in).returns(Yield.Some(out, previousStatus, previousEvolution))
+        (nextStage.apply _).expects(out).returns(Yield.None(nextStatus, nextEvolution))
       }
-      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(status, onDone) =>
+      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(status, evolution) =>
         status shouldBe previousStatus ++ nextStatus
         val updatedPreviousStage = mock[Stage[Int, String, String]]
         val updatedNextStage = mock[Stage[String, Long, Nothing]]
         inSequence {
-          armOnDone(nextOnDone, status, updatedNextStage)
-          armOnDone(previousOnDone, status, updatedPreviousStage)
+          armEvolution(nextEvolution, status, updatedNextStage)
+          armEvolution(previousEvolution, status, updatedPreviousStage)
         }
-        status(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
+        status(evolution) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
       }
     }
 
   it should "call only the first stage and return the correct Yield for None ~> any Yield" in
     forAll { (previousStatus: Status[String], in: Int) =>
       val previousStage = mock[Stage[Int, String, String]]
-      val previousOnDone = mock[OnDone[Int, String, String]]
+      val previousEvolution = mock[Evolution[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
-      (previousStage.apply _).expects(in).returns(Yield.None(previousStatus, previousOnDone))
-      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousStatus`, onDone) =>
+      (previousStage.apply _).expects(in).returns(Yield.None(previousStatus, previousEvolution))
+      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousStatus`, evolution) =>
         val evolvedPreviousStage = mock[Stage[Int, String, String]]
-        armOnDone(previousOnDone, previousStatus, evolvedPreviousStage)
-        previousStatus(onDone) shouldBe Stage.AndThen(evolvedPreviousStage, nextStage)
+        armEvolution(previousEvolution, previousStatus, evolvedPreviousStage)
+        previousStatus(evolution) shouldBe Stage.AndThen(evolvedPreviousStage, nextStage)
       }
     }
 
-  private def armOnDone[I, O, E](
-      onDone: OnDone[I, O, E],
+  private def armEvolution[I, O, E](
+      evolution: Evolution[I, O, E],
       status: Status[E],
-      stage: Stage[I, O, E]): (OnDone[I, O, E], Stage[I, O, E]) = {
+      stage: Stage[I, O, E]): (Evolution[I, O, E], Stage[I, O, E]) = {
     status match {
-      case Status.Success => (onDone.onSuccess _).expects().returns(stage)
-      case Status.Complete => (onDone.onComplete _).expects().returns(stage)
-      case Status.Error(_, _) => (onDone.onError _).expects().returns(stage)
+      case Status.Success => (evolution.onSuccess _).expects().returns(stage)
+      case Status.Complete => (evolution.onComplete _).expects().returns(stage)
+      case Status.Error(_, _) => (evolution.onError _).expects().returns(stage)
     }
-    (onDone, stage)
+    (evolution, stage)
   }
 
   it should "call dispose in reverse order" in {

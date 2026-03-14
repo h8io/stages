@@ -4,7 +4,7 @@
 
 Stages is a small functional DSL for building composable processing pipelines.
 Each processing step is a `Stage` that produces a `Yield` with a `Status` and a continuation
-(`OnDone`) that describes how the pipeline should evolve on success, completion, or error.
+(`Evolution`) that describes how the pipeline should evolve on success, completion, or error.
 The evolution model keeps the pipeline explicit and restartable, and makes it easy to
 decorate with behaviors like loops, retries, deadlines, and branching.
 
@@ -24,28 +24,28 @@ libraryDependencies ++= Seq(
 
 - `Stage[I, O, E]`: a step from input `I` to output `O` that can produce errors of type `E`.
   It is also a function `I => Yield[I, O, E]`. A stage may be stateless, but can also hold
-  resources (files, sockets) and evolve into a new stage via `OnDone`. It also provides
+  resources (files, sockets) and evolve into a new stage via `Evolution`. It also provides
   `dispose` for final cleanup when the pipeline is fully finished.
-- `Yield`: the result of a step. `Yield.Some(out, status, onDone)` returns output, while
-  `Yield.None(status, onDone)` does not. Both carry a `Status` and the next `OnDone`.
+- `Yield`: the result of a step. `Yield.Some(out, status, evolution)` returns output, while
+  `Yield.None(status, evolution)` does not. Both carry a `Status` and the next `Evolution`.
 - `Status`: a control status for the pipeline.
   - `Success` means continue normally.
   - `Complete` stops the pipeline (a soft break).
   - `Error` accumulates one or more errors and switches to the error branch.
-- `OnDone`: describes the next `Stage` to run after success, completion, or error. It is the
+- `Evolution`: describes the next `Stage` to run after success, completion, or error. It is the
   result of a stage's evolution and handles cleanup between stage evolutions.
 - `Alteration` / `Decoration`: functions that wrap or transform stages (e.g., loop, repeat,
   deadlines, lifting to `Option`, etc.). They compose via `~>` and apply via `⋅` or `<|`.
 
 ## Glossary
 
-- `Yield`: a step-level result that still carries the continuation (`OnDone`).
+- `Yield`: a step-level result that still carries the continuation (`Evolution`).
 - `Outcome`: a finalized result with a `Status` and a `dispose` thunk, without a continuation.
   The `dispose` thunk is the final cleanup hook of the stage that produced the outcome.
 - `Status.Success`: normal continuation status.
 - `Status.Complete`: a soft stop (break) for the pipeline.
 - `Status.Error`: an error status that can accumulate multiple errors.
-- `OnDone`: the evolution/continuation of a stage and the holder of cleanup logic between
+- `Evolution`: the evolution/continuation of a stage and the holder of cleanup logic between
   stage evolutions.
 - `dispose`: a `Stage` method used for final cleanup when the pipeline is fully finished and
   no further runs of the evolved pipeline will happen.
@@ -56,7 +56,7 @@ libraryDependencies ++= Seq(
 ## Modules
 
 - `core`: the minimal model and operators:
-  `Stage`, `Yield`, `Status`, `OnDone`, `Outcome`, and alteration composition.
+  `Stage`, `Yield`, `Status`, `Evolution`, `Outcome`, and alteration composition.
   Files: `core/src/main/scala/h8io/stages/...`.
 - `lib`: standard library with concrete stages, decorations, projections, and binary ops.
   Files: `lib/src/main/scala/h8io/stages/...`.

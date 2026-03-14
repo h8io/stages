@@ -3,7 +3,7 @@ package h8io.stages
 sealed trait Status[+E] {
   private[stages] def ++[_E >: E](next: Status[_E]): Status[_E]
 
-  private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E]
+  private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E]
 
   private[stages] def break: Status[E]
 }
@@ -16,7 +16,7 @@ object Status {
         case that => that
       }
 
-    private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onSuccess()
+    private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onSuccess()
 
     private[stages] def break: Status[Nothing] = Complete
   }
@@ -32,7 +32,7 @@ object Status {
         case that => that
       }
 
-    private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onComplete()
+    private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onComplete()
   }
 
   final case class Error[+E](override val head: E, override val tail: List[E]) extends Break[E] with Iterable[E] {
@@ -42,7 +42,7 @@ object Status {
         case Error(head, tail) => Error(this.head, this.tail ::: head :: tail)
       }
 
-    private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onError()
+    private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onError()
 
     @inline override def toList: List[E] = head :: tail
 

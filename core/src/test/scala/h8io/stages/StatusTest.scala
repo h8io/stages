@@ -11,11 +11,11 @@ class StatusTest
     extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with StagesCoreArbitraries {
   "Success" should "be idempotent" in { Status.Success ++ Status.Success shouldBe Status.Success }
 
-  it should "call onSuccess() on the OnDone object" in {
-    val onDone = mock[OnDone[Long, Instant, Exception]]
+  it should "call onSuccess() on the Evolution object" in {
+    val evolution = mock[Evolution[Long, Instant, Exception]]
     val stage = mock[Stage[Long, Instant, Exception]]
-    (onDone.onSuccess _).expects().returns(stage)
-    Status.Success(onDone) shouldBe stage
+    (evolution.onSuccess _).expects().returns(stage)
+    Status.Success(evolution) shouldBe stage
   }
 
   it should "become Complete when break is called" in { Status.Success.break shouldBe Status.Complete }
@@ -25,11 +25,11 @@ class StatusTest
   it should "be overridden by Error" in
     forAll((error: Status.Error[String]) => Status.Complete ++ error shouldBe error)
 
-  it should "call onComplete() on the OnDone object" in {
-    val onDone = mock[OnDone[Long, Instant, Exception]]
+  it should "call onComplete() on the Evolution object" in {
+    val evolution = mock[Evolution[Long, Instant, Exception]]
     val stage = mock[Stage[Long, Instant, Exception]]
-    (onDone.onComplete _).expects().returns(stage)
-    Status.Complete(onDone) shouldBe stage
+    (evolution.onComplete _).expects().returns(stage)
+    Status.Complete(evolution) shouldBe stage
   }
 
   it should "not change when break is called" in { Status.Complete.break shouldBe Status.Complete }
@@ -41,12 +41,12 @@ class StatusTest
 
   it should "override Complete" in forAll((error: Status.Error[String]) => error ++ Status.Complete shouldBe error)
 
-  it should "call onError() on the OnDone object" in
+  it should "call onError() on the Evolution object" in
     forAll { (error: Status.Error[String]) =>
-      val onDone = mock[OnDone[Long, Instant, Exception]]
+      val evolution = mock[Evolution[Long, Instant, Exception]]
       val stage = mock[Stage[Long, Instant, Exception]]
-      (onDone.onError _).expects().returns(stage)
-      error(onDone) shouldBe stage
+      (evolution.onError _).expects().returns(stage)
+      error(evolution) shouldBe stage
     }
 
   it should "not change when break is called" in forAll((error: Status.Error[String]) => error.break shouldBe error)

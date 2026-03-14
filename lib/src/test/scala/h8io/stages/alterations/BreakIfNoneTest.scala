@@ -1,6 +1,6 @@
 package h8io.stages.alterations
 
-import h8io.stages.{OnDone, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Yield}
+import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -18,25 +18,25 @@ class BreakIfNoneTest
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
   "BreakIfNone" should "return Yield.Some if the alterand result is Yield.Some" in
-    forAll { (in: Long, yieldSupplier: OnDoneToYieldSome[Long, Instant, String]) =>
+    forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, Instant, String]) =>
       val alterand = mock[Stage[Long, Instant, String]]
-      val onDone = mock[OnDone[Long, Instant, String]]
-      val yld = yieldSupplier(onDone)
+      val evolution = mock[Evolution[Long, Instant, String]]
+      val yld = yieldSupplier(evolution)
       (alterand.apply _).expects(in).returns(yld)
-      inside(BreakIfNone(alterand)(in)) { case Yield.Some(yld.out, yld.`status`, binOnDone) =>
-        testWrappedOnDone(binOnDone, onDone, BreakIfNone[Long, Instant, String])
+      inside(BreakIfNone(alterand)(in)) { case Yield.Some(yld.out, yld.`status`, binEvolution) =>
+        testWrappedEvolution(binEvolution, evolution, BreakIfNone[Long, Instant, String])
       }
     }
 
   it should "return Yield.None with breaking status if the alterand result is Yield.None" in
-    forAll { (in: String, yieldSupplier: OnDoneToYieldNone[String, LocalDate, Long]) =>
+    forAll { (in: String, yieldSupplier: EvolutionToYieldNone[String, LocalDate, Long]) =>
       val alterand = mock[Stage[String, LocalDate, Long]]
-      val onDone = mock[OnDone[String, LocalDate, Long]]
-      val yld = yieldSupplier(onDone)
+      val evolution = mock[Evolution[String, LocalDate, Long]]
+      val yld = yieldSupplier(evolution)
       (alterand.apply _).expects(in).returns(yld)
-      inside(BreakIfNone(alterand)(in)) { case Yield.None(status, binOnDone) =>
+      inside(BreakIfNone(alterand)(in)) { case Yield.None(status, binEvolution) =>
         status shouldBe yld.status.break
-        testWrappedOnDone(binOnDone, onDone, BreakIfNone[String, LocalDate, Long])
+        testWrappedEvolution(binEvolution, evolution, BreakIfNone[String, LocalDate, Long])
       }
     }
 }
