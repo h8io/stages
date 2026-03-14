@@ -1,11 +1,11 @@
 package h8io.stages
 
 trait Outcome[+O, +E] {
-  val signal: Signal[E]
+  val status: Status[E]
 }
 
 object Outcome {
-  final case class Some[+O, +E](out: O, signal: Signal[E]) extends Outcome[O, E]
+  final case class Some[+O, +E](out: O, status: Status[E]) extends Outcome[O, E]
 
-  final case class None[+E](signal: Signal[E]) extends Outcome[Nothing, E]
+  final case class None[+E](status: Status[E]) extends Outcome[Nothing, E]
 }

@@ -7,52 +7,52 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.Instant
 
-class SignalTest
+class StatusTest
     extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with StagesCoreArbitraries {
-  "Success" should "be idempotent" in { Signal.Success ++ Signal.Success shouldBe Signal.Success }
+  "Success" should "be idempotent" in { Status.Success ++ Status.Success shouldBe Status.Success }
 
   it should "call onSuccess() on the OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
     val stage = mock[Stage[Long, Instant, Exception]]
     (onDone.onSuccess _).expects().returns(stage)
-    Signal.Success(onDone) shouldBe stage
+    Status.Success(onDone) shouldBe stage
   }
 
-  it should "become Complete when break is called" in { Signal.Success.break shouldBe Signal.Complete }
+  it should "become Complete when break is called" in { Status.Success.break shouldBe Status.Complete }
 
-  "Complete" should "be idempotent" in { Signal.Complete ++ Signal.Complete shouldBe Signal.Complete }
+  "Complete" should "be idempotent" in { Status.Complete ++ Status.Complete shouldBe Status.Complete }
 
   it should "be overridden by Error" in
-    forAll((error: Signal.Error[String]) => Signal.Complete ++ error shouldBe error)
+    forAll((error: Status.Error[String]) => Status.Complete ++ error shouldBe error)
 
   it should "call onComplete() on the OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
     val stage = mock[Stage[Long, Instant, Exception]]
     (onDone.onComplete _).expects().returns(stage)
-    Signal.Complete(onDone) shouldBe stage
+    Status.Complete(onDone) shouldBe stage
   }
 
-  it should "not change when break is called" in { Signal.Complete.break shouldBe Signal.Complete }
+  it should "not change when break is called" in { Status.Complete.break shouldBe Status.Complete }
 
   "Error" should "keep the order of causes in composition" in
-    forAll { (previous: Signal.Error[String], next: Signal.Error[String]) =>
-      previous ++ next shouldBe Signal.Error(previous.head, previous.tail ::: next.head :: next.tail)
+    forAll { (previous: Status.Error[String], next: Status.Error[String]) =>
+      previous ++ next shouldBe Status.Error(previous.head, previous.tail ::: next.head :: next.tail)
     }
 
-  it should "override Complete" in forAll((error: Signal.Error[String]) => error ++ Signal.Complete shouldBe error)
+  it should "override Complete" in forAll((error: Status.Error[String]) => error ++ Status.Complete shouldBe error)
 
   it should "call onError() on the OnDone object" in
-    forAll { (error: Signal.Error[String]) =>
+    forAll { (error: Status.Error[String]) =>
       val onDone = mock[OnDone[Long, Instant, Exception]]
       val stage = mock[Stage[Long, Instant, Exception]]
       (onDone.onError _).expects().returns(stage)
       error(onDone) shouldBe stage
     }
 
-  it should "not change when break is called" in forAll((error: Signal.Error[String]) => error.break shouldBe error)
+  it should "not change when break is called" in forAll((error: Status.Error[String]) => error.break shouldBe error)
 
   it should "not be empty" in
-    forAll { (error: Signal.Error[Exception]) =>
+    forAll { (error: Status.Error[Exception]) =>
       error.isEmpty shouldBe false
       error.toList should matchPattern { case error.head :: error.tail => }
       val i = error.iterator

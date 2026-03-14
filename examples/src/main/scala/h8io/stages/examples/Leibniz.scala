@@ -2,13 +2,13 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.alterations.{LocalSoftDeadline, Repeat}
-import h8io.stages.base.StageWithOnDone
+import h8io.stages.base.StageWithEvolution
 
 import scala.concurrent.duration.FiniteDuration
 
 object Leibniz {
-  final case class Pi(n: Long, t: Double, s: Double) extends StageWithOnDone[Unit, Double, Nothing] {
-    override def apply(in: Unit): Yield.Some[Unit, Double, Nothing] = Yield.Some(4 * s, Signal.Success, this)
+  final case class Pi(n: Long, t: Double, s: Double) extends StageWithEvolution[Unit, Double, Nothing] {
+    override def apply(in: Unit): Yield.Some[Unit, Double, Nothing] = Yield.Some(4 * s, Status.Success, this)
 
     override def onSuccess(): Stage[Unit, Double, Nothing] = {
       val _t = -t * (2 * n + 1) / (2 * n + 3)

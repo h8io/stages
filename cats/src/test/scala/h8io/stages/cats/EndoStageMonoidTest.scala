@@ -4,7 +4,7 @@ import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
 import h8io.stages.*
-import h8io.stages.base.StageWithOnDone
+import h8io.stages.base.StageWithEvolution
 import h8io.stages.std.Identity
 import org.scalacheck.{Arbitrary, Prop, Shrink, Test}
 import org.scalatest.funsuite.AnyFunSuite
@@ -27,9 +27,9 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
       for {
         prefix <- Arbitrary.arbitrary[T]
         suffix <- Arbitrary.arbitrary[T]
-        signal <- Arbitrary.arbitrary[Signal[E]]
-      } yield new StageWithOnDone.Endo[T, E] {
-        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, signal, this)
+        status <- Arbitrary.arbitrary[Status[E]]
+      } yield new StageWithEvolution.Endo[T, E] {
+        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, status, this)
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
       }
@@ -51,8 +51,8 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
 
   private def toTuple[T, E](yld: Yield[T, T, E]): Product =
     yld match {
-      case Yield.Some(out, signal, onDone) => (out, signal, toTuple(onDone))
-      case Yield.None(signal, onDone) => (signal, toTuple(onDone))
+      case Yield.Some(out, status, onDone) => (out, status, toTuple(onDone))
+      case Yield.None(status, onDone) => (status, toTuple(onDone))
     }
 
   private implicit def stageEq[T: Arbitrary: Shrink, E]: Eq[Stage.Endo[T, E]] =

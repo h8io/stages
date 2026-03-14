@@ -7,13 +7,13 @@ final case class And[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
     extends BinaryOp[I, LO, RO, (LO, RO), E] {
   override def apply(in: I): Yield[I, (LO, RO), E] =
     left(in) match {
-      case Yield.Some(leftOut, leftSignal, leftOnDone) => right(in) match {
-          case Yield.Some(rightOut, rightSignal, rightOnDone) =>
-            Yield.Some((leftOut, rightOut), leftSignal ++ rightSignal, And.BothOnDone(leftOnDone, rightOnDone))
-          case Yield.None(rightSignal, rightOnDone) =>
-            Yield.None(leftSignal ++ rightSignal, And.BothOnDone(leftOnDone, rightOnDone))
+      case Yield.Some(leftOut, leftStatus, leftOnDone) => right(in) match {
+          case Yield.Some(rightOut, rightStatus, rightOnDone) =>
+            Yield.Some((leftOut, rightOut), leftStatus ++ rightStatus, And.BothOnDone(leftOnDone, rightOnDone))
+          case Yield.None(rightStatus, rightOnDone) =>
+            Yield.None(leftStatus ++ rightStatus, And.BothOnDone(leftOnDone, rightOnDone))
         }
-      case Yield.None(signal, onDone) => Yield.None(signal, And.LeftOnDone(onDone, right))
+      case Yield.None(status, onDone) => Yield.None(status, And.LeftOnDone(onDone, right))
     }
 }
 

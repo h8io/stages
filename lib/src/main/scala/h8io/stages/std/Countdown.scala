@@ -1,16 +1,16 @@
 package h8io.stages.std
 
-import h8io.stages.base.{Fruitful, StageWithOnDone}
-import h8io.stages.{Signal, Stage, Yield}
+import h8io.stages.base.{Fruitful, StageWithEvolution}
+import h8io.stages.{Stage, Status, Yield}
 
 final case class Countdown[T](i: Long, n: Long)
-    extends Fruitful.Endo[T, Nothing] with StageWithOnDone.Endo[T, Nothing] {
+    extends Fruitful.Endo[T, Nothing] with StageWithEvolution.Endo[T, Nothing] {
   assume(n > 0, s"n must be positive, got n = $n")
   assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 
   override def apply(in: T): Yield.Some[T, T, Nothing] =
-    if (i == 1) Yield.Some(in, Signal.Complete, Countdown(n, n))
-    else Yield.Some(in, Signal.Success, this)
+    if (i == 1) Yield.Some(in, Status.Complete, Countdown(n, n))
+    else Yield.Some(in, Status.Success, this)
 
   override def onSuccess(): Stage[T, T, Nothing] = Countdown(i - 1, n)
   override def onComplete(): Stage[T, T, Nothing] = Countdown(n, n)

@@ -18,25 +18,25 @@ class LoopTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries {
-  "Loop" should "be executed until the signal is Complete" in
+  "Loop" should "be executed until the status is Complete" in
     forAll(
       Gen.zip(
-        Gen.listOf(Arbitrary.arbitrary[SignalAndOnDoneToYieldSome[String, String, Nothing]]),
-        Arbitrary.arbitrary[SignalAndOnDoneToYield[String, String, Nothing]],
+        Gen.listOf(Arbitrary.arbitrary[StatusAndOnDoneToYieldSome[String, String, Nothing]]),
+        Arbitrary.arbitrary[StatusAndOnDoneToYield[String, String, Nothing]],
         Arbitrary.arbitrary[String]
       )) { case (yieldSuppliers, lastYieldSupplier, in) =>
       val initial = mock[Stage.Endo[String, Nothing]]("initial stage")
       val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastOnDone = mock[OnDone[String, String, Nothing]]("last onDone")
-      val lastYield = lastYieldSupplier(Signal.Complete, lastOnDone)
+      val lastYield = lastYieldSupplier(Status.Complete, lastOnDone)
       (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[String, Nothing]]("result stage")
       (lastOnDone.onComplete _).expects().returns(resultStage)
       val onDone = inside((lastYield, Loop(initial)(in))) {
-        case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, Signal.Success, onDone)) =>
+        case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, Status.Success, onDone)) =>
           resultOut shouldBe lastOut
           onDone
-        case (Yield.None(_, _), Yield.None(Signal.Success, onDone)) => onDone
+        case (Yield.None(_, _), Yield.None(Status.Success, onDone)) => onDone
       }
       val expectedStage = Loop(resultStage)
       onDone.onSuccess() shouldBe expectedStage
@@ -44,26 +44,26 @@ class LoopTest
       onDone.onError() shouldBe expectedStage
     }
 
-  it should "be executed until the signal is Error" in
+  it should "be executed until the status is Error" in
     forAll(
       Gen.zip(
-        Gen.listOf(Arbitrary.arbitrary[SignalAndOnDoneToYieldSome[UUID, UUID, String]]),
-        Arbitrary.arbitrary[SignalAndOnDoneToYield[UUID, UUID, String]],
+        Gen.listOf(Arbitrary.arbitrary[StatusAndOnDoneToYieldSome[UUID, UUID, String]]),
+        Arbitrary.arbitrary[StatusAndOnDoneToYield[UUID, UUID, String]],
         Gen.uuid,
-        Arbitrary.arbitrary[Signal.Error[String]]
-      )) { case (yieldSuppliers, lastYieldSupplier, in, lastSignal) =>
+        Arbitrary.arbitrary[Status.Error[String]]
+      )) { case (yieldSuppliers, lastYieldSupplier, in, lastStatus) =>
       val initial = mock[Stage.Endo[UUID, String]]("initial stage")
       val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastOnDone = mock[OnDone[UUID, UUID, String]]
-      val lastYield = lastYieldSupplier(lastSignal, lastOnDone)
+      val lastYield = lastYieldSupplier(lastStatus, lastOnDone)
       (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[UUID, String]]("result stage")
       (lastOnDone.onError _).expects().returns(resultStage)
       val onDone = inside((lastYield, Loop(initial)(in))) {
-        case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `lastSignal`, onDone)) =>
+        case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `lastStatus`, onDone)) =>
           resultOut shouldBe lastOut
           onDone
-        case (Yield.None(_, _), Yield.None(`lastSignal`, onDone)) => onDone
+        case (Yield.None(_, _), Yield.None(`lastStatus`, onDone)) => onDone
       }
       val expectedStage = Loop(resultStage)
       onDone.onSuccess() shouldBe expectedStage
@@ -74,18 +74,18 @@ class LoopTest
   it should "be executed until the result is None" in
     forAll(
       Gen.zip(
-        Gen.listOf(Arbitrary.arbitrary[SignalAndOnDoneToYieldSome[BigInt, BigInt, Exception]]),
+        Gen.listOf(Arbitrary.arbitrary[StatusAndOnDoneToYieldSome[BigInt, BigInt, Exception]]),
         Arbitrary.arbitrary[BigInt]
       )) { case (yieldSuppliers, in) =>
       val initial = mock[Stage.Endo[BigInt, Exception]]("initial stage")
       val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastOnDone = mock[OnDone[BigInt, BigInt, Exception]]("last OnDone")
-      val lastYield = Yield.None(Signal.Success, lastOnDone)
+      val lastYield = Yield.None(Status.Success, lastOnDone)
       (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[BigInt, Exception]]("result stage")
       (lastOnDone.onComplete _).expects().returns(resultStage)
       val onDone = inside((lastYield, Loop(initial)(in))) {
-        case (Yield.None(_, _), Yield.None(Signal.Success, onDone)) => onDone
+        case (Yield.None(_, _), Yield.None(Status.Success, onDone)) => onDone
       }
       val expectedStage = Loop(resultStage)
       onDone.onSuccess() shouldBe expectedStage
@@ -94,13 +94,13 @@ class LoopTest
     }
 
   @tailrec private def genStage[T: Arbitrary, E](
-      yieldSuppliers: List[SignalAndOnDoneToYieldSome[T, T, E]],
+      yieldSuppliers: List[StatusAndOnDoneToYieldSome[T, T, E]],
       stage: Stage.Endo[T, E], in: T): (T, Stage.Endo[T, E]) =
     yieldSuppliers match {
       case head :: tail =>
         val id = yieldSuppliers.length.toString
         val onDone = mock[OnDone[T, T, E]](s"onDone $id")
-        val yld = head(Signal.Success, onDone)
+        val yld = head(Status.Success, onDone)
         val evolved = mock[Stage.Endo[T, E]](s"stage $id")
         (onDone.onSuccess _).expects().returns(evolved)
         (stage.apply _).expects(in).returns(yld)

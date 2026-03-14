@@ -33,8 +33,8 @@ class IAndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          test(leftYield, rightYield, signal, onDone)
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, onDone) =>
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
@@ -53,8 +53,8 @@ class IAndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          test(leftYield, rightYield, signal, onDone)
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, onDone) =>
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
@@ -74,8 +74,8 @@ class IAndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          test(leftYield, rightYield, signal, onDone)
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, onDone) =>
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
@@ -95,18 +95,18 @@ class IAndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.Some(out, status, onDone) =>
           out shouldBe leftYield.out -> rightYield.out
-          test(leftYield, rightYield, signal, onDone)
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
   private def test[I, LO, RO, E](
       leftYield: Yield[I, LO, E],
       rightYield: Yield[I, RO, E],
-      signal: Signal[E],
+      status: Status[E],
       onDone: OnDone[I, (LO, RO), E]): Assertion = {
-    signal shouldBe leftYield.signal ++ rightYield.signal
+    status shouldBe leftYield.status ++ rightYield.status
 
     val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
     val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")

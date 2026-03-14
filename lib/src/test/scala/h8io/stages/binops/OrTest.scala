@@ -34,8 +34,8 @@ class OrTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(Or(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          test(leftYield, rightYield, signal, onDone)
+        inside(Or(leftStage, rightStage)(in)) { case Yield.None(status, onDone) =>
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
@@ -55,18 +55,18 @@ class OrTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, status, onDone) =>
           out shouldBe Right(rightYield.out)
-          test(leftYield, rightYield, signal, onDone)
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
   private def test[I, LO, RO, E](
       leftYield: Yield[I, LO, E],
       rightYield: Yield[I, RO, E],
-      signal: Signal[E],
+      status: Status[E],
       onDone: OnDone[I, Either[LO, RO], E]): Assertion = {
-    signal shouldBe leftYield.signal ++ rightYield.signal
+    status shouldBe leftYield.status ++ rightYield.status
 
     val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
     val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")
@@ -100,9 +100,9 @@ class OrTest
         val rightStage = mock[Stage[UUID, ZoneId, String]]("right stage")
         val leftYield = leftYieldSupplier(mock[OnDone[UUID, Long, String]]("left onDone"))
         (leftStage.apply _).expects(in).returns(leftYield)
-        inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, status, onDone) =>
           out shouldBe Left(leftYield.out)
-          signal shouldBe leftYield.signal
+          status shouldBe leftYield.status
           testWrappedOnDone(onDone, leftYield.onDone, Or(_: Stage[UUID, Long, String], rightStage))
         }
     }

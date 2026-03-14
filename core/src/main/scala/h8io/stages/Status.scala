@@ -1,16 +1,16 @@
 package h8io.stages
 
-sealed trait Signal[+E] {
-  private[stages] def ++[_E >: E](next: Signal[_E]): Signal[_E]
+sealed trait Status[+E] {
+  private[stages] def ++[_E >: E](next: Status[_E]): Status[_E]
 
   private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E]
 
-  private[stages] def break: Signal[E]
+  private[stages] def break: Status[E]
 }
 
-object Signal {
-  case object Success extends Signal[Nothing] {
-    private[stages] def ++[E](next: Signal[E]): Signal[E] =
+object Status {
+  case object Success extends Status[Nothing] {
+    private[stages] def ++[E](next: Status[E]): Status[E] =
       next match {
         case Success => this
         case that => that
@@ -18,15 +18,15 @@ object Signal {
 
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onSuccess()
 
-    private[stages] def break: Signal[Nothing] = Complete
+    private[stages] def break: Status[Nothing] = Complete
   }
 
-  sealed trait Break[+E] extends Signal[E] {
-    private[stages] def break: Signal[E] = this
+  sealed trait Break[+E] extends Status[E] {
+    private[stages] def break: Status[E] = this
   }
 
   case object Complete extends Break[Nothing] {
-    private[stages] def ++[E](next: Signal[E]): Signal[E] =
+    private[stages] def ++[E](next: Status[E]): Status[E] =
       next match {
         case Success | Complete => this
         case that => that
@@ -36,7 +36,7 @@ object Signal {
   }
 
   final case class Error[+E](override val head: E, override val tail: List[E]) extends Break[E] with Iterable[E] {
-    private[stages] def ++[_E >: E](next: Signal[_E]): Signal[_E] =
+    private[stages] def ++[_E >: E](next: Status[_E]): Status[_E] =
       next match {
         case Success | Complete => this
         case Error(head, tail) => Error(this.head, this.tail ::: head :: tail)

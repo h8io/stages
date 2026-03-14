@@ -1,11 +1,11 @@
 package h8io.stages.base
 
-import h8io.stages.{Signal, Yield}
+import h8io.stages.{Status, Yield}
 
-trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with StageWithOnDone[I, O, Nothing] {
+trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with StageWithEvolution[I, O, Nothing] {
   def f(in: I): O
 
-  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Signal.Success, this)
+  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this)
 }
 
 object Fn {
