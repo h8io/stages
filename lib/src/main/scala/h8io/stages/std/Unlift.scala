@@ -1,13 +1,13 @@
 package h8io.stages.std
 
-import h8io.stages.base.StageWithOnDone
-import h8io.stages.{Signal, Stage, Yield}
+import h8io.stages.base.StageWithEvolution
+import h8io.stages.{Stage, Status, Yield}
 
-object Unlift extends StageWithOnDone[Option[Any], Any, Nothing] {
+object Unlift extends StageWithEvolution[Option[Any], Any, Nothing] {
   override def apply(in: Option[Any]): Yield[Option[Any], Any, Nothing] =
     in match {
-      case Some(out) => Yield.Some(out, Signal.Success, this)
-      case None => Yield.None(Signal.Success, this)
+      case Some(out) => Yield.Some(out, Status.Success, this)
+      case None => Yield.None(Status.Success, this)
     }
 
   def apply[T]: Stage[Option[T], T, Nothing] = asInstanceOf[Stage[Option[T], T, Nothing]]

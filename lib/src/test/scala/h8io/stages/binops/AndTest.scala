@@ -27,8 +27,8 @@ class AndTest
         val rightStage = mock[Stage[Long, Instant, Exception]]("right stage")
         val leftYield = leftYieldSupplier(mock[OnDone[Long, Duration, Exception]]("left onDone"))
         (leftStage.apply _).expects(in).returns(leftYield)
-        inside(And(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          signal shouldBe leftYield.signal
+        inside(And(leftStage, rightStage)(in)) { case Yield.None(status, onDone) =>
+          status shouldBe leftYield.status
           testWrappedOnDone(onDone, leftYield.onDone, And(_: Stage[Long, Duration, Exception], rightStage))
         }
     }
@@ -48,8 +48,8 @@ class AndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(And(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          test(leftYield, rightYield, signal, onDone)
+        inside(And(leftStage, rightStage)(in)) { case Yield.None(status, onDone) =>
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
@@ -69,18 +69,18 @@ class AndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(And(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(And(leftStage, rightStage)(in)) { case Yield.Some(out, status, onDone) =>
           out shouldBe leftYield.out -> rightYield.out
-          test(leftYield, rightYield, signal, onDone)
+          test(leftYield, rightYield, status, onDone)
         }
     }
 
   private def test[I, LO, RO, E](
       leftYield: Yield[I, LO, E],
       rightYield: Yield[I, RO, E],
-      signal: Signal[E],
+      status: Status[E],
       onDone: OnDone[I, (LO, RO), E]): Assertion = {
-    signal shouldBe leftYield.signal ++ rightYield.signal
+    status shouldBe leftYield.status ++ rightYield.status
 
     val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
     val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")

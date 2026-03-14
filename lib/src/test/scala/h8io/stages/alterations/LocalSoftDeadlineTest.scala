@@ -47,7 +47,7 @@ class LocalSoftDeadlineTest
       test(LocalSoftDeadline(jDuration.ofNanos(nanos))(stage))
     }
 
-  it should "return an yield with signal Break and initial stage (tsSupplier == now) if overdue" in
+  it should "return an yield with status Break and initial stage (tsSupplier == now) if overdue" in
     forAll(
       Gen.zip(
         Gen.long,
@@ -69,11 +69,11 @@ class LocalSoftDeadlineTest
             (stage.apply _).expects(in).returns(yld)
             (now.apply _).expects().returns(currentTS)
           }
-          val expectedSignal = yld.signal.break
+          val expectedStatus = yld.status.break
           val lsdYield = lsd(in)
           inside((yld, lsdYield)) {
-            case (Yield.Some(expectedOut, _, _), Yield.Some(out, `expectedSignal`, _)) => out shouldEqual expectedOut
-            case (Yield.None(_, _), Yield.None(`expectedSignal`, _)) => succeed
+            case (Yield.Some(expectedOut, _, _), Yield.Some(out, `expectedStatus`, _)) => out shouldEqual expectedOut
+            case (Yield.None(_, _), Yield.None(`expectedStatus`, _)) => succeed
           }
           testWrappedOnDone(
             lsdYield.onDone, onDone, LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long]))
@@ -83,7 +83,7 @@ class LocalSoftDeadlineTest
         test(ts + duration + overdue)
     }
 
-  it should "return an yield with signal Break and initial stage (tsSupplier == now) if no overdue" in
+  it should "return an yield with status Break and initial stage (tsSupplier == now) if no overdue" in
     forAll(
       Gen.zip(
         Gen.long,
@@ -109,8 +109,8 @@ class LocalSoftDeadlineTest
           }
           val lsdYield = lsd(in)
           inside((yld, lsdYield)) {
-            case (Yield.Some(expectedOut, _, _), Yield.Some(out, yld.signal, _)) => out shouldEqual expectedOut
-            case (Yield.None(_, _), Yield.None(yld.signal, _)) => succeed
+            case (Yield.Some(expectedOut, _, _), Yield.Some(out, yld.`status`, _)) => out shouldEqual expectedOut
+            case (Yield.None(_, _), Yield.None(yld.`status`, _)) => succeed
           }
 
           val onSuccessStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onSuccess stage")

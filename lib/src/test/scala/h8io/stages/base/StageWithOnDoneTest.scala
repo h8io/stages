@@ -5,8 +5,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class StageWithOnDoneTest extends AnyFlatSpec with Matchers {
-  "OnDoneForStage" should "return self for any signal" in {
-    val stage = new StageWithOnDone[Int, String, Nothing] {
+  "OnDoneForStage" should "return self for any status" in {
+    val stage = new StageWithEvolution[Int, String, Nothing] {
       def apply(in: Int): Yield[Int, String, Nothing] = fail("apply should not be called")
     }
 

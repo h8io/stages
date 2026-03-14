@@ -24,7 +24,7 @@ class LiftTest
       val onDone = mock[OnDone[Int, String, UUID]]
       val yld = yieldSupplier(onDone)
       (stage.apply _).expects(in).returns(yld)
-      inside(Lift(stage)(in)) { case Yield.Some(Some(yld.out), yld.signal, wrappedOnDone) =>
+      inside(Lift(stage)(in)) { case Yield.Some(Some(yld.out), yld.`status`, wrappedOnDone) =>
         testWrappedOnDone(wrappedOnDone, onDone, Lift[Int, String, UUID])
       }
     }
@@ -35,7 +35,7 @@ class LiftTest
       val onDone = mock[OnDone[Long, Instant, String]]
       val yld = yieldSupplier(onDone)
       (stage.apply _).expects(in).returns(yld)
-      inside(Lift(stage)(in)) { case Yield.Some(None, yld.signal, wrappedOnDone) =>
+      inside(Lift(stage)(in)) { case Yield.Some(None, yld.`status`, wrappedOnDone) =>
         testWrappedOnDone(wrappedOnDone, onDone, Lift[Long, Instant, String])
       }
     }

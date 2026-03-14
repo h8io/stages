@@ -1,6 +1,6 @@
 package h8io.stages.std
 
-import h8io.stages.{Signal, StagesCoreArbitraries, Yield}
+import h8io.stages.{StagesCoreArbitraries, Status, Yield}
 import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -30,7 +30,7 @@ class GlobalSoftDeadlineTest
       }
     }
 
-  "GlobalSoftDeadline" should "return Complete signal on overdue" in
+  "GlobalSoftDeadline" should "return Complete status on overdue" in
     forAll(Gen.zip(Gen.long, Gen.listOf(Gen.zip(Gen.choose(0L, 1000L), Gen.uuid)))) { case (ts, parameters) =>
       val maxDuration = parameters.iterator.map(_._1).sum
       forAll(Gen.choose(0, maxDuration)) { duration =>
@@ -46,8 +46,8 @@ class GlobalSoftDeadlineTest
               val currentTS = previousTS + interval
               val currentInterval = previousInterval + interval
               (now.apply _).expects().returns(currentTS)
-              inside(stage(in)) { case Yield.Some(`in`, signal, `stage`) =>
-                if (currentInterval < duration) signal shouldBe Signal.Success else signal shouldBe Signal.Complete
+              inside(stage(in)) { case Yield.Some(`in`, status, `stage`) =>
+                if (currentInterval < duration) status shouldBe Status.Success else status shouldBe Status.Complete
               }
               loop(currentTS, currentInterval, tail)
             case Nil =>

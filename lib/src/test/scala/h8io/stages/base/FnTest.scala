@@ -1,6 +1,6 @@
 package h8io.stages.base
 
-import h8io.stages.{Signal, Yield}
+import h8io.stages.{Status, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -13,6 +13,6 @@ class FnTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckP
     forAll { (in: ZoneId, out: Long) =>
       val f = mock[Fn[ZoneId, Long]]
       (f.f _).expects(in).returns(out)
-      f(in) shouldBe Yield.Some(`out`, Signal.Success, f)
+      f(in) shouldBe Yield.Some(`out`, Status.Success, f)
     }
 }

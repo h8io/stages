@@ -23,19 +23,19 @@ class BreakIfNoneTest
       val onDone = mock[OnDone[Long, Instant, String]]
       val yld = yieldSupplier(onDone)
       (alterand.apply _).expects(in).returns(yld)
-      inside(BreakIfNone(alterand)(in)) { case Yield.Some(yld.out, yld.signal, binOnDone) =>
+      inside(BreakIfNone(alterand)(in)) { case Yield.Some(yld.out, yld.`status`, binOnDone) =>
         testWrappedOnDone(binOnDone, onDone, BreakIfNone[Long, Instant, String])
       }
     }
 
-  it should "return Yield.None with breaking signal if the alterand result is Yield.None" in
+  it should "return Yield.None with breaking status if the alterand result is Yield.None" in
     forAll { (in: String, yieldSupplier: OnDoneToYieldNone[String, LocalDate, Long]) =>
       val alterand = mock[Stage[String, LocalDate, Long]]
       val onDone = mock[OnDone[String, LocalDate, Long]]
       val yld = yieldSupplier(onDone)
       (alterand.apply _).expects(in).returns(yld)
-      inside(BreakIfNone(alterand)(in)) { case Yield.None(signal, binOnDone) =>
-        signal shouldBe yld.signal.break
+      inside(BreakIfNone(alterand)(in)) { case Yield.None(status, binOnDone) =>
+        status shouldBe yld.status.break
         testWrappedOnDone(binOnDone, onDone, BreakIfNone[String, LocalDate, Long])
       }
     }

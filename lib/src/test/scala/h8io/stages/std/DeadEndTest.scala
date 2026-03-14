@@ -1,7 +1,7 @@
 package h8io.stages.std
 
 import h8io.stages.Yield
-import h8io.stages.Signal.Complete
+import h8io.stages.Status.Complete
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

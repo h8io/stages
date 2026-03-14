@@ -32,10 +32,10 @@ class StageTest
       val evolved = mock[Stage[Long, String, UUID]]
       inSequence {
         (stage.apply _).expects(in).returns(yld)
-        onDoneMock(onDone, yld.signal, evolved)
+        onDoneMock(onDone, yld.status, evolved)
         (evolved.dispose _).expects()
       }
-      stage.execute(in) shouldBe Outcome.Some(yld.out, yld.signal)
+      stage.execute(in) shouldBe Outcome.Some(yld.out, yld.status)
     }
 
   it should "run onDone and return Outcome.None" in
@@ -46,10 +46,10 @@ class StageTest
       val evolved = mock[Stage[Instant, Boolean, Long]]
       inSequence {
         (stage.apply _).expects(in).returns(yld)
-        onDoneMock(onDone, yld.signal, evolved)
+        onDoneMock(onDone, yld.status, evolved)
         (evolved.dispose _).expects()
       }
-      stage.execute(in) shouldBe Outcome.None(yld.signal)
+      stage.execute(in) shouldBe Outcome.None(yld.status)
     }
 
   "~>" should "produce a Stage.AndThen with a stage argument" in {
@@ -106,70 +106,70 @@ class StageTest
 
   "AndThen" should "call stages sequentially and return the correct Yield for Some ~> Some" in
     forAll {
-      (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, previousOut: String, nextOut: Long) =>
+      (previousStatus: Status[String], nextStatus: Status[String], in: Int, previousOut: String, nextOut: Long) =>
         val previousStage = mock[Stage[Int, String, String]]
         val previousOnDone = mock[OnDone[Int, String, String]]
         val nextStage = mock[Stage[String, Long, String]]
         val nextOnDone = mock[OnDone[String, Long, String]]
         inSequence {
-          (previousStage.apply _).expects(in).returns(Yield.Some(previousOut, previousSignal, previousOnDone))
-          (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextSignal, nextOnDone))
+          (previousStage.apply _).expects(in).returns(Yield.Some(previousOut, previousStatus, previousOnDone))
+          (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextStatus, nextOnDone))
         }
-        inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, signal, onDone) =>
-          signal shouldBe previousSignal ++ nextSignal
+        inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, status, onDone) =>
+          status shouldBe previousStatus ++ nextStatus
           val updatedPreviousStage = mock[Stage[Int, String, String]]
           val updatedNextStage = mock[Stage[String, Long, Nothing]]
           inSequence {
-            armOnDone(nextOnDone, signal, updatedNextStage)
-            armOnDone(previousOnDone, signal, updatedPreviousStage)
+            armOnDone(nextOnDone, status, updatedNextStage)
+            armOnDone(previousOnDone, status, updatedPreviousStage)
           }
-          signal(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
+          status(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
         }
     }
 
   it should "call stages sequentially and return the correct Yield for Some ~> None" in
-    forAll { (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, out: String) =>
+    forAll { (previousStatus: Status[String], nextStatus: Status[String], in: Int, out: String) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
       val nextOnDone = mock[OnDone[String, Long, String]]
       inSequence {
-        (previousStage.apply _).expects(in).returns(Yield.Some(out, previousSignal, previousOnDone))
-        (nextStage.apply _).expects(out).returns(Yield.None(nextSignal, nextOnDone))
+        (previousStage.apply _).expects(in).returns(Yield.Some(out, previousStatus, previousOnDone))
+        (nextStage.apply _).expects(out).returns(Yield.None(nextStatus, nextOnDone))
       }
-      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(signal, onDone) =>
-        signal shouldBe previousSignal ++ nextSignal
+      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(status, onDone) =>
+        status shouldBe previousStatus ++ nextStatus
         val updatedPreviousStage = mock[Stage[Int, String, String]]
         val updatedNextStage = mock[Stage[String, Long, Nothing]]
         inSequence {
-          armOnDone(nextOnDone, signal, updatedNextStage)
-          armOnDone(previousOnDone, signal, updatedPreviousStage)
+          armOnDone(nextOnDone, status, updatedNextStage)
+          armOnDone(previousOnDone, status, updatedPreviousStage)
         }
-        signal(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
+        status(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
       }
     }
 
   it should "call only the first stage and return the correct Yield for None ~> any Yield" in
-    forAll { (previousSignal: Signal[String], in: Int) =>
+    forAll { (previousStatus: Status[String], in: Int) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
-      (previousStage.apply _).expects(in).returns(Yield.None(previousSignal, previousOnDone))
-      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousSignal`, onDone) =>
+      (previousStage.apply _).expects(in).returns(Yield.None(previousStatus, previousOnDone))
+      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousStatus`, onDone) =>
         val evolvedPreviousStage = mock[Stage[Int, String, String]]
-        armOnDone(previousOnDone, previousSignal, evolvedPreviousStage)
-        previousSignal(onDone) shouldBe Stage.AndThen(evolvedPreviousStage, nextStage)
+        armOnDone(previousOnDone, previousStatus, evolvedPreviousStage)
+        previousStatus(onDone) shouldBe Stage.AndThen(evolvedPreviousStage, nextStage)
       }
     }
 
   private def armOnDone[I, O, E](
       onDone: OnDone[I, O, E],
-      signal: Signal[E],
+      status: Status[E],
       stage: Stage[I, O, E]): (OnDone[I, O, E], Stage[I, O, E]) = {
-    signal match {
-      case Signal.Success => (onDone.onSuccess _).expects().returns(stage)
-      case Signal.Complete => (onDone.onComplete _).expects().returns(stage)
-      case Signal.Error(_, _) => (onDone.onError _).expects().returns(stage)
+    status match {
+      case Status.Success => (onDone.onSuccess _).expects().returns(stage)
+      case Status.Complete => (onDone.onComplete _).expects().returns(stage)
+      case Status.Error(_, _) => (onDone.onError _).expects().returns(stage)
     }
     (onDone, stage)
   }

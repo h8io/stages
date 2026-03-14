@@ -1,10 +1,10 @@
 package h8io.stages.base
 
-import h8io.stages.{Signal, Yield}
+import h8io.stages.{Status, Yield}
 
-trait Projection[-I, O] extends StageWithOnDone[I, O, Nothing] {
-  protected def some(out: O): Yield.Some[I, O, Nothing] = Yield.Some(out, Signal.Success, this)
-  protected val none: Yield.None[I, O, Nothing] = Yield.None(Signal.Success, this)
+trait Projection[-I, O] extends StageWithEvolution[I, O, Nothing] {
+  protected def some(out: O): Yield.Some[I, O, Nothing] = Yield.Some(out, Status.Success, this)
+  protected val none: Yield.None[I, O, Nothing] = Yield.None(Status.Success, this)
 }
 
 trait LeftProjection[C[+_, +_]] extends Projection[C[Any, ?], Any] {

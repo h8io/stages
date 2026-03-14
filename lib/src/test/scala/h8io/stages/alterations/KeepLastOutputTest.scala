@@ -24,41 +24,41 @@ class KeepLastOutputTest
   }
 
   "None" should "stay None if alterand returns Yield.None" in
-    forAll { (in: UUID, signal: Signal[Exception]) =>
+    forAll { (in: UUID, status: Status[Exception]) =>
       val stage = mock[Stage[UUID, Instant, Exception]]
       val onDone = mock[OnDone[UUID, Instant, Exception]]
-      (stage.apply _).expects(in).returns(Yield.None(signal, onDone))
-      inside(KeepLastOutput.None(stage)(in)) { case Yield.None(`signal`, kloOnDone) =>
+      (stage.apply _).expects(in).returns(Yield.None(status, onDone))
+      inside(KeepLastOutput.None(stage)(in)) { case Yield.None(`status`, kloOnDone) =>
         testWrappedOnDone(kloOnDone, onDone, KeepLastOutput.None[UUID, Instant, Exception])
       }
     }
 
   it should "become Some if alterand returns Yield.Some" in
-    forAll { (in: Long, out: String, signal: Signal[Exception]) =>
+    forAll { (in: Long, out: String, status: Status[Exception]) =>
       val stage = mock[Stage[Long, String, Exception]]
       val onDone = mock[OnDone[Long, String, Exception]]
-      (stage.apply _).expects(in).returns(Yield.Some(out, signal, onDone))
-      inside(KeepLastOutput.None(stage)(in)) { case Yield.Some(`out`, `signal`, kloOnDone) =>
+      (stage.apply _).expects(in).returns(Yield.Some(out, status, onDone))
+      inside(KeepLastOutput.None(stage)(in)) { case Yield.Some(`out`, `status`, kloOnDone) =>
         testWrappedOnDone(kloOnDone, onDone, KeepLastOutput.Some[Long, String, Exception](out, _))
       }
     }
 
   "Some" should "keep the old output if alterand returns Yield.None" in
-    forAll { (in: ZonedDateTime, out: ZoneId, signal: Signal[Exception]) =>
+    forAll { (in: ZonedDateTime, out: ZoneId, status: Status[Exception]) =>
       val stage = mock[Stage[ZonedDateTime, ZoneId, Exception]]
       val onDone = mock[OnDone[ZonedDateTime, ZoneId, Exception]]
-      (stage.apply _).expects(in).returns(Yield.None(signal, onDone))
-      inside(KeepLastOutput.Some(out, stage)(in)) { case Yield.Some(`out`, `signal`, kloOnDone) =>
+      (stage.apply _).expects(in).returns(Yield.None(status, onDone))
+      inside(KeepLastOutput.Some(out, stage)(in)) { case Yield.Some(`out`, `status`, kloOnDone) =>
         testWrappedOnDone(kloOnDone, onDone, KeepLastOutput.Some[ZonedDateTime, ZoneId, Exception](out, _))
       }
     }
 
   it should "memoize the new output if alterand returns Yield.Some" in
-    forAll { (in: Array[Int], out: BigInt, newOut: BigInt, signal: Signal[Exception]) =>
+    forAll { (in: Array[Int], out: BigInt, newOut: BigInt, status: Status[Exception]) =>
       val stage = mock[Stage[Array[Int], BigInt, Exception]]
       val onDone = mock[OnDone[Array[Int], BigInt, Exception]]
-      (stage.apply _).expects(in).returns(Yield.Some(newOut, signal, onDone))
-      inside(KeepLastOutput.Some(out, stage)(in)) { case Yield.Some(`newOut`, `signal`, kloOnDone) =>
+      (stage.apply _).expects(in).returns(Yield.Some(newOut, status, onDone))
+      inside(KeepLastOutput.Some(out, stage)(in)) { case Yield.Some(`newOut`, `status`, kloOnDone) =>
         testWrappedOnDone(kloOnDone, onDone, KeepLastOutput.Some[Array[Int], BigInt, Exception](newOut, _))
       }
     }

@@ -1,17 +1,17 @@
 package h8io.stages.std
 
 import h8io.stages.*
-import h8io.stages.base.{Fruitful, StageWithOnDone}
+import h8io.stages.base.{Fruitful, StageWithEvolution}
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 
 final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
-    extends Fruitful.Endo[T, Nothing] with StageWithOnDone.Endo[T, Nothing] {
+    extends Fruitful.Endo[T, Nothing] with StageWithEvolution.Endo[T, Nothing] {
   private val ts: Long = now()
 
   override def apply(in: T): Yield.Some[T, T, Nothing] =
-    Yield.Some(in, if (now() - ts < duration) Signal.Success else Signal.Complete, this)
+    Yield.Some(in, if (now() - ts < duration) Status.Success else Status.Complete, this)
 }
 
 object GlobalSoftDeadline {

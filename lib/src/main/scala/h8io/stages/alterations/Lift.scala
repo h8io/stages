@@ -7,7 +7,7 @@ final case class Lift[I, O, E](alterand: Stage[I, O, E])
     extends BaseAlterator[Stage[I, O, E], I, scala.Option[O], E] with Fruitful[I, scala.Option[O], E] {
   override def apply(in: I): Yield.Some[I, scala.Option[O], E] =
     alterand(in) match {
-      case Yield.Some(out, signal, onDone) => Yield.Some(Some(out), signal, onDone.map(Lift(_)))
-      case Yield.None(signal, onDone) => Yield.Some(None, signal, onDone.map(Lift(_)))
+      case Yield.Some(out, status, onDone) => Yield.Some(Some(out), status, onDone.map(Lift(_)))
+      case Yield.None(status, onDone) => Yield.Some(None, status, onDone.map(Lift(_)))
     }
 }

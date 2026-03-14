@@ -1,6 +1,6 @@
 package h8io.stages.examples
 
-import h8io.stages.{Signal, Yield}
+import h8io.stages.{Status, Yield}
 import org.scalacheck.Gen
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -11,12 +11,12 @@ import scala.concurrent.duration.DurationInt
 
 class LeibnizTest extends AnyFlatSpec with Matchers with Inside with ScalaCheckPropertyChecks {
   "Leibniz series" should "be calculated for stage1" in
-    inside(Leibniz.stage1(300.milliseconds)(())) { case Yield.Some(pi, Signal.Success, _) =>
+    inside(Leibniz.stage1(300.milliseconds)(())) { case Yield.Some(pi, Status.Success, _) =>
       pi shouldEqual (math.Pi +- 0.01)
     }
 
   it should "be calculated for stage2" in
-    inside(Leibniz.stage2(300.milliseconds)(())) { case Yield.Some(pi, Signal.Success, _) =>
+    inside(Leibniz.stage2(300.milliseconds)(())) { case Yield.Some(pi, Status.Success, _) =>
       pi shouldEqual (math.Pi +- 0.01)
     }
 

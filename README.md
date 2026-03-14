@@ -3,7 +3,7 @@
 # Stages DSL
 
 Stages is a small functional DSL for building composable processing pipelines.
-Each processing step is a `Stage` that produces a `Yield` with a `Signal` and a continuation
+Each processing step is a `Stage` that produces a `Yield` with a `Status` and a continuation
 (`OnDone`) that describes how the pipeline should evolve on success, completion, or error.
 The evolution model keeps the pipeline explicit and restartable, and makes it easy to
 decorate with behaviors like loops, retries, deadlines, and branching.
@@ -26,9 +26,9 @@ libraryDependencies ++= Seq(
   It is also a function `I => Yield[I, O, E]`. A stage may be stateless, but can also hold
   resources (files, sockets) and evolve into a new stage via `OnDone`. It also provides
   `dispose` for final cleanup when the pipeline is fully finished.
-- `Yield`: the result of a step. `Yield.Some(out, signal, onDone)` returns output, while
-  `Yield.None(signal, onDone)` does not. Both carry a `Signal` and the next `OnDone`.
-- `Signal`: a control signal for the pipeline.
+- `Yield`: the result of a step. `Yield.Some(out, status, onDone)` returns output, while
+  `Yield.None(status, onDone)` does not. Both carry a `Status` and the next `OnDone`.
+- `Status`: a control status for the pipeline.
   - `Success` means continue normally.
   - `Complete` stops the pipeline (a soft break).
   - `Error` accumulates one or more errors and switches to the error branch.
@@ -40,11 +40,11 @@ libraryDependencies ++= Seq(
 ## Glossary
 
 - `Yield`: a step-level result that still carries the continuation (`OnDone`).
-- `Outcome`: a finalized result with a `Signal` and a `dispose` thunk, without a continuation.
+- `Outcome`: a finalized result with a `Status` and a `dispose` thunk, without a continuation.
   The `dispose` thunk is the final cleanup hook of the stage that produced the outcome.
-- `Signal.Success`: normal continuation signal.
-- `Signal.Complete`: a soft stop (break) for the pipeline.
-- `Signal.Error`: an error signal that can accumulate multiple errors.
+- `Status.Success`: normal continuation status.
+- `Status.Complete`: a soft stop (break) for the pipeline.
+- `Status.Error`: an error status that can accumulate multiple errors.
 - `OnDone`: the evolution/continuation of a stage and the holder of cleanup logic between
   stage evolutions.
 - `dispose`: a `Stage` method used for final cleanup when the pipeline is fully finished and
@@ -56,7 +56,7 @@ libraryDependencies ++= Seq(
 ## Modules
 
 - `core`: the minimal model and operators:
-  `Stage`, `Yield`, `Signal`, `OnDone`, `Outcome`, and alteration composition.
+  `Stage`, `Yield`, `Status`, `OnDone`, `Outcome`, and alteration composition.
   Files: `core/src/main/scala/h8io/stages/...`.
 - `lib`: standard library with concrete stages, decorations, projections, and binary ops.
   Files: `lib/src/main/scala/h8io/stages/...`.
