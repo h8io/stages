@@ -2,7 +2,7 @@ package h8io.stages.base
 
 import h8io.stages.{Status, Yield}
 
-trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with StageWithEvolution[I, O, Nothing] {
+trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with BaseEvolution[I, O, Nothing] {
   def f(in: I): O
 
   override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this)

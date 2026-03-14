@@ -4,7 +4,7 @@ import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
 import h8io.stages.*
-import h8io.stages.base.StageWithEvolution
+import h8io.stages.base.BaseEvolution
 import h8io.stages.std.Identity
 import org.scalacheck.{Arbitrary, Prop, Shrink, Test}
 import org.scalatest.funsuite.AnyFunSuite
@@ -28,7 +28,7 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
         prefix <- Arbitrary.arbitrary[T]
         suffix <- Arbitrary.arbitrary[T]
         status <- Arbitrary.arbitrary[Status[E]]
-      } yield new StageWithEvolution.Endo[T, E] {
+      } yield new Stage.Endo[T, E] with BaseEvolution.Endo[T, E] {
         def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, status, this)
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
