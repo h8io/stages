@@ -2,11 +2,11 @@ package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages
-import h8io.stages.base.{BinaryOp, LeftProjection, RightProjection}
+import h8io.stages.base.{BaseBinOp, LeftProjection, RightProjection}
 import h8io.stages.{Stage, Yield}
 
 final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BinaryOp[I, LO, RO, Ior[LO, RO], E] {
+    extends BaseBinOp[I, LO, RO, Ior[LO, RO], E] {
   override def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
