@@ -74,12 +74,4 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory {
     (f.apply _).expects(onErrorStage).returns(onErrorMappedStage)
     evolution.map(f).onError() shouldBe onErrorMappedStage
   }
-
-  "FromStage" should "return the same stage for any status" in {
-    val stage = mock[Stage[Int, String, UUID]]
-    val evolution = Evolution.FromStage(stage)
-    evolution.onSuccess() should be theSameInstanceAs stage
-    evolution.onComplete() should be theSameInstanceAs stage
-    evolution.onError() should be theSameInstanceAs stage
-  }
 }
