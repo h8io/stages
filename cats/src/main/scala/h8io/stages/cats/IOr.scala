@@ -9,20 +9,22 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
     extends BinaryOp[I, LO, RO, Ior[LO, RO], E] {
   override def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
-      case (Yield.Some(leftOut, leftStatus, leftOnDone), Yield.Some(rightOut, rightStatus, rightOnDone)) =>
-        Yield.Some(Ior.Both(leftOut, rightOut), leftStatus ++ rightStatus, IOr.OnDone(leftOnDone, rightOnDone))
-      case (Yield.Some(leftOut, leftStatus, leftOnDone), Yield.None(rightStatus, rightOnDone)) =>
-        Yield.Some(Ior.Left(leftOut), leftStatus ++ rightStatus, IOr.OnDone(leftOnDone, rightOnDone))
-      case (Yield.None(leftStatus, leftOnDone), Yield.Some(rightOut, rightStatus, rightOnDone)) =>
-        Yield.Some(Ior.Right(rightOut), leftStatus ++ rightStatus, IOr.OnDone(leftOnDone, rightOnDone))
-      case (Yield.None(leftStatus, leftOnDone), Yield.None(rightStatus, rightOnDone)) =>
-        Yield.None(leftStatus ++ rightStatus, IOr.OnDone(leftOnDone, rightOnDone))
+      case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
+        Yield.Some(Ior.Both(leftOut, rightOut), leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
+      case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.None(rightStatus, rightEvolution)) =>
+        Yield.Some(Ior.Left(leftOut), leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
+      case (Yield.None(leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
+        Yield.Some(Ior.Right(rightOut), leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
+      case (Yield.None(leftStatus, leftEvolution), Yield.None(rightStatus, rightEvolution)) =>
+        Yield.None(leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
     }
 }
 
 object IOr {
-  private final case class OnDone[-I, +LO, +RO, +E](left: stages.OnDone[I, LO, E], right: stages.OnDone[I, RO, E])
-      extends stages.OnDone[I, Ior[LO, RO], E] {
+  private final case class Evolution[-I, +LO, +RO, +E](
+      left: stages.Evolution[I, LO, E],
+      right: stages.Evolution[I, RO, E])
+      extends stages.Evolution[I, Ior[LO, RO], E] {
     override def onSuccess(): Stage[I, Ior[LO, RO], E] = IOr(left.onSuccess(), right.onSuccess())
     override def onComplete(): Stage[I, Ior[LO, RO], E] = IOr(left.onComplete(), right.onComplete())
     override def onError(): Stage[I, Ior[LO, RO], E] = IOr(left.onError(), right.onError())

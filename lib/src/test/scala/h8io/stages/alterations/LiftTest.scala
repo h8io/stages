@@ -1,6 +1,6 @@
 package h8io.stages.alterations
 
-import h8io.stages.{OnDone, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Yield}
+import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -19,24 +19,24 @@ class LiftTest
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
   "Lift" should "transform output of Yield.Some to Some" in
-    forAll { (in: Int, yieldSupplier: OnDoneToYieldSome[Int, String, UUID]) =>
+    forAll { (in: Int, yieldSupplier: EvolutionToYieldSome[Int, String, UUID]) =>
       val stage = mock[Stage[Int, String, UUID]]
-      val onDone = mock[OnDone[Int, String, UUID]]
-      val yld = yieldSupplier(onDone)
+      val evolution = mock[Evolution[Int, String, UUID]]
+      val yld = yieldSupplier(evolution)
       (stage.apply _).expects(in).returns(yld)
-      inside(Lift(stage)(in)) { case Yield.Some(Some(yld.out), yld.`status`, wrappedOnDone) =>
-        testWrappedOnDone(wrappedOnDone, onDone, Lift[Int, String, UUID])
+      inside(Lift(stage)(in)) { case Yield.Some(Some(yld.out), yld.`status`, wrappedEvolution) =>
+        testWrappedEvolution(wrappedEvolution, evolution, Lift[Int, String, UUID])
       }
     }
 
   it should "transform Yield.None to Yield.Some" in
-    forAll { (in: Long, yieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
+    forAll { (in: Long, yieldSupplier: EvolutionToYieldNone[Long, Instant, String]) =>
       val stage = mock[Stage[Long, Instant, String]]
-      val onDone = mock[OnDone[Long, Instant, String]]
-      val yld = yieldSupplier(onDone)
+      val evolution = mock[Evolution[Long, Instant, String]]
+      val yld = yieldSupplier(evolution)
       (stage.apply _).expects(in).returns(yld)
-      inside(Lift(stage)(in)) { case Yield.Some(None, yld.`status`, wrappedOnDone) =>
-        testWrappedOnDone(wrappedOnDone, onDone, Lift[Long, Instant, String])
+      inside(Lift(stage)(in)) { case Yield.Some(None, yld.`status`, wrappedEvolution) =>
+        testWrappedEvolution(wrappedEvolution, evolution, Lift[Long, Instant, String])
       }
     }
 }

@@ -7,8 +7,8 @@ object KeepLastOutput {
   private[alterations] final case class None[-I, +O, +E](alterand: Stage[I, O, E]) extends BaseDecorator[I, O, E] {
     override def apply(in: I): Yield[I, O, E] =
       alterand(in) match {
-        case Yield.Some(out, status, onDone) => Yield.Some(out, status, onDone.map(Some(out, _)))
-        case Yield.None(status, onDone) => Yield.None(status, onDone.map(None(_)))
+        case Yield.Some(out, status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
+        case Yield.None(status, evolution) => Yield.None(status, evolution.map(None(_)))
       }
   }
 
@@ -16,8 +16,8 @@ object KeepLastOutput {
       extends BaseDecorator[I, O, E] with Fruitful[I, O, E] {
     override def apply(in: I): Yield.Some[I, O, E] =
       alterand(in) match {
-        case Yield.Some(out, status, onDone) => Yield.Some(out, status, onDone.map(Some(out, _)))
-        case Yield.None(status, onDone) => Yield.Some(out, status, onDone.map(Some(out, _)))
+        case Yield.Some(out, status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
+        case Yield.None(status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
       }
   }
 

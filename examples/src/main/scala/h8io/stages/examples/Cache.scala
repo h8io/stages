@@ -7,17 +7,17 @@ final case class Cache[-I, +O, +E](alterand: Stage[I, O, E])
     extends BaseDecorator[I, O, E] with StageWithEvolution[I, O, E] {
   override def apply(in: I): Yield[I, O, E] =
     alterand(in) match {
-      case Yield.Some(out, Status.Success, onDone) =>
+      case Yield.Some(out, Status.Success, evolution) =>
         Yield.Some(
           out,
           Status.Success,
-          new OnDone[I, O, E] {
-            override def onSuccess(): Stage[I, O, E] = Cache.Cached(out, onDone.onSuccess())
-            override def onComplete(): Stage[I, O, E] = Cache(onDone.onComplete())
-            override def onError(): Stage[I, O, E] = Cache(onDone.onError())
+          new Evolution[I, O, E] {
+            override def onSuccess(): Stage[I, O, E] = Cache.Cached(out, evolution.onSuccess())
+            override def onComplete(): Stage[I, O, E] = Cache(evolution.onComplete())
+            override def onError(): Stage[I, O, E] = Cache(evolution.onError())
           }
         )
-      case yld => yld.mapOnDone(_.map(Cache(_)))
+      case yld => yld.mapEvolution(_.map(Cache(_)))
     }
 }
 

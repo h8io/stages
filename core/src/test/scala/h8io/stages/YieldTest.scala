@@ -18,155 +18,158 @@ class YieldTest
     with StagesCoreTestUtil {
   "compose method" should "compose Some and Some correctly" in
     forAll {
-      (previousYieldSupplier: OnDoneToYieldSome[Long, Instant, String],
-          nextYieldSupplier: OnDoneToYieldSome[Instant, String, String]) =>
-        val previousOnDone = mock[OnDone[Long, Instant, String]]
-        val previousYield = previousYieldSupplier(previousOnDone)
-        val nextOnDone = mock[OnDone[Instant, String, String]]
-        val nextYield = nextYieldSupplier(nextOnDone)
+      (previousYieldSupplier: EvolutionToYieldSome[Long, Instant, String],
+          nextYieldSupplier: EvolutionToYieldSome[Instant, String, String]) =>
+        val previousEvolution = mock[Evolution[Long, Instant, String]]
+        val previousYield = previousYieldSupplier(previousEvolution)
+        val nextEvolution = mock[Evolution[Instant, String, String]]
+        val nextYield = nextYieldSupplier(nextEvolution)
         inside(previousYield.compose(nextYield)) {
-          case Yield.Some(nextYield.out, status, onDone) =>
+          case Yield.Some(nextYield.out, status, evolution) =>
             status shouldBe previousYield.status ++ nextYield.status
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
 
             inSequence {
-              (nextOnDone.onSuccess _).expects().returns(nextStage)
-              (previousOnDone.onSuccess _).expects().returns(previousStage)
+              (nextEvolution.onSuccess _).expects().returns(nextStage)
+              (previousEvolution.onSuccess _).expects().returns(previousStage)
             }
-            onDone.onSuccess() shouldBe stage
+            evolution.onSuccess() shouldBe stage
 
             inSequence {
-              (nextOnDone.onComplete _).expects().returns(nextStage)
-              (previousOnDone.onComplete _).expects().returns(previousStage)
+              (nextEvolution.onComplete _).expects().returns(nextStage)
+              (previousEvolution.onComplete _).expects().returns(previousStage)
             }
-            onDone.onComplete() shouldBe stage
+            evolution.onComplete() shouldBe stage
 
             inSequence {
-              (nextOnDone.onError _).expects().returns(nextStage)
-              (previousOnDone.onError _).expects().returns(previousStage)
+              (nextEvolution.onError _).expects().returns(nextStage)
+              (previousEvolution.onError _).expects().returns(previousStage)
             }
-            onDone.onError() shouldBe stage
+            evolution.onError() shouldBe stage
         }
     }
 
   it should "compose Some and None correctly" in
     forAll {
-      (previousYieldSupplier: OnDoneToYieldSome[Long, Instant, String],
-          nextYieldSupplier: OnDoneToYieldNone[Instant, String, String]) =>
-        val previousOnDone = mock[OnDone[Long, Instant, String]]
-        val previousYield = previousYieldSupplier(previousOnDone)
-        val nextOnDone = mock[OnDone[Instant, String, String]]
-        val nextYield = nextYieldSupplier(nextOnDone)
+      (previousYieldSupplier: EvolutionToYieldSome[Long, Instant, String],
+          nextYieldSupplier: EvolutionToYieldNone[Instant, String, String]) =>
+        val previousEvolution = mock[Evolution[Long, Instant, String]]
+        val previousYield = previousYieldSupplier(previousEvolution)
+        val nextEvolution = mock[Evolution[Instant, String, String]]
+        val nextYield = nextYieldSupplier(nextEvolution)
         inside(previousYield.compose(nextYield)) {
-          case Yield.None(status, onDone) =>
+          case Yield.None(status, evolution) =>
             status shouldBe previousYield.status ++ nextYield.status
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
 
             inSequence {
-              (nextOnDone.onSuccess _).expects().returns(nextStage)
-              (previousOnDone.onSuccess _).expects().returns(previousStage)
+              (nextEvolution.onSuccess _).expects().returns(nextStage)
+              (previousEvolution.onSuccess _).expects().returns(previousStage)
             }
-            onDone.onSuccess() shouldBe stage
+            evolution.onSuccess() shouldBe stage
 
             inSequence {
-              (nextOnDone.onComplete _).expects().returns(nextStage)
-              (previousOnDone.onComplete _).expects().returns(previousStage)
+              (nextEvolution.onComplete _).expects().returns(nextStage)
+              (previousEvolution.onComplete _).expects().returns(previousStage)
             }
-            onDone.onComplete() shouldBe stage
+            evolution.onComplete() shouldBe stage
 
             inSequence {
-              (nextOnDone.onError _).expects().returns(nextStage)
-              (previousOnDone.onError _).expects().returns(previousStage)
+              (nextEvolution.onError _).expects().returns(nextStage)
+              (previousEvolution.onError _).expects().returns(previousStage)
             }
-            onDone.onError() shouldBe stage
+            evolution.onError() shouldBe stage
         }
     }
 
   it should "compose None and Stage correctly" in
-    forAll { (previousYieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
-      val previousOnDone = mock[OnDone[Long, Instant, String]]("previous onDone")
+    forAll { (previousYieldSupplier: EvolutionToYieldNone[Long, Instant, String]) =>
+      val previousEvolution = mock[Evolution[Long, Instant, String]]("previous evolution")
       val nextStage = mock[Stage[Instant, String, String]]("next stage")
-      val previousYield = previousYieldSupplier(previousOnDone)
+      val previousYield = previousYieldSupplier(previousEvolution)
       inside(previousYield.compose(nextStage)) {
-        case Yield.None(previousYield.`status`, onDone) =>
+        case Yield.None(previousYield.`status`, evolution) =>
           val onSuccessStage = mock[Stage[Long, Instant, String]]("onSuccess stage")
-          (previousOnDone.onSuccess _).expects().returns(onSuccessStage)
-          onDone.onSuccess() shouldBe onSuccessStage ~> nextStage
+          (previousEvolution.onSuccess _).expects().returns(onSuccessStage)
+          evolution.onSuccess() shouldBe onSuccessStage ~> nextStage
 
           val onCompleteStage = mock[Stage[Long, Instant, String]]("onComplete stage")
-          (previousOnDone.onComplete _).expects().returns(onCompleteStage)
-          onDone.onComplete() shouldBe onCompleteStage ~> nextStage
+          (previousEvolution.onComplete _).expects().returns(onCompleteStage)
+          evolution.onComplete() shouldBe onCompleteStage ~> nextStage
 
           val onErrorStage = mock[Stage[Long, Instant, String]]("onError stage")
-          (previousOnDone.onError _).expects().returns(onErrorStage)
-          onDone.onError() shouldBe onErrorStage ~> nextStage
+          (previousEvolution.onError _).expects().returns(onErrorStage)
+          evolution.onError() shouldBe onErrorStage ~> nextStage
       }
     }
 
-  "mapOnDone" should "transform Some content (status and onDone)" in
+  "mapEvolution" should "transform Some content (status and evolution)" in
     forAll { (out: LocalDateTime, initialStatus: Status[Long], mappedStatus: Status[Exception]) =>
-      val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[String, LocalDateTime, Exception]]("mapped OnDone")
-      val mapOnDone =
-        mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Exception]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.Some(out, initialStatus, initialOnDone).mapOnDone(mappedStatus, mapOnDone) shouldBe
-        Yield.Some(out, mappedStatus, mappedOnDone)
+      val initialEvolution = mock[Evolution[Long, LocalDateTime, Long]]("initial Evolution")
+      val mappedEvolution = mock[Evolution[String, LocalDateTime, Exception]]("mapped Evolution")
+      val mapEvolution =
+        mock[Evolution[Long, LocalDateTime, Long] => Evolution[String, LocalDateTime, Exception]]("mapEvolution")
+      (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+      Yield.Some(out, initialStatus, initialEvolution).mapEvolution(mappedStatus, mapEvolution) shouldBe
+        Yield.Some(out, mappedStatus, mappedEvolution)
     }
 
-  it should "transform Some content (onDone)" in
+  it should "transform Some content (evolution)" in
     forAll { (out: LocalDateTime, status: Status[Long]) =>
-      val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[String, LocalDateTime, Long]]("mapped OnDone")
-      val mapOnDone =
-        mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Long]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.Some(out, status, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.Some(out, status, mappedOnDone)
+      val initialEvolution = mock[Evolution[Long, LocalDateTime, Long]]("initial Evolution")
+      val mappedEvolution = mock[Evolution[String, LocalDateTime, Long]]("mapped Evolution")
+      val mapEvolution =
+        mock[Evolution[Long, LocalDateTime, Long] => Evolution[String, LocalDateTime, Long]]("mapEvolution")
+      (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+      Yield.Some(out, status, initialEvolution).mapEvolution(mapEvolution) shouldBe
+        Yield.Some(out, status, mappedEvolution)
     }
 
-  it should "transform None content (status and onDone)" in
+  it should "transform None content (status and evolution)" in
     forAll { (initialStatus: Status[Exception], mappedStatus: Status[String]) =>
-      val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Exception]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, String]]("mapped OnDone")
-      val mapOnDone =
-        mock[OnDone[ZonedDateTime, OffsetDateTime, Exception] => OnDone[Duration, OffsetDateTime, String]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(initialStatus, initialOnDone).mapOnDone(mappedStatus, mapOnDone) shouldBe
-        Yield.None(mappedStatus, mappedOnDone)
+      val initialEvolution = mock[Evolution[ZonedDateTime, OffsetDateTime, Exception]]("initial Evolution")
+      val mappedEvolution = mock[Evolution[Duration, OffsetDateTime, String]]("mapped Evolution")
+      val mapEvolution =
+        mock[Evolution[ZonedDateTime, OffsetDateTime, Exception] => Evolution[Duration, OffsetDateTime, String]](
+          "mapEvolution")
+      (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+      Yield.None(initialStatus, initialEvolution).mapEvolution(mappedStatus, mapEvolution) shouldBe
+        Yield.None(mappedStatus, mappedEvolution)
     }
 
-  it should "transform None content (onDone)" in
+  it should "transform None content (evolution)" in
     forAll { (status: Status[Int]) =>
-      val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Int]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, Int]]("mapped OnDone")
-      val mapOnDone =
-        mock[OnDone[ZonedDateTime, OffsetDateTime, Int] => OnDone[Duration, OffsetDateTime, Int]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(status, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.None(status, mappedOnDone)
+      val initialEvolution = mock[Evolution[ZonedDateTime, OffsetDateTime, Int]]("initial Evolution")
+      val mappedEvolution = mock[Evolution[Duration, OffsetDateTime, Int]]("mapped Evolution")
+      val mapEvolution =
+        mock[Evolution[ZonedDateTime, OffsetDateTime, Int] => Evolution[Duration, OffsetDateTime, Int]]("mapEvolution")
+      (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+      Yield.None(status, initialEvolution).mapEvolution(mapEvolution) shouldBe Yield.None(status, mappedEvolution)
     }
 
-  "mapOnDoneAndBreak" should "transform Some content" in
+  "mapEvolutionAndBreak" should "transform Some content" in
     forAll { (out: LocalDateTime, status: Status[Long]) =>
-      val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[String, LocalDateTime, Long]]("mapped OnDone")
-      val mapOnDone =
-        mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Long]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.Some(out, status, initialOnDone).mapOnDoneAndBreak(mapOnDone) shouldBe
-        Yield.Some(out, status.break, mappedOnDone)
+      val initialEvolution = mock[Evolution[Long, LocalDateTime, Long]]("initial Evolution")
+      val mappedEvolution = mock[Evolution[String, LocalDateTime, Long]]("mapped Evolution")
+      val mapEvolution =
+        mock[Evolution[Long, LocalDateTime, Long] => Evolution[String, LocalDateTime, Long]]("mapEvolution")
+      (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+      Yield.Some(out, status, initialEvolution).mapEvolutionAndBreak(mapEvolution) shouldBe
+        Yield.Some(out, status.break, mappedEvolution)
     }
 
   it should "transform None content" in
     forAll { (status: Status[Int]) =>
-      val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Int]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, Int]]("mapped OnDone")
-      val mapOnDone =
-        mock[OnDone[ZonedDateTime, OffsetDateTime, Int] => OnDone[Duration, OffsetDateTime, Int]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(status, initialOnDone).mapOnDoneAndBreak(mapOnDone) shouldBe Yield.None(status.break, mappedOnDone)
+      val initialEvolution = mock[Evolution[ZonedDateTime, OffsetDateTime, Int]]("initial Evolution")
+      val mappedEvolution = mock[Evolution[Duration, OffsetDateTime, Int]]("mapped Evolution")
+      val mapEvolution =
+        mock[Evolution[ZonedDateTime, OffsetDateTime, Int] => Evolution[Duration, OffsetDateTime, Int]]("mapEvolution")
+      (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+      Yield.None(status, initialEvolution).mapEvolutionAndBreak(mapEvolution) shouldBe
+        Yield.None(status.break, mappedEvolution)
     }
 }

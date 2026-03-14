@@ -4,8 +4,8 @@ import h8io.stages.Yield
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class StageWithOnDoneTest extends AnyFlatSpec with Matchers {
-  "OnDoneForStage" should "return self for any status" in {
+class StageWithEvolutionTest extends AnyFlatSpec with Matchers {
+  "EvolutionForStage" should "return self for any status" in {
     val stage = new StageWithEvolution[Int, String, Nothing] {
       def apply(in: Int): Yield[Int, String, Nothing] = fail("apply should not be called")
     }

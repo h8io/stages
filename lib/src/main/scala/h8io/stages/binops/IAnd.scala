@@ -2,21 +2,23 @@ package h8io.stages.binops
 
 import h8io.stages
 import h8io.stages.base.BinaryOp
-import stages.{Stage, Yield}
+import h8io.stages.{Stage, Yield}
 
 final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
     extends BinaryOp[I, LO, RO, (LO, RO), E] {
   override def apply(in: I): Yield[I, (LO, RO), E] =
     (left(in), right(in)) match {
-      case (Yield.Some(leftOut, leftStatus, leftOnDone), Yield.Some(rightOut, rightStatus, rightOnDone)) =>
-        Yield.Some((leftOut, rightOut), leftStatus ++ rightStatus, IAnd.OnDone(leftOnDone, rightOnDone))
-      case (left, right) => Yield.None(left.status ++ right.status, IAnd.OnDone(left.onDone, right.onDone))
+      case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
+        Yield.Some((leftOut, rightOut), leftStatus ++ rightStatus, IAnd.Evolution(leftEvolution, rightEvolution))
+      case (left, right) => Yield.None(left.status ++ right.status, IAnd.Evolution(left.evolution, right.evolution))
     }
 }
 
 object IAnd {
-  private final case class OnDone[-I, +LO, +RO, +E](left: stages.OnDone[I, LO, E], right: stages.OnDone[I, RO, E])
-      extends stages.OnDone[I, (LO, RO), E] {
+  private final case class Evolution[-I, +LO, +RO, +E](
+      left: stages.Evolution[I, LO, E],
+      right: stages.Evolution[I, RO, E])
+      extends stages.Evolution[I, (LO, RO), E] {
     override def onSuccess(): Stage[I, (LO, RO), E] = IAnd(left.onSuccess(), right.onSuccess())
     override def onComplete(): Stage[I, (LO, RO), E] = IAnd(left.onComplete(), right.onComplete())
     override def onError(): Stage[I, (LO, RO), E] = IAnd(left.onError(), right.onError())

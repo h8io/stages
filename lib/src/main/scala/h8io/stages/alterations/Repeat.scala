@@ -11,10 +11,10 @@ final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E])
     @tailrec def repeat(stage: Stage[I, O, E]): Yield[I, O, E] = {
       val yld = stage(in)
       yld.status match {
-        case Status.Success => repeat(yld.onDone.onSuccess())
+        case Status.Success => repeat(yld.evolution.onSuccess())
         case Status.Complete =>
-          yld.mapOnDone(Status.Success, onDone => Repeat(onDone.onComplete()))
-        case error: Status.Error[E] => yld.mapOnDone(error, onDone => Repeat(onDone.onError()))
+          yld.mapEvolution(Status.Success, evolution => Repeat(evolution.onComplete()))
+        case error: Status.Error[E] => yld.mapEvolution(error, evolution => Repeat(evolution.onError()))
       }
     }
     repeat(alterand)

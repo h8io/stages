@@ -46,13 +46,13 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
     loop(stage :: Nil, Nil)
   }
 
-  private def toTuple[T, E](onDone: OnDone[T, T, E]): (List[Stage.Any], List[Stage.Any], List[Stage.Any]) =
-    (toList(onDone.onSuccess()), toList(onDone.onError()), toList(onDone.onComplete()))
+  private def toTuple[T, E](evolution: Evolution[T, T, E]): (List[Stage.Any], List[Stage.Any], List[Stage.Any]) =
+    (toList(evolution.onSuccess()), toList(evolution.onError()), toList(evolution.onComplete()))
 
   private def toTuple[T, E](yld: Yield[T, T, E]): Product =
     yld match {
-      case Yield.Some(out, status, onDone) => (out, status, toTuple(onDone))
-      case Yield.None(status, onDone) => (status, toTuple(onDone))
+      case Yield.Some(out, status, evolution) => (out, status, toTuple(evolution))
+      case Yield.None(status, evolution) => (status, toTuple(evolution))
     }
 
   private implicit def stageEq[T: Arbitrary: Shrink, E]: Eq[Stage.Endo[T, E]] =

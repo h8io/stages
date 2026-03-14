@@ -6,6 +6,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class BreakTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
-  "Break" should "return Yield.Some with input, Complete status and idempotent onDone" in
+  "Break" should "return Yield.Some with input, Complete status and idempotent evolution" in
     forAll((in: Long) => Break[Long](in) shouldBe Yield.Some(in, Status.Complete, Break))
 }
