@@ -28,11 +28,3 @@ trait Evolution[-I, +O, +E] {
       override def onError(): Stage[_I, _O, _E] = f(self.onError())
     }
 }
-
-object Evolution {
-  final case class FromStage[I, O, E](stage: Stage[I, O, E]) extends Evolution[I, O, E] {
-    override def onSuccess(): Stage[I, O, E] = stage
-    override def onComplete(): Stage[I, O, E] = stage
-    override def onError(): Stage[I, O, E] = stage
-  }
-}
