@@ -29,7 +29,7 @@ class IOrTest
         val leftStage = mock[Stage[Long, Duration, Exception]]("left stage")
         val rightStage = mock[Stage[Long, Instant, Exception]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[Long, Duration, Exception]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[Long, Instant, Exception]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[Long, Instant, Exception]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
@@ -49,7 +49,7 @@ class IOrTest
         val leftStage = mock[Stage[UUID, Long, String]]("left stage")
         val rightStage = mock[Stage[UUID, ZoneId, String]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[UUID, Long, String]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[UUID, ZoneId, String]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[UUID, ZoneId, String]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
@@ -71,7 +71,7 @@ class IOrTest
         val leftStage = mock[Stage[String, LocalDateTime, UUID]]("left stage")
         val rightStage = mock[Stage[String, ZonedDateTime, UUID]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[String, LocalDateTime, UUID]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[String, ZonedDateTime, UUID]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[String, ZonedDateTime, UUID]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
@@ -93,7 +93,7 @@ class IOrTest
         val leftStage = mock[Stage[ZoneOffset, OffsetDateTime, Short]]("left stage")
         val rightStage = mock[Stage[ZoneOffset, LocalDate, Short]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[ZoneOffset, OffsetDateTime, Short]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[ZoneOffset, LocalDate, Short]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[ZoneOffset, LocalDate, Short]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
