@@ -5,7 +5,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class BinOpTest extends AnyFlatSpec with Matchers with MockFactory {
+class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   "BinaryOp's dispose" should "call right stage's dispose and then left stage's dispose" in {
     val leftStage = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val rightStage = mock[Stage[Any, Nothing, Nothing]]("right stage")
@@ -13,7 +13,7 @@ class BinOpTest extends AnyFlatSpec with Matchers with MockFactory {
       (rightStage.dispose _).expects()
       (leftStage.dispose _).expects()
     }
-    noException should be thrownBy new BinOp[Any, Nothing, Nothing, Nothing, Nothing] {
+    noException should be thrownBy new BinaryStage[Any, Nothing, Nothing, Nothing, Nothing] {
       val left: Stage[Any, Nothing, Nothing] = leftStage
       val right: Stage[Any, Nothing, Nothing] = rightStage
 

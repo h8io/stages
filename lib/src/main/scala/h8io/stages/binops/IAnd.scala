@@ -1,11 +1,11 @@
 package h8io.stages.binops
 
 import h8io.stages
-import h8io.stages.base.BaseBinOp
+import h8io.stages.base.BaseBinaryStage
 import h8io.stages.{Stage, Yield}
 
 final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BaseBinOp[I, LO, RO, (LO, RO), E] {
+    extends BaseBinaryStage[I, LO, RO, (LO, RO), E] {
   override def apply(in: I): Yield[I, (LO, RO), E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
