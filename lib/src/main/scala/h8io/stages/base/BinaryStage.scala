@@ -4,7 +4,7 @@ import h8io.stages.Stage
 
 import scala.util.control.NonFatal
 
-trait BinOp[-I, +LO, +RO, +O, +E] extends Stage[I, O, E] {
+trait BinaryStage[-I, +LO, +RO, +O, +E] extends Stage[I, O, E] {
   val left: Stage[I, LO, E]
   val right: Stage[I, RO, E]
 
