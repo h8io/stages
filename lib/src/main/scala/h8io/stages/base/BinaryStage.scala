@@ -5,8 +5,8 @@ import h8io.stages.Stage
 import scala.util.control.NonFatal
 
 trait BinaryStage[-I, +LO, +RO, +O, +E] extends Stage[I, O, E] {
-  val left: Stage[I, LO, E]
-  val right: Stage[I, RO, E]
+  def left: Stage[I, LO, E]
+  def right: Stage[I, RO, E]
 
   type DisposeContext
 
@@ -21,18 +21,18 @@ trait BinaryStage[-I, +LO, +RO, +O, +E] extends Stage[I, O, E] {
       try beforeDispose()
       catch {
         case NonFatal(primary) =>
-          suppress(primary)(left.dispose())
           suppress(primary)(right.dispose())
+          suppress(primary)(left.dispose())
           throw primary
       }
-    try left.dispose()
+    try right.dispose()
     catch {
       case NonFatal(primary) =>
-        suppress(primary)(right.dispose())
+        suppress(primary)(left.dispose())
         suppress(primary)(afterDispose(context))
         throw primary
     }
-    try right.dispose()
+    try left.dispose()
     catch {
       case NonFatal(primary) =>
         suppress(primary)(afterDispose(context))
