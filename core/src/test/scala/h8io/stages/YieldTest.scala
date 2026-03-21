@@ -111,7 +111,7 @@ class YieldTest
 
   "map" should "transform Yield.Some correctly" in
     forAll(Gen.zip(Gen.uuid, Gen.long, arbStatus[Long].arbitrary, arbStatus[String].arbitrary)) {
-      case (initialOut: UUID, mappedOut: Long, initialStatus: Status[Long], mappedStatus: Status[String]) =>
+      case (initialOut, mappedOut, initialStatus, mappedStatus) =>
         val mapOut = mock[UUID => Long]
         (mapOut.apply _).expects(initialOut).returns(mappedOut)
         val mapStatus = mock[Status[Long] => Status[String]]
@@ -127,7 +127,7 @@ class YieldTest
 
   it should "transform Yield.None correctly without mapping output" in
     forAll(Gen.zip(arbStatus[Throwable].arbitrary, arbStatus[Long].arbitrary)) {
-      case (initialStatus: Status[Throwable], mappedStatus: Status[Long]) =>
+      case (initialStatus, mappedStatus) =>
         val mapOut = mock[LocalDateTime => UUID]
         val mapStatus = mock[Status[Throwable] => Status[Long]]
         (mapStatus.apply _).expects(initialStatus).returns(mappedStatus)
