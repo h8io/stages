@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
-  "BinaryStage's dispose" should "call beforeDispose, right's dispose, left's dispose, and afterDispose in order" in {
+  "dispose" should "call beforeDispose, right's dispose, left's dispose, and afterDispose in order" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
     val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
