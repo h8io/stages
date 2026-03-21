@@ -1,4 +1,4 @@
-package h8io.stages.binops
+package h8io.stages.binary
 
 import h8io.stages.base.BaseBinaryStage
 import h8io.stages.{Evolution, Stage, Yield}
