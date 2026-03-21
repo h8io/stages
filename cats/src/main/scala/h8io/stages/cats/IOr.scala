@@ -6,7 +6,7 @@ import h8io.stages.base.{BaseBinaryOperator, LeftProjection, RightProjection}
 import h8io.stages.{Stage, Yield}
 
 final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BaseBinaryOperator[I, LO, RO, Ior[LO, RO], E] {
+    extends BaseBinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, Ior[LO, RO], E] {
   override def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
