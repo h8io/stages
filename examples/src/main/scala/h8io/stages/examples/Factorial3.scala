@@ -1,7 +1,7 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.alterations.Repeat
+import h8io.stages.operators.Repeat
 import h8io.stages.base.BaseEvolution
 
 object Factorial3 {

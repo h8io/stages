@@ -1,4 +1,4 @@
-package h8io.stages.alterations
+package h8io.stages.operators
 
 import h8io.stages.std.DeadEnd
 import h8io.stages.*

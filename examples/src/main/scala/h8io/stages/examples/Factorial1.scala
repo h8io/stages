@@ -1,7 +1,7 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.alterations.Loop
+import h8io.stages.operators.Loop
 import h8io.stages.base.BaseEvolution
 import h8io.stages.std.{Const, Countdown}
 
