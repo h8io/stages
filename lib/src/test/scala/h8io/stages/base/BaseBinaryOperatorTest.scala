@@ -4,8 +4,8 @@ import h8io.stages.{Stage, Yield}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class BaseBinaryStageTest extends AnyFlatSpec with Matchers {
-  private final class TestStage extends BaseBinaryStage[Int, String, String, (String, String), Nothing] {
+class BaseBinaryOperatorTest extends AnyFlatSpec with Matchers {
+  private final class TestStage extends BaseBinaryOperator[Int, String, String, (String, String), Nothing] {
     override val left: Stage[Int, String, Nothing] = (_: Int) => fail("apply should not be called")
     override val right: Stage[Int, String, Nothing] = (_: Int) => fail("apply should not be called")
     override def apply(in: Int): Yield[Int, (String, String), Nothing] = fail("apply should not be called")

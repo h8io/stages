@@ -1,4 +1,4 @@
-package h8io.stages.alterations
+package h8io.stages.operators
 
 import h8io.stages.std.Break
 import h8io.stages.{Decoration, Stage}

@@ -1,10 +1,10 @@
-package h8io.stages.alterations
+package h8io.stages.operators
 
 import h8io.stages.base.{BaseDecorator, Fruitful}
 import h8io.stages.{Stage, Yield}
 
 object KeepLastOutput {
-  private[alterations] final case class None[-I, +O, +E](alterand: Stage[I, O, E]) extends BaseDecorator[I, O, E] {
+  private[operators] final case class None[-I, +O, +E](alterand: Stage[I, O, E]) extends BaseDecorator[I, O, E] {
     override def apply(in: I): Yield[I, O, E] =
       alterand(in) match {
         case Yield.Some(out, status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
@@ -12,7 +12,7 @@ object KeepLastOutput {
       }
   }
 
-  private[alterations] final case class Some[-I, +O, +E](out: O, alterand: Stage[I, O, E])
+  private[operators] final case class Some[-I, +O, +E](out: O, alterand: Stage[I, O, E])
       extends BaseDecorator[I, O, E] with Fruitful[I, O, E] {
     override def apply(in: I): Yield.Some[I, O, E] =
       alterand(in) match {

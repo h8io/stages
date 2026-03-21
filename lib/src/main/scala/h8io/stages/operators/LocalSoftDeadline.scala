@@ -1,4 +1,4 @@
-package h8io.stages.alterations
+package h8io.stages.operators
 
 import h8io.stages.*
 import h8io.stages.base.BaseDecorator
@@ -18,7 +18,7 @@ final case class LocalSoftDeadline[-I, +O, +E](
 }
 
 object LocalSoftDeadline {
-  private[alterations] final case class _Evolution[-I, +O, +E](
+  private[operators] final case class _Evolution[-I, +O, +E](
       ts: () => Long, now: () => Long, duration: Long, evolution: Evolution[I, O, E])
       extends Evolution[I, O, E] {
     override def onSuccess(): Stage[I, O, E] = LocalSoftDeadline(ts, now, duration, evolution.onSuccess())

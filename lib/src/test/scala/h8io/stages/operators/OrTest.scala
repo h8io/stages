@@ -1,4 +1,4 @@
-package h8io.stages.binary
+package h8io.stages.operators
 
 import h8io.stages.*
 import org.scalacheck.{Arbitrary, Gen}

@@ -2,7 +2,7 @@ package h8io.stages.cats
 
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid}
-import h8io.stages.alterations.Identity
+import h8io.stages.operators.Identity
 import h8io.stages.{Alteration, AlterationCompose, AlterationOps, Decoration, Stage}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuite

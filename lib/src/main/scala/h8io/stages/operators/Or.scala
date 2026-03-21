@@ -1,10 +1,10 @@
-package h8io.stages.binary
+package h8io.stages.operators
 
-import h8io.stages.base.BaseBinaryStage
+import h8io.stages.base.BaseBinaryOperator
 import h8io.stages.{Evolution, Stage, Yield}
 
 final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BaseBinaryStage[I, LO, RO, Either[LO, RO], E] {
+    extends BaseBinaryOperator[I, LO, RO, Either[LO, RO], E] {
   override def apply(in: I): Yield[I, Either[LO, RO], E] =
     left(in) match {
       case Yield.Some(out, status, evolution) => Yield.Some(Left(out), status, Or.LeftEvolution(evolution, right))

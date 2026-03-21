@@ -5,11 +5,11 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
+class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
   "dispose" should "call beforeDispose, right's dispose, left's dispose, and afterDispose in order" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     inSequence {
       (stage.beforeDispose _).expects().returns(context)
@@ -25,7 +25,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "call right and left dispose even if beforeDispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val exception = new Exception("beforeDispose failed")
     inSequence {
       (stage.beforeDispose _).expects().throws(exception)
@@ -40,7 +40,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "suppress right dispose exception if beforeDispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val beforeDisposeException = new Exception("beforeDispose failed")
     val rightDisposeException = new Exception("right dispose failed")
     inSequence {
@@ -58,7 +58,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "suppress left dispose exception if beforeDispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val beforeDisposeException = new Exception("beforeDispose failed")
     val leftDisposeException = new Exception("left dispose failed")
     inSequence {
@@ -76,7 +76,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "suppress right and left dispose exceptions if beforeDispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val beforeDisposeException = new Exception("beforeDispose failed")
     val rightDisposeException = new Exception("right dispose failed")
     val leftDisposeException = new Exception("left dispose failed")
@@ -97,7 +97,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "call left dispose and afterDispose even if right dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     val rightDisposeException = new Exception("right dispose failed")
     inSequence {
@@ -116,7 +116,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "call afterDispose even if left dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     val leftDisposeException = new Exception("left dispose failed")
     inSequence {
@@ -135,7 +135,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "suppress left dispose exception if right dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     val rightDisposeException = new Exception("right dispose failed")
     val leftDisposeException = new Exception("left dispose failed")
@@ -156,7 +156,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "suppress afterDispose exception if right dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     val rightDisposeException = new Exception("right dispose failed")
     val afterDisposeException = new Exception("afterDispose failed")
@@ -177,7 +177,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "suppress afterDispose exception if left dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     val leftDisposeException = new Exception("left dispose failed")
     val afterDisposeException = new Exception("afterDispose failed")
@@ -198,7 +198,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "suppress left and afterDispose exceptions if right dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     val rightDisposeException = new Exception("right dispose failed")
     val leftDisposeException = new Exception("left dispose failed")
@@ -221,7 +221,7 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "rethrow an exception if afterDispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryStageTest.TestBinaryStage]("binary stage")
+    val stage = mock[BinaryOperatorTest.TestStage]("binary stage")
     val context = new Object
     val afterDisposeException = new Exception("afterDispose failed")
     inSequence {
@@ -237,8 +237,8 @@ class BinaryStageTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 }
 
-object BinaryStageTest {
-  trait TestBinaryStage extends BinaryStage[Any, Nothing, Nothing, Nothing, Nothing] {
+object BinaryOperatorTest {
+  trait TestStage extends BinaryOperator[Any, Nothing, Nothing, Nothing, Nothing] {
     override type DisposeContext = AnyRef
   }
 }

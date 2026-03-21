@@ -1,7 +1,7 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.alterations.{LocalSoftDeadline, Repeat}
+import h8io.stages.operators.{LocalSoftDeadline, Repeat}
 import h8io.stages.base.BaseEvolution
 
 import scala.concurrent.duration.FiniteDuration

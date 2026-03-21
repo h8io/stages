@@ -1,4 +1,4 @@
-package h8io.stages.binary
+package h8io.stages.operators
 
 import h8io.stages.*
 import org.scalacheck.{Arbitrary, Gen}
@@ -12,24 +12,29 @@ import java.time.*
 import java.util.UUID
 import scala.concurrent.duration.Duration
 
-class AndTest
+class IAndTest
     extends AnyFlatSpec
     with Matchers
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries
-    with StagesCoreTestUtil {
-  "And" should "return Yield.None if left stage returns Yield.None" in
-    forAll(Gen.zip(Gen.long, Arbitrary.arbitrary[EvolutionToYieldNone[Long, Duration, Exception]])) {
-      case (in, leftYieldSupplier) =>
+    with StagesCoreArbitraries {
+  "IAnd" should "return Yield.None if both stages return Yield.None" in
+    forAll(
+      Gen.zip(Gen.long,
+        Arbitrary.arbitrary[EvolutionToYieldNone[Long, Duration, Exception]],
+        Arbitrary.arbitrary[EvolutionToYieldNone[Long, Instant, Exception]])) {
+      case (in, leftYieldSupplier, rightYieldSupplier) =>
         val leftStage = mock[Stage[Long, Duration, Exception]]("left stage")
         val rightStage = mock[Stage[Long, Instant, Exception]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[Long, Duration, Exception]]("left evolution"))
-        (leftStage.apply _).expects(in).returns(leftYield)
-        inside(And(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
-          status shouldBe leftYield.status
-          testWrappedEvolution(evolution, leftYield.evolution, And(_: Stage[Long, Duration, Exception], rightStage))
+        val rightYield = rightYieldSupplier(mock[Evolution[Long, Instant, Exception]]("right Evolution"))
+        inSequence {
+          (leftStage.apply _).expects(in).returns(leftYield)
+          (rightStage.apply _).expects(in).returns(rightYield)
+        }
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
+          test(leftYield, rightYield, status, evolution)
         }
     }
 
@@ -48,7 +53,28 @@ class AndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(And(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
+          test(leftYield, rightYield, status, evolution)
+        }
+    }
+
+  it should "return Yield.None if the left stage return Yield.None and the right one returns Yield.Some" in
+    forAll(
+      Gen.zip(
+        Arbitrary.arbitrary[String],
+        Arbitrary.arbitrary[EvolutionToYieldNone[String, LocalDateTime, UUID]],
+        Arbitrary.arbitrary[EvolutionToYieldSome[String, ZonedDateTime, UUID]]
+      )) {
+      case (in, leftYieldSupplier, rightYieldSupplier) =>
+        val leftStage = mock[Stage[String, LocalDateTime, UUID]]("left stage")
+        val rightStage = mock[Stage[String, ZonedDateTime, UUID]]("right stage")
+        val leftYield = leftYieldSupplier(mock[Evolution[String, LocalDateTime, UUID]]("left evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[String, ZonedDateTime, UUID]]("right Evolution"))
+        inSequence {
+          (leftStage.apply _).expects(in).returns(leftYield)
+          (rightStage.apply _).expects(in).returns(rightYield)
+        }
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           test(leftYield, rightYield, status, evolution)
         }
     }
@@ -69,7 +95,7 @@ class AndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(And(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
+        inside(IAnd(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe leftYield.out -> rightYield.out
           test(leftYield, rightYield, status, evolution)
         }
@@ -88,7 +114,7 @@ class AndTest
       (leftYield.evolution.onSuccess _).expects().returns(leftOnSuccessStage)
       (rightYield.evolution.onSuccess _).expects().returns(rightOnSuccessStage)
     }
-    evolution.onSuccess() shouldBe And(leftOnSuccessStage, rightOnSuccessStage)
+    evolution.onSuccess() shouldBe IAnd(leftOnSuccessStage, rightOnSuccessStage)
 
     val leftOnCompleteStage = mock[Stage[I, LO, E]]("left onComplete stage")
     val rightOnCompleteStage = mock[Stage[I, RO, E]]("right onComplete stage")
@@ -96,7 +122,7 @@ class AndTest
       (leftYield.evolution.onComplete _).expects().returns(leftOnCompleteStage)
       (rightYield.evolution.onComplete _).expects().returns(rightOnCompleteStage)
     }
-    evolution.onComplete() shouldBe And(leftOnCompleteStage, rightOnCompleteStage)
+    evolution.onComplete() shouldBe IAnd(leftOnCompleteStage, rightOnCompleteStage)
 
     val leftOnErrorStage = mock[Stage[I, LO, E]]("left onError stage")
     val rightOnErrorStage = mock[Stage[I, RO, E]]("right onError stage")
@@ -104,6 +130,6 @@ class AndTest
       (leftYield.evolution.onError _).expects().returns(leftOnErrorStage)
       (rightYield.evolution.onError _).expects().returns(rightOnErrorStage)
     }
-    evolution.onError() shouldBe And(leftOnErrorStage, rightOnErrorStage)
+    evolution.onError() shouldBe IAnd(leftOnErrorStage, rightOnErrorStage)
   }
 }
