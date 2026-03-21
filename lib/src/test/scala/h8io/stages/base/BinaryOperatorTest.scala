@@ -238,7 +238,8 @@ class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
 }
 
 object BinaryOperatorTest {
-  trait TestStage extends BinaryOperator[Any, Nothing, Nothing, Nothing, Nothing] {
+  trait TestStage
+      extends BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing] {
     override type DisposeContext = AnyRef
   }
 }

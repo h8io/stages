@@ -5,9 +5,15 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class BaseBinaryOperatorTest extends AnyFlatSpec with Matchers {
-  private final class TestStage extends BaseBinaryOperator[Int, String, String, (String, String), Nothing] {
-    override val left: Stage[Int, String, Nothing] = (_: Int) => fail("apply should not be called")
-    override val right: Stage[Int, String, Nothing] = (_: Int) => fail("apply should not be called")
+  private final class TestStage
+      extends BaseBinaryOperator[
+        Stage[Int, Int, Nothing],
+        Stage[Int, Long, Nothing],
+        Int,
+        (String, String),
+        Nothing] {
+    override val left: Stage[Int, Int, Nothing] = (_: Int) => fail("apply should not be called")
+    override val right: Stage[Int, Long, Nothing] = (_: Int) => fail("apply should not be called")
     override def apply(in: Int): Yield[Int, (String, String), Nothing] = fail("apply should not be called")
   }
 

@@ -1,11 +1,11 @@
 package h8io.stages
 
 package object base {
-  type UnaryOperator[-I, +_O, +O, +_E, +E] = Alterator[Stage[I, _O, _E], I, O, E]
+  type UnaryOperator[+S <: Stage[I, ?, ?], -I, +O, +E] = Alterator[S, I, O, E]
 
-  type BaseUnaryOperator[-I, +_O, +O, +_E, +E] = BaseAlterator[Stage[I, _O, _E], I, O, E]
+  type BaseUnaryOperator[+S <: Stage[I, ?, ?], -I, +O, +E] = BaseAlterator[S, I, O, E]
 
-  type Decorator[-I, +O, +E] = UnaryOperator[I, O, O, E, E]
+  type Decorator[-I, +O, +E] = UnaryOperator[Stage[I, O, E], I, O, E]
 
-  type BaseDecorator[-I, +O, +E] = BaseUnaryOperator[I, O, O, E, E]
+  type BaseDecorator[-I, +O, +E] = BaseUnaryOperator[Stage[I, O, E], I, O, E]
 }
