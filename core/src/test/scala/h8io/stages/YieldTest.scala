@@ -1,5 +1,6 @@
 package h8io.stages
 
+import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -7,6 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.*
+import java.util.UUID
 
 class YieldTest
     extends AnyFlatSpec
@@ -105,5 +107,36 @@ class YieldTest
           (previousEvolution.onError _).expects().returns(onErrorStage)
           evolution.onError() shouldBe onErrorStage ~> nextStage
       }
+    }
+
+  "map" should "transform Yield.Some correctly" in
+    forAll(Gen.zip(Gen.uuid, Gen.long, arbStatus[Long].arbitrary, arbStatus[String].arbitrary)) {
+      case (initialOut: UUID, mappedOut: Long, initialStatus: Status[Long], mappedStatus: Status[String]) =>
+        val mapOut = mock[UUID => Long]
+        (mapOut.apply _).expects(initialOut).returns(mappedOut)
+        val mapStatus = mock[Status[Long] => Status[String]]
+        (mapStatus.apply _).expects(initialStatus).returns(mappedStatus)
+        val initialEvolution = mock[Evolution[Long, UUID, Long]]("initial Evolution")
+        val mappedEvolution = mock[Evolution[String, Long, String]]("mapped Evolution")
+        val mapEvolution =
+          mock[Evolution[Long, UUID, Long] => Evolution[String, Long, String]]("mapEvolution")
+        (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+        Yield.Some(initialOut, initialStatus, initialEvolution).map(mapOut, mapStatus, mapEvolution) shouldBe
+          Yield.Some(mappedOut, mappedStatus, mappedEvolution)
+    }
+
+  it should "transform Yield.None correctly without mapping output" in
+    forAll(Gen.zip(arbStatus[Throwable].arbitrary, arbStatus[Long].arbitrary)) {
+      case (initialStatus: Status[Throwable], mappedStatus: Status[Long]) =>
+        val mapOut = mock[LocalDateTime => UUID]
+        val mapStatus = mock[Status[Throwable] => Status[Long]]
+        (mapStatus.apply _).expects(initialStatus).returns(mappedStatus)
+        val initialEvolution = mock[Evolution[Instant, LocalDateTime, Throwable]]("initial Evolution")
+        val mappedEvolution = mock[Evolution[String, UUID, Long]]("mapped Evolution")
+        val mapEvolution =
+          mock[Evolution[Instant, LocalDateTime, Throwable] => Evolution[String, UUID, Long]]("mapEvolution")
+        (mapEvolution.apply _).expects(initialEvolution).returns(mappedEvolution)
+        Yield.None(initialStatus, initialEvolution).map(mapOut, mapStatus, mapEvolution) shouldBe
+          Yield.None(mappedStatus, mappedEvolution)
     }
 }
