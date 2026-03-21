@@ -1,11 +1,14 @@
 package h8io.stages
 
+import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.Instant
+import java.util.UUID
+import scala.concurrent.duration.Duration
 
 class StatusTest
     extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with StagesCoreArbitraries {
@@ -58,5 +61,28 @@ class StatusTest
       val i = error.iterator
       i.next() shouldBe error.head
       i.toList should contain theSameElementsInOrderAs error.tail
+    }
+
+  "map" should "not change the Success status" in {
+    Status.Success.map(mock[String => Long]) shouldBe Status.Success
+  }
+
+  it should "not change the Complete status" in {
+    Status.Complete.map(mock[Throwable => String]) shouldBe Status.Complete
+  }
+
+  it should "not change the Error status" in
+    forAll(Gen.choose(1, 16)) { size =>
+      forAll(Gen.zip(Gen.listOfN(size, Gen.uuid), Gen.listOfN(size, Gen.duration))) { case (initial, mapped) =>
+        val initalError = Status.Error(initial.head, initial.tail)
+        val mappedError = Status.Error(mapped.head, mapped.tail)
+        val f = mock[UUID => Duration]
+        inSequence(
+          for {
+            (i, m) <- initial.zip(mapped)
+          } (f.apply _).expects(i).returns(m)
+        )
+        initalError.map(f) shouldBe mappedError
+      }
     }
 }
