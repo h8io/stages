@@ -7,6 +7,6 @@ final case class BreakIfNone[I, O, E](alterand: Stage[I, O, E]) extends BaseDeco
   override def apply(in: I): Yield[I, O, E] =
     alterand(in) match {
       case Yield.None(Status.Success, evolution) => Yield.None(Status.Complete, evolution.map(BreakIfNone(_)))
-      case other => other.mapEvolution(_.map(BreakIfNone(_)))
+      case other => other.map(identity, identity, _.map(BreakIfNone(_)))
     }
 }

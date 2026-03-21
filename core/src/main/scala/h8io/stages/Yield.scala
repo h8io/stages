@@ -4,15 +4,10 @@ sealed trait Yield[-I, +O, +E] {
   val status: Status[E]
   val evolution: Evolution[I, O, E]
 
-  private[stages] def mapEvolution[_I, _O >: O, _E](
-      status: Status[_E],
-      f: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E]
-
-  private[stages] def mapEvolution[_I, _O >: O, _E >: E](
-      f: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E]
-
-  private[stages] final def mapEvolutionAndBreak[_I, _O >: O, _E >: E](
-      f: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E] = mapEvolution(status.break, f)
+  def map[_I, _O, _E](
+      mapOut: O => _O,
+      mapStatus: Status[E] => Status[_E],
+      mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E]
 }
 
 object Yield {
@@ -24,27 +19,21 @@ object Yield {
         case Yield.None(status, evolution) => Yield.None(this.status ++ status, this.evolution.compose(evolution))
       }
 
-    private[stages] def mapEvolution[_I, _O >: O, _E](
-        status: Status[_E],
+    override def map[_I, _O, _E](
+        mapOut: O => _O,
+        mapStatus: Status[E] => Status[_E],
         mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield.Some[_I, _O, _E] =
-      Yield.Some(out, status, mapEvolution(evolution))
-
-    private[stages] def mapEvolution[_I, _O >: O, _E >: E](
-        mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield.Some[_I, _O, _E] =
-      Yield.Some(out, status, mapEvolution(evolution))
+      Yield.Some(mapOut(out), mapStatus(status), mapEvolution(evolution))
   }
 
   final case class None[-I, +O, +E](status: Status[E], evolution: Evolution[I, O, E]) extends Yield[I, O, E] {
     private[stages] def compose[_O, _E >: E](next: Stage[O, _O, _E]): Yield.None[I, _O, _E] =
       Yield.None(status, evolution.compose(next))
 
-    private[stages] def mapEvolution[_I, _O >: O, _E](
-        status: Status[_E],
-        mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield.None[_I, _O, _E] =
-      Yield.None(status, mapEvolution(evolution))
-
-    private[stages] def mapEvolution[_I, _O >: O, _E >: E](
-        mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield.None[_I, _O, _E] =
-      Yield.None(status, mapEvolution(evolution))
+    override def map[_I, _O, _E](
+        mapOut: O => _O,
+        mapStatus: Status[E] => Status[_E],
+        mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E] =
+      Yield.None(mapStatus(status), mapEvolution(evolution))
   }
 }

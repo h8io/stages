@@ -15,8 +15,8 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends BaseDecorator[T
             case Yield.Some(out, _, _) => loop(yld.evolution.onSuccess(), out)
             case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.evolution.onComplete()))
           }
-        case Status.Complete => yld.mapEvolution(Status.Success, evolution => Loop(evolution.onComplete()))
-        case error: Status.Error[E] => yld.mapEvolution(error, evolution => Loop(evolution.onError()))
+        case Status.Complete => yld.map(identity, _ => Status.Success, evolution => Loop(evolution.onComplete()))
+        case _: Status.Error[E] => yld.map(identity, identity, evolution => Loop(evolution.onError()))
       }
     }
     loop(alterand, in)

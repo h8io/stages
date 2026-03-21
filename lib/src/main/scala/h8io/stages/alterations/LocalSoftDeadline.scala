@@ -12,8 +12,8 @@ final case class LocalSoftDeadline[-I, +O, +E](
   override def apply(in: I): Yield[I, O, E] = {
     val ts = tsSupplier()
     val yld = alterand(in)
-    if (now() - ts >= duration) yld.mapEvolutionAndBreak(_.map(LocalSoftDeadline(now, now, duration, _)))
-    else yld.mapEvolution(LocalSoftDeadline._Evolution(() => ts, now, duration, _))
+    if (now() - ts >= duration) yld.map(identity, _.break, _.map(LocalSoftDeadline(now, now, duration, _)))
+    else yld.map(identity, identity, LocalSoftDeadline._Evolution(() => ts, now, duration, _))
   }
 }
 
