@@ -17,7 +17,7 @@ final case class Cache[-I, +O, +E](alterand: Stage[I, O, E])
             override def onError(): Stage[I, O, E] = Cache(evolution.onError())
           }
         )
-      case yld => yld.mapEvolution(_.map(Cache(_)))
+      case yld => yld.map(identity, identity, _.map(Cache(_)))
     }
 }
 

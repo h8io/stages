@@ -13,8 +13,8 @@ final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E])
       yld.status match {
         case Status.Success => repeat(yld.evolution.onSuccess())
         case Status.Complete =>
-          yld.mapEvolution(Status.Success, evolution => Repeat(evolution.onComplete()))
-        case error: Status.Error[E] => yld.mapEvolution(error, evolution => Repeat(evolution.onError()))
+          yld.map(identity, _ => Status.Success, evolution => Repeat(evolution.onComplete()))
+        case _: Status.Error[E] => yld.map(identity, identity, evolution => Repeat(evolution.onError()))
       }
     }
     repeat(alterand)

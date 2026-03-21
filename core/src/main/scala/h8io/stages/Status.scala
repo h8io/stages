@@ -6,6 +6,8 @@ sealed trait Status[+E] {
   private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E]
 
   private[stages] def break: Status[E]
+
+  def map[_E](f: E => _E): Status[_E]
 }
 
 object Status {
@@ -19,6 +21,8 @@ object Status {
     private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onSuccess()
 
     private[stages] def break: Status[Nothing] = Complete
+
+    override def map[_E](f: Nothing => _E): this.type = this
   }
 
   sealed trait Break[+E] extends Status[E] {
@@ -33,6 +37,8 @@ object Status {
       }
 
     private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onComplete()
+
+    override def map[_E](f: Nothing => _E): this.type = this
   }
 
   final case class Error[+E](override val head: E, override val tail: List[E]) extends Break[E] with Iterable[E] {
@@ -49,6 +55,8 @@ object Status {
     def iterator: Iterator[E] = toList.iterator
 
     override def isEmpty: Boolean = false
+
+    override def map[_E](f: E => _E): Error[_E] = Error(f(head), tail.map(f))
   }
 
   object Error {
