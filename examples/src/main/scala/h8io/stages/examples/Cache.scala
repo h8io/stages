@@ -1,10 +1,9 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.base.{BaseDecorator, BaseEvolution, Fruitful}
+import h8io.stages.base.{BaseEvolution, Decorator, Fruitful}
 
-final case class Cache[-I, +O, +E](alterand: Stage[I, O, E])
-    extends BaseDecorator[I, O, E] with BaseEvolution[I, O, E] {
+final case class Cache[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] with BaseEvolution[I, O, E] {
   override def apply(in: I): Yield[I, O, E] =
     alterand(in) match {
       case Yield.Some(out, Status.Success, evolution) =>
@@ -23,7 +22,7 @@ final case class Cache[-I, +O, +E](alterand: Stage[I, O, E])
 
 object Cache {
   private[examples] final case class Cached[-I, +O, +E](out: O, alterand: Stage[I, O, E])
-      extends BaseDecorator[I, O, E] with Fruitful[I, O, E] with BaseEvolution[I, O, E] {
+      extends Decorator[I, O, E] with Fruitful[I, O, E] with BaseEvolution[I, O, E] {
     override def apply(in: I): Yield.Some[I, O, E] = Yield.Some(out, Status.Success, this)
 
     override def onComplete(): Stage[I, O, E] = Cache(alterand)
