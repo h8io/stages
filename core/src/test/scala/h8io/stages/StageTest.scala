@@ -174,7 +174,7 @@ class StageTest
     (evolution, stage)
   }
 
-  it should "call dispose in reverse order" in {
+  it should "call the next stage's dispose and then the previous stage's dispose" in {
     val previousStage = mock[Stage[Int, String, String]]
     val nextStage = mock[Stage[String, Long, String]]
     inSequence {
@@ -182,5 +182,30 @@ class StageTest
       (previousStage.dispose _).expects()
     }
     Stage.AndThen(previousStage, nextStage).dispose()
+  }
+
+  it should "call the previous stage's dispose even if the next stage's dispose throws" in {
+    val previousStage = mock[Stage[Int, String, String]]
+    val nextStage = mock[Stage[String, Long, String]]
+    val nextException = new Exception("next's stage dispose failed")
+    inSequence {
+      (nextStage.dispose _).expects().throws(nextException)
+      (previousStage.dispose _).expects()
+    }
+    the[Throwable] thrownBy Stage.AndThen(previousStage, nextStage).dispose() should be theSameInstanceAs nextException
+  }
+
+  it should "suppress the previous stage's dispose exception if the next stage's dispose throws" in {
+    val previousStage = mock[Stage[Int, String, String]]
+    val nextStage = mock[Stage[String, Long, String]]
+    val nextException = new Exception("next's stage dispose failed")
+    val previousException = new Exception("previous's stage dispose failed")
+    inSequence {
+      (nextStage.dispose _).expects().throws(nextException)
+      (previousStage.dispose _).expects().throws(previousException)
+    }
+    val exception = the[Throwable] thrownBy Stage.AndThen(previousStage, nextStage).dispose()
+    exception should be theSameInstanceAs nextException
+    exception.getSuppressed should contain(previousException)
   }
 }

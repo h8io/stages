@@ -1,12 +1,11 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.{BaseDecorator, BaseEvolution}
+import h8io.stages.base.{BaseEvolution, Decorator}
 
 import scala.annotation.tailrec
 
-final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E])
-    extends BaseDecorator[I, O, E] with BaseEvolution[I, O, E] {
+final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] with BaseEvolution[I, O, E] {
   override def apply(in: I): Yield[I, O, E] = {
     @tailrec def repeat(stage: Stage[I, O, E]): Yield[I, O, E] = {
       val yld = stage(in)
