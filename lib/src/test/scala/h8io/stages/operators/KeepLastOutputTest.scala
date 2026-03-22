@@ -1,6 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.*
+import h8io.stages.base.StagesBaseTestUtil
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -17,7 +18,7 @@ class KeepLastOutputTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil {
+    with StagesBaseTestUtil {
   "Initial stage" should "be None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     KeepLastOutput(stage) shouldBe KeepLastOutput.None(stage)

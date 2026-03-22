@@ -19,18 +19,7 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   @inline final def ~>[_O, _E >: E](that: Stage[O, _O, _E]): Stage[I, _O, _E] = Stage.AndThen(this, that)
 
-  @inline final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
-
-  @inline final def ~>[S <: Stage.Any, _O, _E >: E](
-      alteration: Alteration[S, Stage[O, _O, _E]]): Alteration[S, Stage[I, _O, _E]] = stage => this ~> alteration(stage)
-
-  @inline final def |>[S <: Stage.Any](alteration: Alteration[Stage[I, O, E], S]): S = alteration ⋅ this
-
-  @inline final def alteration[_O, _E >: E]: Alteration[Stage[O, _O, _E], Stage[I, _O, _E]] = leftAlteration[_O, _E]
-
-  @inline final def leftAlteration[_O, _E >: E]: Alteration[Stage[O, _O, _E], Stage[I, _O, _E]] = ~>[_O, _E]
-
-  @inline final def rightAlteration[_I, _E >: E]: Alteration[Stage[_I, I, _E], Stage[_I, O, _E]] = <~[_I, _E]
+  @inline private[stages] final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
 }
 
 object Stage {

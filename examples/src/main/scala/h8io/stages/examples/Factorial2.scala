@@ -15,5 +15,5 @@ object Factorial2 {
   }
 
   val stage: Stage[Int, BigInt, String] =
-    And(Identity[Int], Const(One)) ~> Loop[(Int, BigInt), String] _ ⋅ Agg ~> Tuple2.Right[BigInt]
+    And(Identity[Int], Const(One)) ~> Loop[(Int, BigInt), String](Agg) ~> Tuple2.Right[BigInt]
 }

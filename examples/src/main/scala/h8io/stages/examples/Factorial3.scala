@@ -24,5 +24,5 @@ object Factorial3 {
 
   val InitialStage: Factorial = Factorial(2, One)
 
-  val stage: Stage[Int, BigInt, FactorialError] = Repeat[Int, BigInt, FactorialError] _ <| InitialStage
+  val stage: Stage[Int, BigInt, FactorialError] = Repeat[Int, BigInt, FactorialError](InitialStage)
 }

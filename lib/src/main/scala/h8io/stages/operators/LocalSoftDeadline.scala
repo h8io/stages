@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.Decorator
+import h8io.stages.base.{Decoration, Decorator}
 import h8io.stages.std.DeadEnd
 
 import scala.concurrent.duration.FiniteDuration

@@ -1,6 +1,7 @@
 package h8io.stages.operators
 
-import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Yield}
+import h8io.stages.base.StagesBaseTestUtil
+import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -16,7 +17,7 @@ class BreakIfNoneTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil {
+    with StagesBaseTestUtil {
   "BreakIfNone" should "return Yield.Some if the alterand result is Yield.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, Instant, String]) =>
       val alterand = mock[Stage[Long, Instant, String]]

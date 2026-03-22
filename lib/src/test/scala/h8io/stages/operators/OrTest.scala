@@ -1,6 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.*
+import h8io.stages.base.StagesBaseTestUtil
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -19,7 +20,7 @@ class OrTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil {
+    with StagesBaseTestUtil {
   "Or" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,

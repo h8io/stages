@@ -22,5 +22,5 @@ object Wallis {
   val InitialStage = Pi(1)
 
   def stage(duration: FiniteDuration): Stage[Any, Double, Nothing] =
-    Const(2d) ~> Loop[Double, Nothing] _ <| InitialStage ~> GlobalSoftDeadline(duration)
+    Const(2d) ~> Loop[Double, Nothing](InitialStage ~> GlobalSoftDeadline(duration))
 }
