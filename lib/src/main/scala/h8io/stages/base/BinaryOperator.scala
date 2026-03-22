@@ -15,8 +15,7 @@ trait BinaryOperator[+LS <: Stage[I, ?, ?], +RS <: Stage[I, ?, ?], -I, +O, +E] e
         try left.dispose()
         catch {
           case NonFatal(secondary) => primary.addSuppressed(secondary)
-        }
-        throw primary
+        } finally throw primary
     }
     left.dispose()
   }

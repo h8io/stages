@@ -1,5 +1,7 @@
 package h8io.stages
 
+import scala.util.control.NonFatal
+
 @FunctionalInterface
 trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
   def apply(in: I): Yield[I, O, E]
@@ -44,7 +46,14 @@ object Stage {
       }
 
     override def dispose(): Unit = {
-      next.dispose()
+      try next.dispose()
+      catch {
+        case NonFatal(primary) => try previous.dispose()
+          catch {
+            case NonFatal(secondary) =>
+              primary.addSuppressed(secondary)
+          } finally throw primary
+      }
       previous.dispose()
     }
   }

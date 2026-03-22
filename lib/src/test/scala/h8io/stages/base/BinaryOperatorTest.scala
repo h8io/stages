@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
-  "dispose" should "call right's dispose and left's dispose" in {
+  "dispose" should "call right stage's dispose and left stage's dispose" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
     val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
@@ -20,7 +20,7 @@ class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
     noException should be thrownBy stage.dispose()
   }
 
-  it should "call left's dispose even if right's dispose throws" in {
+  it should "call left stage's dispose even if right stage's dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
     val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
@@ -35,7 +35,7 @@ class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
     the[Exception] thrownBy stage.dispose() should be theSameInstanceAs exception
   }
 
-  it should "suppress left's dispose exception if right's dispose throws" in {
+  it should "suppress left stage's dispose exception if right stage's dispose throws" in {
     val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
     val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
