@@ -1,11 +1,9 @@
-package h8io.stages.cats
+package h8io.stages
 
 import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
-import h8io.stages.*
-import h8io.stages.base.BaseEvolution
-import h8io.stages.std.Identity
+import h8io.stages.Stage.Endo
 import org.scalacheck.{Arbitrary, Prop, Shrink, Test}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
@@ -15,6 +13,16 @@ import scala.annotation.tailrec
 
 class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with StagesCoreArbitraries {
   private val parameters = Test.Parameters.default
+
+  private object Identity extends Stage[Any, Any, Nothing] with Evolution[Any, Any, Nothing] {
+    override def apply(in: Any): Yield.Some[Any, Any, Nothing] = Yield.Some(in, Status.Success, this)
+
+    override def onSuccess(): Stage[Any, Any, Nothing] = this
+    override def onComplete(): Stage[Any, Any, Nothing] = this
+    override def onError(): Stage[Any, Any, Nothing] = this
+
+    def apply[T]: Endo[T, Nothing] = this.asInstanceOf[Stage.Endo[T, Nothing]]
+  }
 
   private implicit def stageMonoid[T, E]: Monoid[Stage.Endo[T, E]] =
     new Monoid[Stage.Endo[T, E]] {
@@ -28,10 +36,16 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
         prefix <- Arbitrary.arbitrary[T]
         suffix <- Arbitrary.arbitrary[T]
         status <- Arbitrary.arbitrary[Status[E]]
-      } yield new Stage.Endo[T, E] with BaseEvolution.Endo[T, E] {
+      } yield new Stage.Endo[T, E] with Evolution[T, T, E] {
         def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, status, this)
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
+
+        override def onSuccess(): Stage[T, T, E] = this
+
+        override def onComplete(): Stage[T, T, E] = this
+
+        override def onError(): Stage[T, T, E] = this
       }
     }
 
