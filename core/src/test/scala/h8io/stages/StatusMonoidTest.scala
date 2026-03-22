@@ -1,8 +1,7 @@
-package h8io.stages.cats
+package h8io.stages
 
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid}
-import h8io.stages.{StagesCoreArbitraries, Status}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
