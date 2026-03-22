@@ -1,7 +1,8 @@
 package h8io.stages.operators
 
-import h8io.stages.std.DeadEnd
 import h8io.stages.*
+import h8io.stages.base.StagesBaseTestUtil
+import h8io.stages.std.DeadEnd
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -21,7 +22,7 @@ class LocalSoftDeadlineTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil {
+    with StagesBaseTestUtil {
   "LocalSoftDeadline" should "return DeadEnd if Scala duration is not positive" in
     forAll(Gen.choose(Long.MinValue, 0L)) { nanos =>
       val stage = mock[Stage[Any, Nothing, Nothing]]

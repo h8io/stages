@@ -1,6 +1,7 @@
 package h8io.stages.operators
 
-import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Status, Yield}
+import h8io.stages.base.StagesBaseTestUtil
+import h8io.stages.*
 import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -19,7 +20,7 @@ class SafeTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil {
+    with StagesBaseTestUtil {
   "Safe" should "wrap status and evolution for Yield.Some with a non-error status" in
     forAll(
       Gen.zip(

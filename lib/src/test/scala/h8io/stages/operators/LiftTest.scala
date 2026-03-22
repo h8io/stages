@@ -1,6 +1,7 @@
 package h8io.stages.operators
 
-import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Yield}
+import h8io.stages.base.StagesBaseTestUtil
+import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -17,7 +18,7 @@ class LiftTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil {
+    with StagesBaseTestUtil {
   "Lift" should "transform output of Yield.Some to Some" in
     forAll { (in: Int, yieldSupplier: EvolutionToYieldSome[Int, String, UUID]) =>
       val stage = mock[Stage[Int, String, UUID]]

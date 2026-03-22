@@ -16,5 +16,5 @@ object Factorial1 {
 
   object Agg extends Agg(1)
 
-  def stage(n: Int): Stage[Unit, BigInt, Nothing] = Const(One) ~> Loop[BigInt, Nothing] _ <| Agg ~> Countdown[BigInt](n)
+  def stage(n: Int): Stage[Unit, BigInt, Nothing] = Const(One) ~> Loop[BigInt, Nothing](Agg ~> Countdown[BigInt](n))
 }

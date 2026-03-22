@@ -43,11 +43,14 @@ ThisBuild / libraryDependencies ++= TestBundle % Test
 val core = (project in file("core"))
   .settings(
     name := "stages-core",
-    libraryDependencies ++= TestBundle % testkit.Variant
-  ).enablePlugins(TestKitClassifierPlugin)
+    libraryDependencies ++= TestBundle % testkit.Variant)
+  .enablePlugins(TestKitClassifierPlugin)
 
 val lib = (project in file("lib"))
-  .settings(name := "stages-lib")
+  .settings(
+    name := "stages-lib",
+    libraryDependencies ++= TestBundle % testkit.Variant)
+  .enablePlugins(TestKitClassifierPlugin)
   .dependsOn(core, core % "test->testkit")
 
 val cats = (project in file("cats"))
@@ -62,7 +65,7 @@ val examples = (project in file("examples")).settings(
   Compile / packageDoc / mappings := Nil,
   Compile / packageSrc / mappings := Nil,
   Compile / doc / skip := true
-).dependsOn(core, core % "test->testkit", lib)
+).dependsOn(core, core % "test->testkit", lib, lib % "test->testkit")
 
 val root = (project in file("."))
   .settings(name := ProjectName)
