@@ -6,6 +6,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class IdentityTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
-  "Identity" should "return input" in
+  "Identity" should "return the input" in
     forAll((in: String) => Identity(in) shouldBe Yield.Some(`in`, Status.Success, Identity))
 }

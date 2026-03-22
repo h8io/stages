@@ -43,7 +43,7 @@ class AndTest
         val leftStage = mock[Stage[UUID, Long, String]]("left stage")
         val rightStage = mock[Stage[UUID, ZoneId, String]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[UUID, Long, String]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[UUID, ZoneId, String]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[UUID, ZoneId, String]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
@@ -64,7 +64,7 @@ class AndTest
         val leftStage = mock[Stage[ZoneOffset, OffsetDateTime, Short]]("left stage")
         val rightStage = mock[Stage[ZoneOffset, LocalDate, Short]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[ZoneOffset, OffsetDateTime, Short]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[ZoneOffset, LocalDate, Short]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[ZoneOffset, LocalDate, Short]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
