@@ -29,7 +29,7 @@ class OrTest
         val leftStage = mock[Stage[Long, Duration, Exception]]("left stage")
         val rightStage = mock[Stage[Long, Instant, Exception]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[Long, Duration, Exception]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[Long, Instant, Exception]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[Long, Instant, Exception]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
@@ -39,7 +39,7 @@ class OrTest
         }
     }
 
-  it should "return Right output if the left stage returns Yield.None and the right one returns Yield.Some" in
+  it should "return a Right value when the left stage returns Yield.None and the right one returns Yield.Some" in
     forAll(
       Gen.zip(
         Arbitrary.arbitrary[String],
@@ -50,7 +50,7 @@ class OrTest
         val leftStage = mock[Stage[String, LocalDateTime, UUID]]("left stage")
         val rightStage = mock[Stage[String, ZonedDateTime, UUID]]("right stage")
         val leftYield = leftYieldSupplier(mock[Evolution[String, LocalDateTime, UUID]]("left evolution"))
-        val rightYield = rightYieldSupplier(mock[Evolution[String, ZonedDateTime, UUID]]("right Evolution"))
+        val rightYield = rightYieldSupplier(mock[Evolution[String, ZonedDateTime, UUID]]("right evolution"))
         inSequence {
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
@@ -93,7 +93,7 @@ class OrTest
     evolution.onError() shouldBe Or(leftOnErrorStage, rightOnErrorStage)
   }
 
-  it should "return Left output if the left stage returns Yield.Some" in
+  it should "return a Left value when the left stage returns Yield.Some" in
     forAll(Gen.zip(Gen.uuid, Arbitrary.arbitrary[EvolutionToYieldSome[UUID, Long, String]])) {
       case (in, leftYieldSupplier) =>
         val leftStage = mock[Stage[UUID, Long, String]]("left stage")

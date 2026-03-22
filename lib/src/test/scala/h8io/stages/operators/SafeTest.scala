@@ -88,7 +88,7 @@ class SafeTest
     }
   }
 
-  it should "dispose alterand" in {
+  it should "dispose the alterand" in {
     val alterand = mock[Stage[Any, Nothing, Nothing]]
     (alterand.dispose _).expects()
     noException should be thrownBy Safe(alterand).dispose()

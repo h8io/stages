@@ -30,7 +30,7 @@ class GlobalSoftDeadlineTest
       }
     }
 
-  "GlobalSoftDeadline" should "return Complete status on overdue" in
+  "GlobalSoftDeadline" should "return Complete status when overdue" in
     forAll(Gen.zip(Gen.long, Gen.listOf(Gen.zip(Gen.choose(0L, 1000L), Gen.uuid)))) { case (ts, parameters) =>
       val maxDuration = parameters.iterator.map(_._1).sum
       forAll(Gen.choose(0, maxDuration)) { duration =>

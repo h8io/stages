@@ -9,7 +9,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import java.time.ZoneId
 
 class FnTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks {
-  "Fn" should "return a function value as an output" in
+  "Fn" should "return the function value as output" in
     forAll { (in: ZoneId, out: Long) =>
       val f = mock[Fn[ZoneId, Long]]
       (f.f _).expects(in).returns(out)

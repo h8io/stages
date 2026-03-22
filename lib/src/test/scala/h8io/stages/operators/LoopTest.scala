@@ -79,7 +79,7 @@ class LoopTest
       )) { case (yieldSuppliers, in) =>
       val initial = mock[Stage.Endo[BigInt, Exception]]("initial stage")
       val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
-      val lastEvolution = mock[Evolution[BigInt, BigInt, Exception]]("last Evolution")
+      val lastEvolution = mock[Evolution[BigInt, BigInt, Exception]]("last evolution")
       val lastYield = Yield.None(Status.Success, lastEvolution)
       (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[BigInt, Exception]]("result stage")

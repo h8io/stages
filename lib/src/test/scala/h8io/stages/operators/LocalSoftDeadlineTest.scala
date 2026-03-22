@@ -31,7 +31,7 @@ class LocalSoftDeadlineTest
       LocalSoftDeadline(jDuration.ofNanos(nanos))(stage) shouldBe DeadEnd
     }
 
-  it should "return initial stage (tsSupplier == now) if duration is positive" in
+  it should "return the initial stage (tsSupplier == now) if the duration is positive" in
     forAll(Gen.choose(1L, Long.MaxValue)) { nanos =>
       val stage = mock[Stage[Any, Nothing, Nothing]]
 
@@ -47,7 +47,7 @@ class LocalSoftDeadlineTest
       test(LocalSoftDeadline(jDuration.ofNanos(nanos))(stage))
     }
 
-  it should "return an yield with status Break and initial stage (tsSupplier == now) if overdue" in
+  it should "return a yield with Break status and the initial stage (tsSupplier == now) when overdue" in
     forAll(
       Gen.zip(
         Gen.long,
@@ -83,7 +83,7 @@ class LocalSoftDeadlineTest
         test(ts + duration + overdue)
     }
 
-  it should "return an yield with status Break and initial stage (tsSupplier == now) if no overdue" in
+  it should "return a yield with Break status and the initial stage (tsSupplier == now) when not overdue" in
     forAll(
       Gen.zip(
         Gen.long,

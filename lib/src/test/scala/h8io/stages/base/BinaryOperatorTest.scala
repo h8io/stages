@@ -25,7 +25,7 @@ class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
     val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
       "binary stage")
-    val exception = new Exception("right's dispose failed")
+    val exception = new Exception("right stage's dispose failed")
     inSequence {
       (() => stage.right).expects().returns(right)
       (right.dispose _).expects().throws(exception)
@@ -40,8 +40,8 @@ class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
     val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
     val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
       "binary stage")
-    val rightDisposeException = new Exception("right's dispose failed")
-    val leftDisposeException = new Exception("lefty's dispose failed")
+    val rightDisposeException = new Exception("right stage's dispose failed")
+    val leftDisposeException = new Exception("left stage's dispose failed")
     inSequence {
       (() => stage.right).expects().returns(right)
       (right.dispose _).expects().throws(rightDisposeException)
