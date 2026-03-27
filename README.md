@@ -1,91 +1,86 @@
 [![GitHub release](https://img.shields.io/github/v/release/h8io/stages)](https://github.com/h8io/stages/releases/latest)
 
-# Stages DSL
+# stages
 
-Stages is a small functional DSL for building composable processing pipelines.
-Each processing step is a `Stage` that produces a `Yield` with a `Status` and a continuation
-(`Evolution`) that describes how the pipeline should evolve on success, completion, or error.
-The evolution model keeps the pipeline explicit and restartable, and makes it easy to
-decorate with behaviors like loops, retries, deadlines, and branching.
+`stages` is an experimental Scala library for building pipelines out of steps that can evolve as they run.
 
-## Maven Central
+The core idea is simple: an ordinary function turns an input into an output, while a `Stage` does more. It not only
+processes a value, but also reports what happened and contributes to how the pipeline evolves next.
 
-Add to `build.sbt`:
+That is what makes `stages` different from ordinary function composition. Here, a pipeline is not just a chain of
+transformations, but a living structure that can:
 
-```scala
-libraryDependencies ++= Seq(
-  "io.h8" %% "stages-core" % "0.0.4",
-  "io.h8" %% "stages-lib" % "0.0.4",
-  "io.h8" %% "stages-cats" % "0.0.4"
-)
-```
+- continue;
+- finish normally;
+- react to errors;
+- evolve in response to what happened.
 
-## Core concepts
+## Why
 
-- `Stage[I, O, E]`: a step from input `I` to output `O` that can produce errors of type `E`.
-  It is also a function `I => Yield[I, O, E]`. A stage may be stateless, but can also hold
-  resources (files, sockets) and evolve into a new stage via `Evolution`. It also provides
-  `dispose` for final cleanup when the pipeline is fully finished.
-- `Yield`: the result of a step. `Yield.Some(out, status, evolution)` returns output, while
-  `Yield.None(status, evolution)` does not. Both carry a `Status` and the next `Evolution`.
-- `Status`: a control status for the pipeline.
-  - `Success` means continue normally.
-  - `Complete` stops the pipeline (a soft break).
-  - `Error` accumulates one or more errors and switches to the error branch.
-- `Evolution`: describes the next `Stage` to run after success, completion, or error. It is the
-  result of a stage's evolution and handles cleanup between stage evolutions.
-- `Alteration` / `Decoration`: functions that wrap or transform stages (e.g., loop, repeat,
-  deadlines, lifting to `Option`, etc.). They compose via `~>` and apply via `⋅` or `<|`.
+In many real computations, producing the next value is not enough. You also need to express:
 
-## Glossary
+- that processing succeeded;
+- that the work completed normally, without failure;
+- that something went wrong;
+- that the next step should now behave differently.
 
-- `Yield`: a step-level result that still carries the continuation (`Evolution`).
-- `Outcome`: a finalized result with a `Status` and a `dispose` thunk, without a continuation.
-  The `dispose` thunk is the final cleanup hook of the stage that produced the outcome.
-- `Status.Success`: normal continuation status.
-- `Status.Complete`: a soft stop (break) for the pipeline.
-- `Status.Error`: an error status that can accumulate multiple errors.
-- `Evolution`: the evolution/continuation of a stage and the holder of cleanup logic between
-  stage evolutions.
-- `dispose`: a `Stage` method used for final cleanup when the pipeline is fully finished and
-  no further runs of the evolved pipeline will happen.
-- `Alteration`: a transformation `Stage => Stage`.
-- `Decoration`: an `Alteration` that preserves input/output types.
-- `Alterator`: a `Stage` wrapper that holds the altered stage (`alterand`) and delegates disposal.
+This is especially useful for stateful computations, iterative algorithms, streaming-like workflows, decorators, and
+other scenarios where not only the result matters, but also the future of the computation.
 
-## Modules
+## How to think about it
 
-- `core`: the minimal model and operators:
-  `Stage`, `Yield`, `Status`, `Evolution`, `Outcome`, and alteration composition.
-  Files: `core/src/main/scala/h8io/stages/...`.
-- `lib`: standard library with concrete stages, decorations, projections, and binary ops.
-  Files: `lib/src/main/scala/h8io/stages/...`.
-- `cats`: integrations for Cats types such as `Ior` and `Validated`.
-  Files: `cats/src/main/scala/h8io/stages/cats/...`.
-- `examples`: small, runnable examples demonstrating real pipelines.
-  Files: `examples/src/main/scala/h8io/stages/examples/...`.
+The easiest way to think about a `Stage` is as a computation step that can evolve in response to what happened.
 
-## Examples
+After each call, it returns not just a result, but a richer answer:
 
-The `examples` module contains more complete pipelines:
+- possibly a new value;
+- an execution status;
+- a description of how the pipeline should evolve next.
 
-- Factorials with looping and countdowns:
-  `examples/src/main/scala/h8io/stages/examples/Factorial1.scala`.
-- Series computation (Leibniz / Wallis):
-  `examples/src/main/scala/h8io/stages/examples/Leibniz.scala`,
-  `examples/src/main/scala/h8io/stages/examples/Wallis.scala`.
-- A small caching example:
-  `examples/src/main/scala/h8io/stages/examples/Cache.scala`.
+Because of that, `stages` is not only about transforming data, but also about composing behavior.
 
-## Alterations and binary ops
+## What this gives you
 
-The standard library includes:
+This approach lets you model things explicitly that are often scattered across surrounding code in ordinary pipelines:
 
-- Looping and repetition: `Loop`, `Repeat`.
-- Deadlines: `GlobalSoftDeadline`, `LocalSoftDeadline`.
-- Control flow: `Break`, `BreakIfNone`, `BreakIfSome`, `DeadEnd`.
-- Output shaping: `Lift`, `KeepLastOutput`, `Unlift`.
-- Binary combinators: `And`, `IAnd`, `Or` and projections for tuples and either types.
+- normal completion without failure;
+- continuing after partial success;
+- repeating a step while it still makes sense;
+- evolving after each call in response to what happened;
+- building stateful pipelines in a direct way.
+
+As a result, pipeline behavior becomes part of the model rather than an accidental side effect of external control flow.
+
+## The basic intuition
+
+In the shortest possible form:
+
+- an ordinary function answers “what should I do with this value?”;
+- a `Stage` answers “what happened now, and how should the pipeline evolve next?”.
+
+That idea sits at the center of `stages`.
+
+The `examples` module contains illustrative examples. They may be far from real-world usage, but they are meant to make
+the core ideas easier to grasp.
+
+## Project status
+
+The project is still in the design stage, and its core abstractions are being refined.
+
+This README is intentionally introductory and explanatory. Stricter definitions, formal semantics, and precise examples
+can live in separate documentation.
+
+## Who this may be for
+
+`stages` may be interesting if you like:
+
+- functional style;
+- declarative pipelines;
+- stateful computation;
+- explicit semantics for continuation, completion, and failure.
+
+If the idea of composable stateful pipelines in Scala appeals to you, `stages` may already be interesting at the level
+of the model itself.
 
 ## License
 
