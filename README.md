@@ -60,6 +60,9 @@ In the shortest possible form:
 
 That idea sits at the center of `stages`.
 
+The `examples` module contains illustrative examples. They may be far from real-world usage, but they are meant to make
+the core ideas easier to grasp.
+
 ## Project status
 
 The project is still in the design stage, and its core abstractions are being refined.
