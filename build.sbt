@@ -68,7 +68,10 @@ val examples = (project in file("examples")).settings(
 ).dependsOn(core, core % "test->testkit", lib, lib % "test->testkit")
 
 val root = (project in file("."))
-  .settings(name := ProjectName)
+  .settings(
+    name := ProjectName,
+    mdocVariables := Map("VERSION" -> version.value))
   .dependsOn(core, lib, cats)
   .aggregate(core, lib, cats, examples)
   .enablePlugins(ScoverageSummaryPlugin)
+  .enablePlugins(MdocPlugin)
