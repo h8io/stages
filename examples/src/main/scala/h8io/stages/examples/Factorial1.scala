@@ -6,6 +6,12 @@ import h8io.stages.base.BaseEvolution
 import h8io.stages.std.{Const, Countdown}
 
 object Factorial1 {
+  /*
+   * Example 1: factorial as a small pipeline.
+   * The pipeline seeds the accumulator with 1, then loops a stage that multiplies
+   * by an internal counter and a countdown that stops after n steps.
+   * Input is Unit, output is the computed factorial.
+   */
   sealed case class Agg(n: Long) extends Stage.Endo[BigInt, Nothing] with BaseEvolution.Endo[BigInt, Nothing] {
     override def apply(in: BigInt): Yield.Some[BigInt, BigInt, Nothing] = Yield.Some(in * n, Status.Success, this)
 

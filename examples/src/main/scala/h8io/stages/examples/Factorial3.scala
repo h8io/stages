@@ -5,6 +5,12 @@ import h8io.stages.operators.Repeat
 import h8io.stages.base.BaseEvolution
 
 object Factorial3 {
+  /*
+   * Example 3: factorial as a stateful stage that evolves itself.
+   * The stage carries the current multiplier and accumulated value. Each Success
+   * advances the state, and Repeat keeps invoking it until it signals Complete.
+   * Negative input is translated into a domain-specific error.
+   */
   trait FactorialError
 
   object NegativeNumberError extends FactorialError
