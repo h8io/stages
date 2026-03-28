@@ -2,4 +2,4 @@
 
 set -euxo pipefail
 
-sbt scalafmtSbtCheck scalafmtCheckAll +clean +coverage +test +coverageSummary +coverageAggregate mdoc
+sbt scalafmtSbtCheck scalafmtCheckAll +clean +coverage +test +doc +coverageSummary +coverageAggregate mdoc

@@ -5,7 +5,7 @@
 `stages` is an experimental Scala library for building pipelines out of steps that can evolve as they run.
 
 The core idea is simple: an ordinary function turns an input into an output, while a `Stage` does more. It not only
-processes a value, but also reports what happened and contributes to how the pipeline evolves next.
+processes a value but also reports what happened and contributes to how the pipeline evolves next.
 
 That is what makes `stages` different from ordinary function composition. Here, a pipeline is not just a chain of
 transformations, but a living structure that can:
