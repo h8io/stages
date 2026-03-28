@@ -24,7 +24,7 @@ class StageTest
     }.dispose()
   }
 
-  "outcome" should "run evolution and return Outcome.Some" in
+  "execute" should "run evolution and return Outcome.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
       val evolution = mock[Evolution[Long, String, UUID]]
@@ -35,7 +35,7 @@ class StageTest
         evolutionMock(evolution, yld.status, evolved)
         (evolved.dispose _).expects()
       }
-      stage.execute(in) shouldBe Outcome.Some(yld.out, yld.status)
+      stage.execute(in) shouldBe Outcome.Some(yld.out, yld.status, None)
     }
 
   it should "run evolution and return Outcome.None" in
@@ -49,7 +49,37 @@ class StageTest
         evolutionMock(evolution, yld.status, evolved)
         (evolved.dispose _).expects()
       }
-      stage.execute(in) shouldBe Outcome.None(yld.status)
+      stage.execute(in) shouldBe Outcome.None(yld.status, None)
+    }
+
+  it should "should not fail on dispose throw and return Outcome.Some" in
+    forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, String, UUID]) =>
+      val stage = mock[Stage[Long, String, UUID]]
+      val evolution = mock[Evolution[Long, String, UUID]]
+      val yld = yieldSupplier(evolution)
+      val evolved = mock[Stage[Long, String, UUID]]
+      val disposeFailure = new Exception("dispose failed")
+      inSequence {
+        (stage.apply _).expects(in).returns(yld)
+        evolutionMock(evolution, yld.status, evolved)
+        (evolved.dispose _).expects().throws(disposeFailure)
+      }
+      stage.execute(in) shouldBe Outcome.Some(yld.out, yld.status, Some(disposeFailure))
+    }
+
+  it should "should not fail on dispose throw and return Outcome.None" in
+    forAll { (in: Instant, yieldSupplier: EvolutionToYieldNone[Instant, Boolean, Long]) =>
+      val stage = mock[Stage[Instant, Boolean, Long]]
+      val evolution = mock[Evolution[Instant, Boolean, Long]]
+      val yld = yieldSupplier(evolution)
+      val evolved = mock[Stage[Instant, Boolean, Long]]
+      val disposeFailure = new Exception("dispose failed")
+      inSequence {
+        (stage.apply _).expects(in).returns(yld)
+        evolutionMock(evolution, yld.status, evolved)
+        (evolved.dispose _).expects().throws(disposeFailure)
+      }
+      stage.execute(in) shouldBe Outcome.None(yld.status, Some(disposeFailure))
     }
 
   "~>" should "produce a Stage.AndThen with a stage argument" in {
