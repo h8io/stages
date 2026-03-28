@@ -8,8 +8,7 @@ import h8io.stages.{Stage, Status, Yield}
   *   - `Some(v)` → `h8io.stages.Yield.Some``(v, Status.Success, this)`
   *   - `None` → `h8io.stages.Yield.None``(Status.Success, this)`
   *
-  * In both cases the status is `h8io.stages.Status.Success`; the absence of a value is not treated as an error. To stop
-  * the pipeline when `None` is encountered, compose with [[h8io.stages.operators.BreakIfNone]].
+  * In both cases the status is `h8io.stages.Status.Success`; the absence of a value is not treated as an error.
   *
   * The singleton operates on `Option[Any]` and can be safely cast to `Stage[Option[T], T, Nothing]` via `apply[T]`.
   */
