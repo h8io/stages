@@ -4,6 +4,31 @@ import h8io.stages
 import h8io.stages.base.BinaryOperator
 import h8io.stages.{Stage, Yield}
 
+/** An ''independent'' binary operator that applies two stages to the same input simultaneously and combines their
+  * outputs into a tuple.
+  *
+  * Both `left` and `right` are always applied — unlike [[And]], which skips `right` if `left` produces no output.
+  *
+  *   - If both stages yield `h8io.stages.Yield.Some`, the result is `h8io.stages.Yield.Some``((leftOut, rightOut),
+  *     mergedStatus, ...)`.
+  *   - If either stage yields `h8io.stages.Yield.None`, the result is `h8io.stages.Yield.None``(mergedStatus, ...)`.
+  *
+  * Statuses from both stages are merged with `++` (i.e., `leftStatus ++ rightStatus`). The evolution pairs each
+  * branch's continuations symmetrically.
+  *
+  * @param left
+  *   the first stage
+  * @param right
+  *   the second stage
+  * @tparam I
+  *   the shared input type (contravariant)
+  * @tparam LO
+  *   the left output type (covariant)
+  * @tparam RO
+  *   the right output type (covariant)
+  * @tparam E
+  *   the error type (covariant)
+  */
 final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
     extends BinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, (LO, RO), E] {
   override def apply(in: I): Yield[I, (LO, RO), E] =
@@ -14,6 +39,7 @@ final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, R
     }
 }
 
+/** Companion object for [[IAnd]]. */
 object IAnd {
   private final case class Evolution[-I, +LO, +RO, +E](
       left: stages.Evolution[I, LO, E],

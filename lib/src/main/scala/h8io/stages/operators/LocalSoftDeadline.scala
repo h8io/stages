@@ -6,6 +6,35 @@ import h8io.stages.std.DeadEnd
 
 import scala.concurrent.duration.FiniteDuration
 
+/** A decorator that stops the pipeline after a given duration has elapsed since the last successful
+  * `h8io.stages.Evolution` transition.
+  *
+  * Unlike [[h8io.stages.std.GlobalSoftDeadline]], which measures time from the moment the stage is created,
+  * `LocalSoftDeadline` resets its clock on every `onSuccess` transition: the timestamp is captured fresh each time the
+  * stage is selected by `h8io.stages.Evolution.onSuccess`. On `onComplete` and `onError` transitions the clock is also
+  * reset (to `now`), but the deadline is checked on the very next `apply` call.
+  *
+  * If the deadline is exceeded, the `h8io.stages.Status` of the current `h8io.stages.Yield` is upgraded to its break
+  * variant (e.g. `Success` → `Complete`) by applying `break` to the status.
+  *
+  * If `duration ≤ 0` the factory methods return [[h8io.stages.std.DeadEnd]] directly, ensuring the pipeline immediately
+  * terminates.
+  *
+  * @param tsSupplier
+  *   a thunk that returns the timestamp captured at the last evolution transition
+  * @param now
+  *   a supplier of the current time in nanoseconds
+  * @param duration
+  *   the time budget in nanoseconds
+  * @param alterand
+  *   the inner stage whose deadline is enforced
+  * @tparam I
+  *   the input type (contravariant)
+  * @tparam O
+  *   the output type (covariant)
+  * @tparam E
+  *   the error type (covariant)
+  */
 final case class LocalSoftDeadline[-I, +O, +E](
     tsSupplier: () => Long, now: () => Long, duration: Long, alterand: Stage[I, O, E])
     extends Decorator[I, O, E] {
@@ -17,6 +46,7 @@ final case class LocalSoftDeadline[-I, +O, +E](
   }
 }
 
+/** Companion object and factory for [[LocalSoftDeadline]]. */
 object LocalSoftDeadline {
   private[operators] final case class _Evolution[-I, +O, +E](
       ts: () => Long, now: () => Long, duration: Long, evolution: Evolution[I, O, E])
@@ -26,8 +56,16 @@ object LocalSoftDeadline {
     override def onError(): Stage[I, O, E] = LocalSoftDeadline(now, now, duration, evolution.onError())
   }
 
+  /** Wraps `stage` with a local deadline of the given `scala.concurrent.duration.FiniteDuration`.
+    *
+    * Returns [[h8io.stages.std.DeadEnd]] if `duration` is non-positive.
+    */
   def apply[I, O, E](duration: FiniteDuration, stage: Stage[I, O, E]): Stage[I, O, E] = apply(duration.toNanos, stage)
 
+  /** Wraps `stage` with a local deadline of the given `java.time.Duration`.
+    *
+    * Returns [[h8io.stages.std.DeadEnd]] if `duration` is non-positive.
+    */
   def apply[I, O, E](duration: java.time.Duration, stage: Stage[I, O, E]): Stage[I, O, E] =
     apply(duration.toNanos, stage)
 
@@ -36,7 +74,12 @@ object LocalSoftDeadline {
 
   private val now: () => Long = System.nanoTime _
 
+  /** Returns a [[h8io.stages.base.Decoration]] that applies this deadline to any stage.
+    *
+    * Useful when the same timeout should be applied to multiple stages.
+    */
   def apply[I, O, E](duration: FiniteDuration): Decoration[I, O, E] = apply(duration, _)
 
+  /** Returns a [[h8io.stages.base.Decoration]] that applies this deadline to any stage. */
   def apply[I, O, E](duration: java.time.Duration): Decoration[I, O, E] = apply(duration, _)
 }
