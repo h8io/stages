@@ -1,5 +1,6 @@
 package h8io.stages
 
+import scala.util.Try
 import scala.util.control.NonFatal
 
 /** A single processing unit in a pipeline that transforms input values into [[Yield]] results.
@@ -51,10 +52,12 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     * Internally this method:
     *   1. Applies the stage to `in`, obtaining a [[Yield]].
     *   1. Selects the next stage from the [[Evolution]] based on the current [[Status]].
-    *   1. Disposes the selected next stage.
+    *   1. Attempts to dispose the selected next stage.
     *   1. Wraps the result in an [[Outcome.Some]] or [[Outcome.None]].
     *
-    * If disposing the selected next stage throws, the exception is propagated.
+    * Disposal failures do not prevent the result from being returned. Any non-fatal exception raised by disposing the
+    * selected next stage is captured in [[Outcome.disposeFailure]] and the outcome is still produced. Fatal exceptions
+    * are not caught and will propagate.
     *
     * @param in
     *   the input value
@@ -63,10 +66,10 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     */
   @inline final def execute(in: I): Outcome[O, E] = {
     val yld = this(in)
-    yld.status(yld.evolution).dispose()
+    val disposeFailure = Try(yld.status(yld.evolution).dispose()).failed.toOption
     yld match {
-      case Yield.Some(out, status, _) => Outcome.Some(out, status)
-      case Yield.None(status, _) => Outcome.None(status)
+      case Yield.Some(out, status, _) => Outcome.Some(out, status, disposeFailure)
+      case Yield.None(status, _) => Outcome.None(status, disposeFailure)
     }
   }
 
