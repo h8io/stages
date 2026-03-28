@@ -7,6 +7,12 @@ import h8io.stages.base.BaseEvolution
 import scala.concurrent.duration.FiniteDuration
 
 object Leibniz {
+  /*
+   * Example: Pi approximation via the Leibniz series.
+   * Each step emits the current approximation and evolves to the next term.
+   * A local soft deadline stops the run after the requested duration, and Repeat
+   * keeps stepping until completion.
+   */
   final case class Pi(n: Long, t: Double, s: Double)
       extends Stage[Unit, Double, Nothing] with BaseEvolution[Unit, Double, Nothing] {
     override def apply(in: Unit): Yield.Some[Unit, Double, Nothing] = Yield.Some(4 * s, Status.Success, this)
