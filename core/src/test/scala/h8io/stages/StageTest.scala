@@ -110,8 +110,8 @@ class StageTest
           val updatedPreviousStage = mock[Stage[Int, String, String]]
           val updatedNextStage = mock[Stage[String, Long, Nothing]]
           inSequence {
-            armEvolution(nextEvolution, status, updatedNextStage)
-            armEvolution(previousEvolution, status, updatedPreviousStage)
+            evolutionMock(nextEvolution, status, updatedNextStage)
+            evolutionMock(previousEvolution, status, updatedPreviousStage)
           }
           status(evolution) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
         }
@@ -132,8 +132,8 @@ class StageTest
         val updatedPreviousStage = mock[Stage[Int, String, String]]
         val updatedNextStage = mock[Stage[String, Long, Nothing]]
         inSequence {
-          armEvolution(nextEvolution, status, updatedNextStage)
-          armEvolution(previousEvolution, status, updatedPreviousStage)
+          evolutionMock(nextEvolution, status, updatedNextStage)
+          evolutionMock(previousEvolution, status, updatedPreviousStage)
         }
         status(evolution) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
       }
@@ -147,22 +147,10 @@ class StageTest
       (previousStage.apply _).expects(in).returns(Yield.None(previousStatus, previousEvolution))
       inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousStatus`, evolution) =>
         val evolvedPreviousStage = mock[Stage[Int, String, String]]
-        armEvolution(previousEvolution, previousStatus, evolvedPreviousStage)
+        evolutionMock(previousEvolution, previousStatus, evolvedPreviousStage)
         previousStatus(evolution) shouldBe Stage.AndThen(evolvedPreviousStage, nextStage)
       }
     }
-
-  private def armEvolution[I, O, E](
-      evolution: Evolution[I, O, E],
-      status: Status[E],
-      stage: Stage[I, O, E]): (Evolution[I, O, E], Stage[I, O, E]) = {
-    status match {
-      case Status.Success => (evolution.onSuccess _).expects().returns(stage)
-      case Status.Complete => (evolution.onComplete _).expects().returns(stage)
-      case Status.Error(_, _) => (evolution.onError _).expects().returns(stage)
-    }
-    (evolution, stage)
-  }
 
   it should "call the next stage's dispose and then the previous stage's dispose" in {
     val previousStage = mock[Stage[Int, String, String]]
