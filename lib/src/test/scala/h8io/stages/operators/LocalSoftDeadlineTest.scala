@@ -134,11 +134,11 @@ class LocalSoftDeadlineTest
         test(ts + spent)
     }
 
-  "_Evolution" should "return Tail on success and Head on complete and on error" in
+  "Evolution" should "return Tail on success and Head on complete and on error" in
     forAll(Gen.zip(Gen.function0(Gen.long), Gen.posNum[Long])) { case (tsSupplier, duration) =>
       val now = mock[() => Long]("now")
       val evolution = mock[Evolution[Any, Nothing, Nothing]]("evolution")
-      val _evolution = LocalSoftDeadline._Evolution(tsSupplier, now, duration, evolution)
+      val _evolution = LocalSoftDeadline.Evolution(tsSupplier, now, duration, evolution)
       testWrappedEvolution(
         _evolution,
         evolution,

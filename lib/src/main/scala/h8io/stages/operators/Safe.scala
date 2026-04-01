@@ -9,7 +9,7 @@ import h8io.stages.{Stage, Status, Yield}
   * The error type is widened from `E` to `Either[Throwable, E]`:
   *   - Errors already carried by the inner stage are wrapped as `Right(e)`.
   *   - Exceptions caught during `apply` are reported as `Left(throwable)` in a
-  *     `h8io.stages.Yield.None``(Status.Error(Left(e)), this)`.
+  *     `Yield.None(Status.Error(Left(e)), this)`.
   *
   * Only non-fatal exceptions (matched by `scala.util.control.NonFatal`) are caught; fatal errors such as
   * `OutOfMemoryError` propagate normally.
