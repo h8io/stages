@@ -52,7 +52,8 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     * Internally this method:
     *   1. Applies the stage to `in`, obtaining a [[Yield]].
     *   1. Selects the next stage from the [[Evolution]] based on the current [[Status]].
-    *   1. Attempts to dispose the selected next stage.
+    *   1. Disposes the selected next stage — since `execute` is a terminal operation, the continuation is not needed
+    *      and must be cleaned up immediately.
     *   1. Wraps the result in an [[Outcome.Some]] or [[Outcome.None]].
     *
     * Disposal failures do not prevent the result from being returned. Any non-fatal exception raised by disposing the
@@ -75,7 +76,9 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   /** Composes this stage with `that`, producing a new stage that feeds the output of this stage into `that`.
     *
-    * The resulting [[Stage.AndThen]] merges the statuses and evolutions of both stages.
+    * The resulting [[Stage.AndThen]] feeds the output of this stage into `that`. If this stage produces an output, the
+    * statuses and evolutions of both stages are merged; if it produces no output, only the evolutions are composed and
+    * `that` is not invoked for the current input.
     *
     * @param that
     *   the stage to execute after this one

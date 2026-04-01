@@ -22,7 +22,7 @@ import scala.concurrent.duration.FiniteDuration
   * @tparam T
   *   the value type passed through unchanged
   */
-final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
+final class GlobalSoftDeadline[T] private (val now: () => Long, val duration: Long)
     extends Fruitful.Endo[T, Nothing] with BaseEvolution.Endo[T, Nothing] {
   private val ts: Long = now()
 
@@ -32,6 +32,20 @@ final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
 
 /** Factory for [[GlobalSoftDeadline]] stages. */
 object GlobalSoftDeadline {
+
+  /** Creates a [[GlobalSoftDeadline]] with the given clock and duration in nanoseconds.
+    *
+    * @param now
+    *   the clock supplier
+    * @param duration
+    *   the time budget in nanoseconds
+    * @tparam T
+    *   the value type
+    */
+  def apply[T](now: () => Long, duration: Long): GlobalSoftDeadline[T] = new GlobalSoftDeadline[T](now, duration)
+
+  /** Extracts the clock and duration from a [[GlobalSoftDeadline]] instance. */
+  def unapply[T](gsd: GlobalSoftDeadline[T]): Some[(() => Long, Long)] = Some((gsd.now, gsd.duration))
 
   /** Creates a [[GlobalSoftDeadline]] with a `scala.concurrent.duration.FiniteDuration` and `System.nanoTime` as the
     * clock.

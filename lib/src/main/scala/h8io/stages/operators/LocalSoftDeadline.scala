@@ -1,5 +1,6 @@
 package h8io.stages.operators
 
+import h8io.stages
 import h8io.stages.*
 import h8io.stages.base.{Decoration, Decorator}
 import h8io.stages.std.DeadEnd
@@ -42,15 +43,15 @@ final case class LocalSoftDeadline[-I, +O, +E](
     val ts = tsSupplier()
     val yld = alterand(in)
     if (now() - ts >= duration) yld.map(identity, _.break, _.map(LocalSoftDeadline(now, now, duration, _)))
-    else yld.map(identity, identity, LocalSoftDeadline._Evolution(() => ts, now, duration, _))
+    else yld.map(identity, identity, LocalSoftDeadline.Evolution(() => ts, now, duration, _))
   }
 }
 
 /** Companion object and factory for [[LocalSoftDeadline]]. */
 object LocalSoftDeadline {
-  private[operators] final case class _Evolution[-I, +O, +E](
-      ts: () => Long, now: () => Long, duration: Long, evolution: Evolution[I, O, E])
-      extends Evolution[I, O, E] {
+  private[operators] final case class Evolution[-I, +O, +E](
+      ts: () => Long, now: () => Long, duration: Long, evolution: stages.Evolution[I, O, E])
+      extends stages.Evolution[I, O, E] {
     override def onSuccess(): Stage[I, O, E] = LocalSoftDeadline(ts, now, duration, evolution.onSuccess())
     override def onComplete(): Stage[I, O, E] = LocalSoftDeadline(now, now, duration, evolution.onComplete())
     override def onError(): Stage[I, O, E] = LocalSoftDeadline(now, now, duration, evolution.onError())
