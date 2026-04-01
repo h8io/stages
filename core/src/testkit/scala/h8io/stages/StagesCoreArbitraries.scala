@@ -2,22 +2,22 @@ package h8io.stages
 
 import org.scalacheck.{Arbitrary, Gen}
 
-/** ScalaCheck [[Arbitrary]] instances for the core types of the `stages` library.
+/** ScalaCheck `Arbitrary` instances for the core types of the `stages` library.
   *
   * Mix this trait into a test suite or a shared arbitraries object to bring the implicit generators into scope for
   * property-based tests.
   *
   * The trait provides generators for:
-  *   - [[Status]] and [[Status.Error]]
-  *   - Functions that produce [[Yield.Some]], [[Yield.None]], or either [[Yield]] variant, parameterised by [[Status]]
-  *     and/or [[Evolution]].
+  *   - `Status` and `Status.Error`
+  *   - Functions that produce `Yield.Some`, `Yield.None`, or either `Yield` variant, parameterised by `Status`
+  *     and/or `Evolution`.
   *
   * The function-typed aliases (e.g. [[StatusAndEvolutionToYieldSome]]) make it possible to generate partially applied
-  * [[Yield]] constructors and compose them into larger generators.
+  * `Yield` constructors and compose them into larger generators.
   */
 trait StagesCoreArbitraries {
 
-  /** Generates an arbitrary [[Status.Error]] value whose head and tail are drawn from the implicit `Arbitrary[E]`
+  /** Generates an arbitrary `Status.Error` value whose head and tail are drawn from the implicit `Arbitrary[E]`
     * instance.
     *
     * @tparam E
@@ -29,8 +29,8 @@ trait StagesCoreArbitraries {
         Status.Error(head, tail)
       })
 
-  /** Generates an arbitrary [[Status]] by randomly selecting one of [[Status.Success]], [[Status.Complete]], or a
-    * generated [[Status.Error]].
+  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.Complete`, or a
+    * generated `Status.Error`.
     *
     * @tparam E
     *   the error type; requires an implicit `Arbitrary[E]`
@@ -38,7 +38,7 @@ trait StagesCoreArbitraries {
   implicit def arbStatus[E: Arbitrary]: Arbitrary[Status[E]] =
     Arbitrary(Gen.oneOf(Gen.const(Status.Success: Status[E]), Gen.const(Status.Complete), arbStatusError[E].arbitrary))
 
-  /** A function type that constructs a [[Yield.Some]] given a [[Status]] and an [[Evolution]].
+  /** A function type that constructs a `Yield.Some` given a `Status` and an `Evolution`.
     *
     * Useful as a building block for generators that produce `Yield.Some` values with independently controlled status
     * and evolution.
@@ -46,7 +46,7 @@ trait StagesCoreArbitraries {
   type StatusAndEvolutionToYieldSome[I, O, E] = (Status[E], Evolution[I, O, E]) => Yield.Some[I, O, E]
 
   /** Generates a [[StatusAndEvolutionToYieldSome]] function by drawing a random output value `O` and partially applying
-    * [[Yield.Some]].
+    * `Yield.Some`.
     *
     * @tparam I
     *   the stage input type (no `Arbitrary` required — captured as a phantom type)
@@ -58,8 +58,7 @@ trait StagesCoreArbitraries {
   implicit def arbStatusAndEvolutionToYieldSome[I, O: Arbitrary, E]: Arbitrary[StatusAndEvolutionToYieldSome[I, O, E]] =
     Arbitrary(Arbitrary.arbitrary[O] map { out => Yield.Some(out, _: Status[E], _: Evolution[I, O, E]) })
 
-  /** A function type that constructs either a [[Yield.Some]] or a [[Yield.None]] given a [[Status]] and an
-    * [[Evolution]].
+  /** A function type that constructs either a `Yield.Some` or a `Yield.None` given a `Status` and an `Evolution`.
     */
   type StatusAndEvolutionToYield[I, O, E] = (Status[E], Evolution[I, O, E]) => Yield[I, O, E]
 
@@ -79,11 +78,11 @@ trait StagesCoreArbitraries {
         Arbitrary.arbitrary[StatusAndEvolutionToYieldSome[I, O, E]],
         Gen.const(Yield.None[I, O, E](_: Status[E], _: Evolution[I, O, E]))))
 
-  /** A function type that constructs a [[Yield.Some]] given only an [[Evolution]] (the [[Status]] is baked in).
+  /** A function type that constructs a `Yield.Some` given only an `Evolution` (the `Status` is baked in).
     */
   type EvolutionToYieldSome[I, O, E] = Evolution[I, O, E] => Yield.Some[I, O, E]
 
-  /** Generates an [[EvolutionToYieldSome]] function by drawing a random [[Status]] and a random
+  /** Generates an [[EvolutionToYieldSome]] function by drawing a random `Status` and a random
     * [[StatusAndEvolutionToYieldSome]], then partially applying the status.
     *
     * @tparam I
@@ -99,12 +98,12 @@ trait StagesCoreArbitraries {
         case (status, yieldSupplier) => yieldSupplier(status, _: Evolution[I, O, E])
       })
 
-  /** A function type that constructs a [[Yield.None]] given only an [[Evolution]] (the [[Status]] is baked in).
+  /** A function type that constructs a `Yield.None` given only an `Evolution` (the `Status` is baked in).
     */
   type EvolutionToYieldNone[I, O, E] = Evolution[I, O, E] => Yield.None[I, O, E]
 
-  /** Generates an [[EvolutionToYieldNone]] function by drawing a random [[Status]] and partially applying
-    * [[Yield.None]].
+  /** Generates an [[EvolutionToYieldNone]] function by drawing a random `Status` and partially applying
+    * `Yield.None`.
     *
     * @tparam I
     *   the stage input type
@@ -116,12 +115,12 @@ trait StagesCoreArbitraries {
   implicit def arbEvolutionToYieldNone[I, O, E: Arbitrary]: Arbitrary[EvolutionToYieldNone[I, O, E]] =
     Arbitrary(Arbitrary.arbitrary[Status[E]].map(status => Yield.None(status, _: Evolution[I, O, E])))
 
-  /** A function type that constructs either a [[Yield.Some]] or a [[Yield.None]] given only an [[Evolution]] (the
-    * [[Status]] is baked in).
+  /** A function type that constructs either a `Yield.Some` or a `Yield.None` given only an `Evolution` (the
+    * `Status` is baked in).
     */
   type EvolutionToYield[I, O, E] = Evolution[I, O, E] => Yield[I, O, E]
 
-  /** Generates an [[EvolutionToYield]] function by drawing a random [[Status]] and a random
+  /** Generates an [[EvolutionToYield]] function by drawing a random `Status` and a random
     * [[StatusAndEvolutionToYield]], then partially applying the status.
     *
     * @tparam I
