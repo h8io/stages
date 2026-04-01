@@ -43,14 +43,14 @@ ThisBuild / libraryDependencies ++= TestBundle % Test
 val core = (project in file("core"))
   .settings(
     name := "stages-core",
-    libraryDependencies ++= TestBundle % testkit.Variant)
-  .enablePlugins(TestKitClassifierPlugin)
+    libraryDependencies ++= TestBundle % TestKit)
+  .enablePlugins(TestKitPlugin)
 
 val lib = (project in file("lib"))
   .settings(
     name := "stages-lib",
-    libraryDependencies ++= TestBundle % testkit.Variant)
-  .enablePlugins(TestKitClassifierPlugin)
+    libraryDependencies ++= TestBundle % TestKit)
+  .enablePlugins(TestKitPlugin)
   .dependsOn(core, core % "test->testkit")
 
 val cats = (project in file("cats"))
@@ -70,8 +70,10 @@ val examples = (project in file("examples")).settings(
 val root = (project in file("."))
   .settings(
     name := ProjectName,
-    mdocVariables := Map("VERSION" -> version.value))
+    mdocVariables := Map("VERSION" -> version.value),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
+    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit)
+  )
   .dependsOn(core, lib, cats)
   .aggregate(core, lib, cats, examples)
-  .enablePlugins(ScoverageSummaryPlugin)
-  .enablePlugins(MdocPlugin)
+  .enablePlugins(ScoverageSummaryPlugin, MdocPlugin, ScalaUnidocPlugin)
