@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 /** Test utilities for specs that exercise the core `stages` abstractions.
   *
   * Mix this trait into a ScalaTest suite (alongside `MockFactory` and `Matchers`, which are already extended here) to
-  * get access to helpers that set up mock expectations on [[Evolution]] instances.
+  * get access to helpers that set up mock expectations on `Evolution` instances.
   *
   * {{{
   * class MySpec extends AnyFunSuite with StagesCoreTestUtil {
@@ -27,16 +27,16 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
     * called exactly once and will return `stage`.
     *
     * The mapping between status and branch is:
-    *   - [[Status.Success]] → `evolution.onSuccess()`
-    *   - [[Status.Complete]] → `evolution.onComplete()`
-    *   - [[Status.Error]] → `evolution.onError()`
+    *   - `Status.Success` → `evolution.onSuccess()`
+    *   - `Status.Complete` → `evolution.onComplete()`
+    *   - `Status.Error` → `evolution.onError()`
     *
     * @param evolution
-    *   the mock [[Evolution]] on which the expectation is registered
+    *   the mock `Evolution` on which the expectation is registered
     * @param status
-    *   the [[Status]] that determines which branch to expect
+    *   the `Status` that determines which branch to expect
     * @param stage
-    *   the [[Stage]] that the expected branch should return
+    *   the `Stage` that the expected branch should return
     * @tparam I
     *   the stage input type
     * @tparam O
