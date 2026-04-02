@@ -1,0 +1,45 @@
+name: Publish pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stages:publish-pages~${{ github.repository }}~${{ github.workflow }}~${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: coursier/cache-action@v8
+      - uses: coursier/setup-action@v3
+        with:
+          apps: sbt
+          jvm: temurin:17
+      - uses: actions/configure-pages@v6
+      - shell: bash
+        run: |
+          sbt clean +unidoc
+          mkdir -p target/pages/api/scala-2.12
+          cp -pr target/scala-2.12/unidoc/* target/pages/api/scala-2.12
+          mkdir -p target/pages/api/scala-2.13
+          cp -pr target/scala-2.13/unidoc/* target/pages/api/scala-2.13
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: target/pages
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/deploy-pages@v4
