@@ -46,8 +46,8 @@ trait BinaryOperator[+LS <: Stage[I, ?, ?], +RS <: Stage[I, ?, ?], -I, +O, +E] e
     * Exception semantics:
     *   - If [[preDispose]] throws, `right.dispose()` and `left.dispose()` are still called (in order), but
     *     [[postDispose]] is '''not''' invoked. Any exceptions from the dispose calls are suppressed.
-    *   - If `right.dispose()` throws, `left.dispose()` and [[postDispose]] are still called; any exceptions they
-    *     throw are suppressed.
+    *   - If `right.dispose()` throws, `left.dispose()` and [[postDispose]] are still called; any exceptions they throw
+    *     are suppressed.
     *   - If `left.dispose()` throws, [[postDispose]] is still called; any exception it throws is suppressed.
     *   - If [[postDispose]] throws on the normal (no-error) path, the exception propagates as-is.
     */
@@ -56,14 +56,14 @@ trait BinaryOperator[+LS <: Stage[I, ?, ?], +RS <: Stage[I, ?, ?], -I, +O, +E] e
       try preDispose()
       catch {
         case NonFatal(primary) =>
-          suppress(primary, right.dispose)
-          suppress(primary, left.dispose)
+          suppress(primary, right.dispose _)
+          suppress(primary, left.dispose _)
           throw primary
       }
     try right.dispose()
     catch {
       case NonFatal(primary) =>
-        suppress(primary, left.dispose)
+        suppress(primary, left.dispose _)
         suppress(primary, () => postDispose(ctx))
         throw primary
     }
@@ -85,7 +85,8 @@ trait BinaryOperator[+LS <: Stage[I, ?, ?], +RS <: Stage[I, ?, ?], -I, +O, +E] e
   /** Called at the start of [[dispose]], before `right.dispose()`.
     *
     * May perform pre-disposal cleanup and/or produce a [[DisposeContext]] that is passed to [[postDispose]]. If this
-    * method throws, [[postDispose]] is '''not''' called — both sub-stages are still disposed with exceptions suppressed.
+    * method throws, [[postDispose]] is '''not''' called — both sub-stages are still disposed with exceptions
+    * suppressed.
     */
   def preDispose(): DisposeContext
 
