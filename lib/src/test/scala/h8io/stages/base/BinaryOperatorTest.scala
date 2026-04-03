@@ -6,50 +6,195 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class BinaryOperatorTest extends AnyFlatSpec with Matchers with MockFactory {
-  "dispose" should "call right stage's dispose and left stage's dispose" in {
-    val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
-    val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
-      "binary stage")
+  "dispose" should "call right and left dispose in order, then postDispose" in {
+    val (op, left, right, context) = mkMocks()
     inSequence {
-      (() => stage.right).expects().returns(right)
+      (op.preDispose _).expects().returns(context)
+      (() => op.right).expects().returns(right)
       (right.dispose _).expects().returns(())
-      (() => stage.left).expects().returns(left)
+      (() => op.left).expects().returns(left)
       (left.dispose _).expects().returns(())
+      (op.postDispose _).expects(context)
     }
-    noException should be thrownBy stage.dispose()
+    noException should be thrownBy op.dispose()
   }
 
-  it should "call left stage's dispose even if right stage's dispose throws" in {
-    val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
-    val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
-      "binary stage")
-    val exception = new Exception("right stage's dispose failed")
+  // preDispose throws
+
+  it should "propagate preDispose exception, still call right and left dispose, skip postDispose" in {
+    val (op, left, right, _) = mkMocks()
+    val preError = new RuntimeException("preDispose")
     inSequence {
-      (() => stage.right).expects().returns(right)
-      (right.dispose _).expects().throws(exception)
-      (() => stage.left).expects().returns(left)
+      (op.preDispose _).expects().throws(preError)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().returns(())
+      (() => op.left).expects().returns(left)
       (left.dispose _).expects().returns(())
     }
-    the[Exception] thrownBy stage.dispose() should be theSameInstanceAs exception
+    the[RuntimeException] thrownBy op.dispose() should be(preError)
   }
 
-  it should "suppress left stage's dispose exception if right stage's dispose throws" in {
-    val left = mock[Stage[Any, Nothing, Nothing]]("left stage")
-    val right = mock[Stage[Any, Nothing, Nothing]]("right stage")
-    val stage = mock[BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing]](
-      "binary stage")
-    val rightDisposeException = new Exception("right stage's dispose failed")
-    val leftDisposeException = new Exception("left stage's dispose failed")
+  it should "suppress right dispose exception when preDispose already threw" in {
+    val (op, left, right, _) = mkMocks()
+    val preError = new RuntimeException("preDispose")
+    val rightError = new RuntimeException("right dispose")
     inSequence {
-      (() => stage.right).expects().returns(right)
-      (right.dispose _).expects().throws(rightDisposeException)
-      (() => stage.left).expects().returns(left)
-      (left.dispose _).expects().throws(leftDisposeException)
+      (op.preDispose _).expects().throws(preError)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().throws(rightError)
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().returns(())
     }
-    val exception = the[Exception] thrownBy stage.dispose()
-    exception should be theSameInstanceAs rightDisposeException
-    rightDisposeException.getSuppressed should contain(leftDisposeException)
+    val thrown = the[RuntimeException] thrownBy op.dispose()
+    thrown should be(preError)
+    thrown.getSuppressed should contain(rightError)
   }
+
+  it should "suppress left dispose exception when preDispose already threw" in {
+    val (op, left, right, _) = mkMocks()
+    val preError = new RuntimeException("preDispose")
+    val leftError = new RuntimeException("left dispose")
+    inSequence {
+      (op.preDispose _).expects().throws(preError)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().returns(())
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().throws(leftError)
+    }
+    val thrown = the[RuntimeException] thrownBy op.dispose()
+    thrown should be(preError)
+    thrown.getSuppressed should contain(leftError)
+  }
+
+  it should "suppress both right and left dispose exceptions when preDispose already threw" in {
+    val (op, left, right, _) = mkMocks()
+    val preError = new RuntimeException("preDispose")
+    val rightError = new RuntimeException("right dispose")
+    val leftError = new RuntimeException("left dispose")
+    inSequence {
+      (op.preDispose _).expects().throws(preError)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().throws(rightError)
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().throws(leftError)
+    }
+    val thrown = the[RuntimeException] thrownBy op.dispose()
+    thrown should be(preError)
+    thrown.getSuppressed should contain(rightError)
+    thrown.getSuppressed should contain(leftError)
+  }
+
+  // right.dispose throws
+
+  it should "propagate right dispose exception, still call left dispose and postDispose" in {
+    val (op, left, right, context) = mkMocks()
+    val rightError = new RuntimeException("right dispose")
+    inSequence {
+      (op.preDispose _).expects().returns(context)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().throws(rightError)
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().returns(())
+      (op.postDispose _).expects(context).returns(())
+    }
+    the[RuntimeException] thrownBy op.dispose() should be(rightError)
+  }
+
+  it should "suppress left dispose exception when right dispose already threw" in {
+    val (op, left, right, context) = mkMocks()
+    val rightError = new RuntimeException("right dispose")
+    val leftError = new RuntimeException("left dispose")
+    inSequence {
+      (op.preDispose _).expects().returns(context)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().throws(rightError)
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().throws(leftError)
+      (op.postDispose _).expects(context).returns(())
+    }
+    val thrown = the[RuntimeException] thrownBy op.dispose()
+    thrown should be(rightError)
+    thrown.getSuppressed should contain(leftError)
+  }
+
+  it should "suppress postDispose exception when right dispose already threw" in {
+    val (op, left, right, context) = mkMocks()
+    val rightError = new RuntimeException("right dispose")
+    val postError = new RuntimeException("postDispose")
+    inSequence {
+      (op.preDispose _).expects().returns(context)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().throws(rightError)
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().returns(())
+      (op.postDispose _).expects(context).throws(postError)
+    }
+    val thrown = the[RuntimeException] thrownBy op.dispose()
+    thrown should be(rightError)
+    thrown.getSuppressed should contain(postError)
+  }
+
+  it should "suppress both left dispose and postDispose exceptions when right dispose already threw" in {
+    val (op, left, right, context) = mkMocks()
+    val rightError = new RuntimeException("right dispose")
+    val leftError = new RuntimeException("left dispose")
+    val postError = new RuntimeException("postDispose")
+    inSequence {
+      (op.preDispose _).expects().returns(context)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().throws(rightError)
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().throws(leftError)
+      (op.postDispose _).expects(context).throws(postError)
+    }
+    val thrown = the[RuntimeException] thrownBy op.dispose()
+    thrown should be(rightError)
+    thrown.getSuppressed should contain(leftError)
+    thrown.getSuppressed should contain(postError)
+  }
+
+  // left.dispose throws
+
+  it should "propagate left dispose exception and still call postDispose" in {
+    val (op, left, right, context) = mkMocks()
+    val leftError = new RuntimeException("left dispose")
+    inSequence {
+      (op.preDispose _).expects().returns(context)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().returns(())
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().throws(leftError)
+      (op.postDispose _).expects(context).returns(())
+    }
+    the[RuntimeException] thrownBy op.dispose() should be(leftError)
+  }
+
+  it should "suppress postDispose exception when left dispose already threw" in {
+    val (op, left, right, context) = mkMocks()
+    val leftError = new RuntimeException("left dispose")
+    val postError = new RuntimeException("postDispose")
+    inSequence {
+      (op.preDispose _).expects().returns(context)
+      (() => op.right).expects().returns(right)
+      (right.dispose _).expects().returns(())
+      (() => op.left).expects().returns(left)
+      (left.dispose _).expects().throws(leftError)
+      (op.postDispose _).expects(context).throws(postError)
+    }
+    val thrown = the[RuntimeException] thrownBy op.dispose()
+    thrown should be(leftError)
+    thrown.getSuppressed should contain(postError)
+  }
+
+  private def mkMocks() = (
+    mock[TestBinaryOperator]("op"),
+    mock[Stage[Any, Nothing, Nothing]]("left"),
+    mock[Stage[Any, Nothing, Nothing]]("right"),
+    mock[AnyRef]("context")
+  )
+}
+
+private trait TestBinaryOperator
+    extends BinaryOperator[Stage[Any, Nothing, Nothing], Stage[Any, Nothing, Nothing], Any, Nothing, Nothing] {
+  override type DisposeContext = AnyRef
 }

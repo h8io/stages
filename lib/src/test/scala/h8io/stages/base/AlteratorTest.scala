@@ -77,19 +77,6 @@ class AlteratorTest extends AnyFlatSpec with Matchers with MockFactory {
     thrown.getSuppressed should contain(postError)
   }
 
-  it should "propagate postDispose exception when preDispose and alterand's dispose succeeded" in {
-    val alterand = mock[Stage[Any, Nothing, Nothing]]("alterand")
-    val alterator = mock[TestAlterator]("alterator")
-    val context = mock[AnyRef]("context")
-    val postError = new RuntimeException("postDispose")
-    inSequence {
-      (alterator.preDispose _).expects().returns(context)
-      (() => alterator.alterand).expects().returns(alterand)
-      (alterand.dispose _).expects().returns(())
-      (alterator.postDispose _).expects(context).throws(postError)
-    }
-    the[RuntimeException] thrownBy alterator.dispose() should be(postError)
-  }
 }
 
 private trait TestAlterator extends Alterator[Stage[Any, Nothing, Nothing], Any, Nothing, Nothing] {

@@ -2,7 +2,7 @@ package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages
-import h8io.stages.base.{BinaryOperator, LeftProjection, RightProjection}
+import h8io.stages.base.{BaseBinaryOperator, LeftProjection, RightProjection}
 import h8io.stages.{Stage, Yield}
 
 /** A binary operator that applies two stages independently to the same input and combines their outputs into a
@@ -37,7 +37,7 @@ import h8io.stages.{Stage, Yield}
   *   the error type (covariant)
   */
 final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, Ior[LO, RO], E] {
+    extends BaseBinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, Ior[LO, RO], E] {
   override def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
