@@ -1,6 +1,6 @@
 package h8io.stages.operators
 
-import h8io.stages.base.BinaryOperator
+import h8io.stages.base.BaseBinaryOperator
 import h8io.stages.{Evolution, Stage, Yield}
 
 /** A binary operator that tries `left` first; if `left` produces no output, it falls back to `right`, wrapping the
@@ -33,7 +33,7 @@ import h8io.stages.{Evolution, Stage, Yield}
   *   the error type (covariant)
   */
 final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, Either[LO, RO], E] {
+    extends BaseBinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, Either[LO, RO], E] {
   override def apply(in: I): Yield[I, Either[LO, RO], E] =
     left(in) match {
       case Yield.Some(out, status, evolution) => Yield.Some(Left(out), status, Or.LeftEvolution(evolution, right))

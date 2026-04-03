@@ -19,7 +19,7 @@ import h8io.stages.Stage
 trait BaseAlterator[+S <: Stage.Any, -I, +O, +E] extends Alterator[S, I, O, E] {
   override type DisposeContext = Unit
 
-  override def preDispose(): Unit = ()
+  override def preDispose(): DisposeContext = ()
 
   override def postDispose(ctx: DisposeContext): Unit = ()
 }
