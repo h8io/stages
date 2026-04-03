@@ -22,6 +22,10 @@ package object base {
     */
   type Decorator[-I, +O, +E] = UnaryOperator[Stage[I, O, E], I, O, E]
 
+  type BaseUnaryOperator[+S <: Stage[I, ?, ?], -I, +O, +E] = BaseAlterator[S, I, O, E]
+
+  type BaseDecorator[-I, +O, +E] = BaseUnaryOperator[Stage[I, O, E], I, O, E]
+
   /** A function that transforms one stage type into another.
     *
     * @tparam IS
