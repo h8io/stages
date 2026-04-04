@@ -83,107 +83,111 @@ class StageTest
     }
 
   "~>" should "produce a Stage.AndThen with a stage argument" in {
-    val previous = mock[Stage[String, Long, Nothing]]
-    val next = mock[Stage[Long, Timestamp, String]]
-    previous ~> next shouldBe Stage.AndThen(previous, next)
+    val upstream = mock[Stage[String, Long, Nothing]]
+    val downstream = mock[Stage[Long, Timestamp, String]]
+    upstream ~> downstream shouldBe Stage.AndThen(upstream, downstream)
   }
 
   "<~" should "produce a Stage.AndThen" in {
-    val previous = mock[Stage[Instant, Int, String]]
-    val next = mock[Stage[Int, String, Nothing]]
-    next <~ previous shouldBe Stage.AndThen(previous, next)
+    val upstream = mock[Stage[Instant, Int, String]]
+    val downstream = mock[Stage[Int, String, Nothing]]
+    downstream <~ upstream shouldBe Stage.AndThen(upstream, downstream)
   }
 
   "AndThen" should "call stages sequentially and return the correct Yield for Some ~> Some" in
     forAll {
-      (previousStatus: Status[String], nextStatus: Status[String], in: Int, previousOut: String, nextOut: Long) =>
-        val previousStage = mock[Stage[Int, String, String]]
-        val previousEvolution = mock[Evolution[Int, String, String]]
-        val nextStage = mock[Stage[String, Long, String]]
-        val nextEvolution = mock[Evolution[String, Long, String]]
+      (upstreamStatus: Status[String], downstreamStatus: Status[String], in: Int, upstreamOut: String,
+          downstreamOut: Long) =>
+        val upstreamStage = mock[Stage[Int, String, String]]
+        val upstreamEvolution = mock[Evolution[Int, String, String]]
+        val downstreamStage = mock[Stage[String, Long, String]]
+        val downstreamEvolution = mock[Evolution[String, Long, String]]
         inSequence {
-          (previousStage.apply _).expects(in).returns(Yield.Some(previousOut, previousStatus, previousEvolution))
-          (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextStatus, nextEvolution))
+          (upstreamStage.apply _).expects(in).returns(Yield.Some(upstreamOut, upstreamStatus, upstreamEvolution))
+          (downstreamStage.apply _).expects(upstreamOut).returns(
+            Yield.Some(downstreamOut, downstreamStatus, downstreamEvolution))
         }
-        inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, status, evolution) =>
-          status shouldBe previousStatus ++ nextStatus
-          val updatedPreviousStage = mock[Stage[Int, String, String]]
-          val updatedNextStage = mock[Stage[String, Long, Nothing]]
-          inSequence {
-            evolutionMock(nextEvolution, status, updatedNextStage)
-            evolutionMock(previousEvolution, status, updatedPreviousStage)
-          }
-          status(evolution) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
+        inside(Stage.AndThen(upstreamStage, downstreamStage)(in)) {
+          case Yield.Some(`downstreamOut`, status, evolution) =>
+            status shouldBe upstreamStatus ++ downstreamStatus
+            val updatedUpstreamStage = mock[Stage[Int, String, String]]
+            val updatedDownstreamStage = mock[Stage[String, Long, Nothing]]
+            inSequence {
+              evolutionMock(downstreamEvolution, status, updatedDownstreamStage)
+              evolutionMock(upstreamEvolution, status, updatedUpstreamStage)
+            }
+            status(evolution) shouldBe Stage.AndThen(updatedUpstreamStage, updatedDownstreamStage)
         }
     }
 
   it should "call stages sequentially and return the correct Yield for Some ~> None" in
-    forAll { (previousStatus: Status[String], nextStatus: Status[String], in: Int, out: String) =>
-      val previousStage = mock[Stage[Int, String, String]]
-      val previousEvolution = mock[Evolution[Int, String, String]]
-      val nextStage = mock[Stage[String, Long, String]]
-      val nextEvolution = mock[Evolution[String, Long, String]]
+    forAll { (upstreamStatus: Status[String], downstreamStatus: Status[String], in: Int, out: String) =>
+      val upstreamStage = mock[Stage[Int, String, String]]
+      val upstreamEvolution = mock[Evolution[Int, String, String]]
+      val downstreamStage = mock[Stage[String, Long, String]]
+      val downstreamEvolution = mock[Evolution[String, Long, String]]
       inSequence {
-        (previousStage.apply _).expects(in).returns(Yield.Some(out, previousStatus, previousEvolution))
-        (nextStage.apply _).expects(out).returns(Yield.None(nextStatus, nextEvolution))
+        (upstreamStage.apply _).expects(in).returns(Yield.Some(out, upstreamStatus, upstreamEvolution))
+        (downstreamStage.apply _).expects(out).returns(Yield.None(downstreamStatus, downstreamEvolution))
       }
-      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(status, evolution) =>
-        status shouldBe previousStatus ++ nextStatus
-        val updatedPreviousStage = mock[Stage[Int, String, String]]
-        val updatedNextStage = mock[Stage[String, Long, Nothing]]
+      inside(Stage.AndThen(upstreamStage, downstreamStage)(in)) { case Yield.None(status, evolution) =>
+        status shouldBe upstreamStatus ++ downstreamStatus
+        val updatedUpstreamStage = mock[Stage[Int, String, String]]
+        val updatedDownstreamStage = mock[Stage[String, Long, Nothing]]
         inSequence {
-          evolutionMock(nextEvolution, status, updatedNextStage)
-          evolutionMock(previousEvolution, status, updatedPreviousStage)
+          evolutionMock(downstreamEvolution, status, updatedDownstreamStage)
+          evolutionMock(upstreamEvolution, status, updatedUpstreamStage)
         }
-        status(evolution) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
+        status(evolution) shouldBe Stage.AndThen(updatedUpstreamStage, updatedDownstreamStage)
       }
     }
 
   it should "call only the first stage and return the correct Yield for None ~> any Yield" in
-    forAll { (previousStatus: Status[String], in: Int) =>
-      val previousStage = mock[Stage[Int, String, String]]
-      val previousEvolution = mock[Evolution[Int, String, String]]
-      val nextStage = mock[Stage[String, Long, String]]
-      (previousStage.apply _).expects(in).returns(Yield.None(previousStatus, previousEvolution))
-      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousStatus`, evolution) =>
-        val evolvedPreviousStage = mock[Stage[Int, String, String]]
-        evolutionMock(previousEvolution, previousStatus, evolvedPreviousStage)
-        previousStatus(evolution) shouldBe Stage.AndThen(evolvedPreviousStage, nextStage)
+    forAll { (upstreamStatus: Status[String], in: Int) =>
+      val upstreamStage = mock[Stage[Int, String, String]]
+      val upstreamEvolution = mock[Evolution[Int, String, String]]
+      val downstreamStage = mock[Stage[String, Long, String]]
+      (upstreamStage.apply _).expects(in).returns(Yield.None(upstreamStatus, upstreamEvolution))
+      inside(Stage.AndThen(upstreamStage, downstreamStage)(in)) { case Yield.None(`upstreamStatus`, evolution) =>
+        val evolvedUpstreamStage = mock[Stage[Int, String, String]]
+        evolutionMock(upstreamEvolution, upstreamStatus, evolvedUpstreamStage)
+        upstreamStatus(evolution) shouldBe Stage.AndThen(evolvedUpstreamStage, downstreamStage)
       }
     }
 
-  it should "call the next stage's dispose and then the previous stage's dispose" in {
-    val previousStage = mock[Stage[Int, String, String]]
-    val nextStage = mock[Stage[String, Long, String]]
+  it should "call the downstream stage's dispose and then the upstream stage's dispose" in {
+    val upstreamStage = mock[Stage[Int, String, String]]
+    val downstreamStage = mock[Stage[String, Long, String]]
     inSequence {
-      (nextStage.dispose _).expects()
-      (previousStage.dispose _).expects()
+      (downstreamStage.dispose _).expects()
+      (upstreamStage.dispose _).expects()
     }
-    Stage.AndThen(previousStage, nextStage).dispose()
+    Stage.AndThen(upstreamStage, downstreamStage).dispose()
   }
 
-  it should "call the previous stage's dispose even if the next stage's dispose throws" in {
-    val previousStage = mock[Stage[Int, String, String]]
-    val nextStage = mock[Stage[String, Long, String]]
-    val nextException = new Exception("next's stage dispose failed")
+  it should "call the upstream stage's dispose even if the downstream stage's dispose throws" in {
+    val upstreamStage = mock[Stage[Int, String, String]]
+    val downstreamStage = mock[Stage[String, Long, String]]
+    val downstreamException = new Exception("downstream stage dispose failed")
     inSequence {
-      (nextStage.dispose _).expects().throws(nextException)
-      (previousStage.dispose _).expects()
+      (downstreamStage.dispose _).expects().throws(downstreamException)
+      (upstreamStage.dispose _).expects()
     }
-    the[Throwable] thrownBy Stage.AndThen(previousStage, nextStage).dispose() should be theSameInstanceAs nextException
+    the[Throwable] thrownBy Stage.AndThen(upstreamStage, downstreamStage).dispose() should be theSameInstanceAs
+      downstreamException
   }
 
-  it should "suppress the previous stage's dispose exception if the next stage's dispose throws" in {
-    val previousStage = mock[Stage[Int, String, String]]
-    val nextStage = mock[Stage[String, Long, String]]
-    val nextException = new Exception("next's stage dispose failed")
-    val previousException = new Exception("previous's stage dispose failed")
+  it should "suppress the upstream stage's dispose exception if the downstream stage's dispose throws" in {
+    val upstreamStage = mock[Stage[Int, String, String]]
+    val downstreamStage = mock[Stage[String, Long, String]]
+    val downstreamException = new Exception("downstream stage dispose failed")
+    val upstreamException = new Exception("upstream stage dispose failed")
     inSequence {
-      (nextStage.dispose _).expects().throws(nextException)
-      (previousStage.dispose _).expects().throws(previousException)
+      (downstreamStage.dispose _).expects().throws(downstreamException)
+      (upstreamStage.dispose _).expects().throws(upstreamException)
     }
-    val exception = the[Throwable] thrownBy Stage.AndThen(previousStage, nextStage).dispose()
-    exception should be theSameInstanceAs nextException
-    exception.getSuppressed should contain(previousException)
+    val exception = the[Throwable] thrownBy Stage.AndThen(upstreamStage, downstreamStage).dispose()
+    exception should be theSameInstanceAs downstreamException
+    exception.getSuppressed should contain(upstreamException)
   }
 }

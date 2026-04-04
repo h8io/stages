@@ -110,16 +110,16 @@ object Stage {
   /** A [[Stage]] composed of two sequential stages.
     *
     * When applied to an input:
-    *   - If `previous` produces a [[Yield.Some]], the output is passed to `next`.
-    *   - If `previous` produces a [[Yield.None]], the evolution is composed with `next` so that it is applied when the
-    *     pipeline resumes.
+    *   - If `upstream` produces a [[Yield.Some]], the output is passed to `downstream`.
+    *   - If `upstream` produces a [[Yield.None]], the evolution is composed with `downstream` so that it is applied
+    *     when the pipeline resumes.
     *
-    * Disposal is performed in reverse order (`next` first, then `previous`). If `next.dispose()` throws, the exception
-    * from `previous.dispose()` is added as a suppressed exception.
+    * Disposal is performed in reverse order (`downstream` first, then `upstream`). If `downstream.dispose()` throws,
+    * the exception from `upstream.dispose()` is added as a suppressed exception.
     *
-    * @param previous
+    * @param upstream
     *   the first stage in the sequence
-    * @param next
+    * @param downstream
     *   the second stage in the sequence
     * @tparam I
     *   input type of the pipeline
@@ -130,23 +130,24 @@ object Stage {
     * @tparam E
     *   error type
     */
-  final case class AndThen[-I, OI, +O, +E](previous: Stage[I, OI, E], next: Stage[OI, O, E]) extends Stage[I, O, E] {
+  final case class AndThen[-I, OI, +O, +E](upstream: Stage[I, OI, E], downstream: Stage[OI, O, E])
+      extends Stage[I, O, E] {
     override def apply(in: I): Yield[I, O, E] =
-      previous(in) match {
-        case some @ Yield.Some(out, _, _) => some.compose(next(out))
-        case none: Yield.None[I, OI, E] => none.compose(next)
+      upstream(in) match {
+        case some @ Yield.Some(out, _, _) => some.compose(downstream(out))
+        case none: Yield.None[I, OI, E] => none.compose(downstream)
       }
 
     override def dispose(): Unit = {
-      try next.dispose()
+      try downstream.dispose()
       catch {
-        case NonFatal(primary) => try previous.dispose()
+        case NonFatal(primary) => try upstream.dispose()
           catch {
             case NonFatal(secondary) =>
               primary.addSuppressed(secondary)
           } finally throw primary
       }
-      previous.dispose()
+      upstream.dispose()
     }
   }
 }

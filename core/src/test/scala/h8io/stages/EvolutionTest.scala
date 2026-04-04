@@ -9,46 +9,46 @@ import java.util.UUID
 
 class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory {
   "compose method" should "compose Evolution objects correctly" in {
-    val previousEvolution = mock[Evolution[String, Instant, Exception]]
-    val previousStage = mock[Stage[String, Instant, Exception]]
-    val nextEvolution = mock[Evolution[Instant, Long, Exception]]
-    val nextStage = mock[Stage[Instant, Long, Exception]]
-    val evolution = previousEvolution.compose(nextEvolution)
-    val stage = previousStage ~> nextStage
+    val upstreamEvolution = mock[Evolution[String, Instant, Exception]]
+    val upstreamStage = mock[Stage[String, Instant, Exception]]
+    val downstreamEvolution = mock[Evolution[Instant, Long, Exception]]
+    val downstreamStage = mock[Stage[Instant, Long, Exception]]
+    val evolution = upstreamEvolution.compose(downstreamEvolution)
+    val stage = upstreamStage ~> downstreamStage
 
     inSequence {
-      (nextEvolution.onSuccess _).expects().returns(nextStage)
-      (previousEvolution.onSuccess _).expects().returns(previousStage)
+      (downstreamEvolution.onSuccess _).expects().returns(downstreamStage)
+      (upstreamEvolution.onSuccess _).expects().returns(upstreamStage)
     }
     evolution.onSuccess() shouldBe stage
 
     inSequence {
-      (nextEvolution.onComplete _).expects().returns(nextStage)
-      (previousEvolution.onComplete _).expects().returns(previousStage)
+      (downstreamEvolution.onComplete _).expects().returns(downstreamStage)
+      (upstreamEvolution.onComplete _).expects().returns(upstreamStage)
     }
     evolution.onComplete() shouldBe stage
 
     inSequence {
-      (nextEvolution.onError _).expects().returns(nextStage)
-      (previousEvolution.onError _).expects().returns(previousStage)
+      (downstreamEvolution.onError _).expects().returns(downstreamStage)
+      (upstreamEvolution.onError _).expects().returns(upstreamStage)
     }
     evolution.onError() shouldBe stage
   }
 
   it should "compose Evolution and Stage objects correctly" in {
-    val previousEvolution = mock[Evolution[String, Instant, Exception]]
-    val previousStage = mock[Stage[String, Instant, Exception]]
-    val nextStage = mock[Stage[Instant, Long, Exception]]
-    val evolution = previousEvolution.compose(nextStage)
-    val stage = previousStage ~> nextStage
+    val upstreamEvolution = mock[Evolution[String, Instant, Exception]]
+    val upstreamStage = mock[Stage[String, Instant, Exception]]
+    val downstreamStage = mock[Stage[Instant, Long, Exception]]
+    val evolution = upstreamEvolution.compose(downstreamStage)
+    val stage = upstreamStage ~> downstreamStage
 
-    (previousEvolution.onSuccess _).expects().returns(previousStage)
+    (upstreamEvolution.onSuccess _).expects().returns(upstreamStage)
     evolution.onSuccess() shouldBe stage
 
-    (previousEvolution.onComplete _).expects().returns(previousStage)
+    (upstreamEvolution.onComplete _).expects().returns(upstreamStage)
     evolution.onComplete() shouldBe stage
 
-    (previousEvolution.onError _).expects().returns(previousStage)
+    (upstreamEvolution.onError _).expects().returns(upstreamStage)
     evolution.onError() shouldBe stage
   }
 
