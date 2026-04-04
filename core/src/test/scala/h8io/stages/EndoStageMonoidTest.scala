@@ -53,7 +53,7 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
     @tailrec def loop(todo: List[Stage[?, ?, E]], acc: List[Stage[?, ?, E]]): List[Stage[?, ?, E]] =
       todo match {
         case Nil => acc
-        case Stage.AndThen(previous, next) :: rest => loop(next :: previous :: rest, acc)
+        case Stage.AndThen(upstream, downstream) :: rest => loop(downstream :: upstream :: rest, acc)
         case Identity :: rest => loop(rest, acc)
         case other :: rest => loop(rest, other :: acc)
       }
