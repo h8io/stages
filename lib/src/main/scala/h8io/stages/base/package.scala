@@ -22,8 +22,13 @@ package object base {
     */
   type Decorator[-I, +O, +E] = UnaryOperator[Stage[I, O, E], I, O, E]
 
+  /** A [[UnaryOperator]] with no-op [[Alterator.preDispose]] / [[Alterator.postDispose]] hooks (via [[BaseAlterator]]).
+    */
   type BaseUnaryOperator[+S <: Stage[I, ?, ?], -I, +O, +E] = BaseAlterator[S, I, O, E]
 
+  /** A [[BaseUnaryOperator]] that wraps a `Stage[I, O, E]` and preserves its type — the standard shape for decorators
+    * that need no disposal hooks (e.g. [[h8io.stages.operators.BreakIfNone]], [[h8io.stages.operators.Loop]]).
+    */
   type BaseDecorator[-I, +O, +E] = BaseUnaryOperator[Stage[I, O, E], I, O, E]
 
   /** A function that transforms one stage type into another.

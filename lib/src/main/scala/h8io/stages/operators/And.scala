@@ -13,13 +13,9 @@ import h8io.stages.{Stage, Yield}
   *     - If `right` also yields `Some`, the result is `Yield.Some((leftOut, rightOut), ...)`.
   *     - If `right` yields `None`, the result is `Yield.None(mergedStatus, ...)`.
   *   - If `left` yields `h8io.stages.Yield.None`, `right` is **not** applied and the result is
-  *     `Yield.None(leftStatus, ...)`. The right stage is preserved in the evolution so that it will be applied once the
-  *     left side eventually produces output.
+  *     `Yield.None(leftStatus, ...)`.
   *
   * Statuses from both sides are merged with `++`.
-  *
-  * Two private evolution implementations track whether the right stage's evolution is already known (`Evolution`) or
-  * still pending (`LeftEvolution`).
   *
   * @param left
   *   the first stage to apply

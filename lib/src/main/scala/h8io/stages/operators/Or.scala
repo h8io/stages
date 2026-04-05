@@ -9,16 +9,13 @@ import h8io.stages.{Stage, Yield}
   *
   * Evaluation rules for a given input:
   *
-  *   - If `left` yields `h8io.stages.Yield.Some`, the result is
-  *     `Yield.Some(Left(leftOut), leftStatus, LeftEvolution(...))`. `right` is **not** applied.
+  *   - If `left` yields `h8io.stages.Yield.Some`, the result is `Yield.Some(Left(leftOut), leftStatus, ...)`. `right`
+  *     is **not** applied.
   *   - If `left` yields `h8io.stages.Yield.None`, `right` is applied:
-  *     - `right` yields `Some` → `Yield.Some(Right(rightOut), mergedStatus, BothEvolution(...))`.
-  *     - `right` yields `None` → `Yield.None(mergedStatus, BothEvolution(...))`.
+  *     - `right` yields `Some` → `Yield.Some(Right(rightOut), mergedStatus, ...)`.
+  *     - `right` yields `None` → `Yield.None(mergedStatus, ...)`.
   *
   * Statuses are merged with `++`.
-  *
-  * Two private evolution implementations track whether the left side succeeded on its own (`LeftEvolution`, right not
-  * yet consumed) or both sides were evaluated (`BothEvolution`).
   *
   * @param left
   *   the preferred stage; tried first
@@ -38,22 +35,22 @@ final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO,
   override def apply(in: I): Yield[I, Either[LO, RO], E] =
     left(in) match {
       case Yield.Some(out, status, evolution) =>
-        Yield.Some(Left(out), status, Or.BothEvolution(evolution, right.skip()))
+        Yield.Some(Left(out), status, Or.Evolution(evolution, right.skip()))
       case Yield.None(leftStatus, leftEvolution) =>
         right(in) match {
           case Yield.Some(out, rightStatus, rightEvolution) =>
-            Yield.Some(Right(out), leftStatus ++ rightStatus, Or.BothEvolution(leftEvolution, rightEvolution))
+            Yield.Some(Right(out), leftStatus ++ rightStatus, Or.Evolution(leftEvolution, rightEvolution))
           case Yield.None(rightStatus, rightEvolution) =>
-            Yield.None(leftStatus ++ rightStatus, Or.BothEvolution(leftEvolution, rightEvolution))
+            Yield.None(leftStatus ++ rightStatus, Or.Evolution(leftEvolution, rightEvolution))
         }
     }
 
-  override def skip(): stages.Evolution[I, Either[LO, RO], E] = Or.BothEvolution(left.skip(), right.skip())
+  override def skip(): stages.Evolution[I, Either[LO, RO], E] = Or.Evolution(left.skip(), right.skip())
 }
 
 /** Companion object for [[Or]]. */
 object Or {
-  private final case class BothEvolution[-I, +LO, +RO, +E](
+  private final case class Evolution[-I, +LO, +RO, +E](
       leftEvolution: stages.Evolution[I, LO, E],
       rightEvolution: stages.Evolution[I, RO, E])
       extends stages.Evolution[I, Either[LO, RO], E] {
