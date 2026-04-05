@@ -34,7 +34,8 @@ final case class And[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
     extends BaseBinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, (LO, RO), E] {
   override def apply(in: I): Yield[I, (LO, RO), E] =
     left(in) match {
-      case Yield.Some(leftOut, leftStatus, leftEvolution) => right(in) match {
+      case Yield.Some(leftOut, leftStatus, leftEvolution) =>
+        right(in) match {
           case Yield.Some(rightOut, rightStatus, rightEvolution) =>
             Yield.Some((leftOut, rightOut), leftStatus ++ rightStatus, And.Evolution(leftEvolution, rightEvolution))
           case Yield.None(rightStatus, rightEvolution) =>
@@ -49,11 +50,25 @@ final case class And[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
 /** Companion object for [[And]]. */
 object And {
   private final case class Evolution[-I, +LO, +RO, +E](
-      leftEvolution: stages.Evolution[I, LO, E],
-      rightEvolution: stages.Evolution[I, RO, E])
+      left: stages.Evolution[I, LO, E],
+      right: stages.Evolution[I, RO, E])
       extends stages.Evolution[I, (LO, RO), E] {
-    override def onSuccess(): Stage[I, (LO, RO), E] = And(leftEvolution.onSuccess(), rightEvolution.onSuccess())
-    override def onComplete(): Stage[I, (LO, RO), E] = And(leftEvolution.onComplete(), rightEvolution.onComplete())
-    override def onError(): Stage[I, (LO, RO), E] = And(leftEvolution.onError(), rightEvolution.onError())
+    override def onSuccess(): Stage[I, (LO, RO), E] = {
+      val rightStage = right.onSuccess()
+      val leftStage = left.onSuccess()
+      And(leftStage, rightStage)
+    }
+
+    override def onComplete(): Stage[I, (LO, RO), E] = {
+      val rightStage = right.onComplete()
+      val leftStage = left.onComplete()
+      And(leftStage, rightStage)
+    }
+
+    override def onError(): Stage[I, (LO, RO), E] = {
+      val rightStage = right.onError()
+      val leftStage = left.onError()
+      And(leftStage, rightStage)
+    }
   }
 }
