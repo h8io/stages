@@ -18,6 +18,7 @@ class KeepLastOutputTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
+    with StagesCoreTestUtil
     with StagesBaseTestUtil {
   "Initial stage" should "be None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
@@ -44,6 +45,13 @@ class KeepLastOutputTest
       }
     }
 
+  it should "call the alterand.skip() method" in {
+    val stage = mock[Stage[UUID, String, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, String, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(KeepLastOutput.None(stage).skip(), evolution, KeepLastOutput.None[UUID, String, Exception])
+  }
+
   "Some" should "keep the old output if alterand returns Yield.None" in
     forAll { (in: ZonedDateTime, out: ZoneId, status: Status[Exception]) =>
       val stage = mock[Stage[ZonedDateTime, ZoneId, Exception]]
@@ -63,6 +71,15 @@ class KeepLastOutputTest
         testWrappedEvolution(kloEvolution, evolution, KeepLastOutput.Some[Array[Int], BigInt, Exception](newOut, _))
       }
     }
+
+  it should "call the alterand.skip() method" in {
+    val out = mock[AnyRef]
+    val stage = mock[Stage[UUID, AnyRef, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, AnyRef, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(
+      KeepLastOutput.Some(out, stage).skip(), evolution, KeepLastOutput.Some[UUID, AnyRef, Exception](out, _))
+  }
 
   "dispose" should "call alterand's dispose for None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
