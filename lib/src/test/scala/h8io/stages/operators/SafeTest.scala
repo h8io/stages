@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
-import h8io.stages.base.StagesBaseTestUtil
 import h8io.stages.*
+import h8io.stages.base.StagesBaseTestUtil
 import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -20,6 +20,7 @@ class SafeTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
+    with StagesCoreTestUtil
     with StagesBaseTestUtil {
   "Safe" should "wrap status and evolution for Yield.Some with a non-error status" in
     forAll(
@@ -87,6 +88,13 @@ class SafeTest
       safeEvolution.onComplete() shouldBe Safe(stage)
       safeEvolution.onError() shouldBe Safe(stage)
     }
+  }
+
+  it should "call the alterand.skip() method" in {
+    val stage = mock[Stage[UUID, String, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, String, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(Safe(stage).skip(), evolution, Safe[UUID, String, Exception])
   }
 
   it should "dispose the alterand" in {
