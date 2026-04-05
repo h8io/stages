@@ -60,32 +60,6 @@ trait Evolution[-I, +O, +E] {
       override def onError(): Stage[I, _O, _E] = that.onError() <~ self.onError()
     }
 
-  /** Composes this evolution with a fixed downstream [[Stage]], producing a new evolution whose every branch feeds into
-    * `stage`.
-    *
-    * For each status branch `b`:
-    * {{{
-    *   composed.b() == self.b() ~> stage
-    * }}}
-    *
-    * Used internally when a [[Yield.None]] is composed with the next stage in a pipeline (see [[Yield.None.compose]]).
-    *
-    * @param stage
-    *   the downstream stage appended to every branch
-    * @tparam _O
-    *   the output type produced by `stage`
-    * @tparam _E
-    *   the combined error type
-    * @return
-    *   a new evolution where every branch is followed by `stage`
-    */
-  @inline private[stages] final def compose[_O, _E >: E](stage: Stage[O, _O, _E]): Evolution[I, _O, _E] =
-    new Evolution[I, _O, _E] {
-      override def onSuccess(): Stage[I, _O, _E] = self.onSuccess() ~> stage
-      override def onComplete(): Stage[I, _O, _E] = self.onComplete() ~> stage
-      override def onError(): Stage[I, _O, _E] = self.onError() ~> stage
-    }
-
   /** Transforms every branch of this evolution by applying `f` to the stage it returns.
     *
     * This is the public API for adapting an `Evolution` to a different stage type without exposing internal composition

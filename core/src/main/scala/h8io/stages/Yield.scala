@@ -127,7 +127,7 @@ object Yield {
       * Because no output was produced, `next` cannot be applied immediately; instead it becomes part of the evolution
       * so that the entire composed stage is invoked when the pipeline resumes.
       *
-      * @param next
+      * @param downstream
       *   the next stage in the pipeline
       * @tparam _O
       *   the output type of `next`
@@ -136,8 +136,8 @@ object Yield {
       * @return
       *   a `None` with the composed evolution
       */
-    private[stages] def compose[_O, _E >: E](next: Stage[O, _O, _E]): Yield.None[I, _O, _E] =
-      Yield.None(status, evolution.compose(next))
+    private[stages] def compose[_O, _E >: E](downstream: Evolution[O, _O, _E]): Yield.None[I, _O, _E] =
+      Yield.None(status, evolution.compose(downstream))
 
     override def map[_I, _O, _E](
         mapOut: O => _O,

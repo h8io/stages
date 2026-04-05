@@ -17,6 +17,10 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
   private object Identity extends Stage[Any, Any, Nothing] with Evolution[Any, Any, Nothing] {
     override def apply(in: Any): Yield.Some[Any, Any, Nothing] = Yield.Some(in, Status.Success, this)
 
+    override def skip(): Evolution[Any, Any, Nothing] = this
+
+    override def dispose(): Unit = {}
+
     override def onSuccess(): Stage[Any, Any, Nothing] = this
     override def onComplete(): Stage[Any, Any, Nothing] = this
     override def onError(): Stage[Any, Any, Nothing] = this
@@ -38,6 +42,10 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
         status <- Arbitrary.arbitrary[Status[E]]
       } yield new Stage.Endo[T, E] with Evolution[T, T, E] {
         def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, status, this)
+
+        override def skip(): Evolution[T, T, E] = this
+
+        override def dispose(): Unit = {}
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
 

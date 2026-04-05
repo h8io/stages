@@ -18,12 +18,6 @@ class StageTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
-  "dispose" should "do nothing" in {
-    noException should be thrownBy new Stage[Instant, Timestamp, String] {
-      def apply(in: Instant): Yield[Instant, Timestamp, String] = throw new NotImplementedError
-    }.dispose()
-  }
-
   "execute" should "run evolution and return Outcome.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
@@ -147,11 +141,17 @@ class StageTest
       val upstreamStage = mock[Stage[Int, String, String]]
       val upstreamEvolution = mock[Evolution[Int, String, String]]
       val downstreamStage = mock[Stage[String, Long, String]]
-      (upstreamStage.apply _).expects(in).returns(Yield.None(upstreamStatus, upstreamEvolution))
+      val downstreamEvolution = mock[Evolution[String, Long, String]]
+      inSequence {
+        (upstreamStage.apply _).expects(in).returns(Yield.None(upstreamStatus, upstreamEvolution))
+        (downstreamStage.skip _).expects().returns(downstreamEvolution)
+      }
       inside(Stage.AndThen(upstreamStage, downstreamStage)(in)) { case Yield.None(`upstreamStatus`, evolution) =>
+        val evolvedDownstreamStage = mock[Stage[String, Long, String]]
+        evolutionMock(downstreamEvolution, upstreamStatus, evolvedDownstreamStage)
         val evolvedUpstreamStage = mock[Stage[Int, String, String]]
         evolutionMock(upstreamEvolution, upstreamStatus, evolvedUpstreamStage)
-        upstreamStatus(evolution) shouldBe Stage.AndThen(evolvedUpstreamStage, downstreamStage)
+        upstreamStatus(evolution) shouldBe evolvedUpstreamStage ~> evolvedDownstreamStage
       }
     }
 

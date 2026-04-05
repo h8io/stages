@@ -88,24 +88,30 @@ class YieldTest
         }
     }
 
-  it should "compose None and Stage correctly" in
+  it should "compose None and Evolution correctly" in
     forAll { (upstreamYieldSupplier: EvolutionToYieldNone[Long, Instant, String]) =>
       val upstreamEvolution = mock[Evolution[Long, Instant, String]]("upstream evolution")
-      val downstreamStage = mock[Stage[Instant, String, String]]("downstream stage")
+      val downstreamEvolution = mock[Evolution[Instant, String, String]]("downstream evolution")
       val upstreamYield = upstreamYieldSupplier(upstreamEvolution)
-      inside(upstreamYield.compose(downstreamStage)) {
+      inside(upstreamYield.compose(downstreamEvolution)) {
         case Yield.None(upstreamYield.`status`, evolution) =>
-          val onSuccessStage = mock[Stage[Long, Instant, String]]("onSuccess stage")
-          (upstreamEvolution.onSuccess _).expects().returns(onSuccessStage)
-          evolution.onSuccess() shouldBe onSuccessStage ~> downstreamStage
+          val onSuccessDownstreamStage = mock[Stage[Instant, String, String]]("onSuccess downstream stage")
+          (downstreamEvolution.onSuccess _).expects().returns(onSuccessDownstreamStage)
+          val onSuccessUpstreamStage = mock[Stage[Long, Instant, String]]("onSuccess upstream stage")
+          (upstreamEvolution.onSuccess _).expects().returns(onSuccessUpstreamStage)
+          evolution.onSuccess() shouldBe onSuccessUpstreamStage ~> onSuccessDownstreamStage
 
-          val onCompleteStage = mock[Stage[Long, Instant, String]]("onComplete stage")
-          (upstreamEvolution.onComplete _).expects().returns(onCompleteStage)
-          evolution.onComplete() shouldBe onCompleteStage ~> downstreamStage
+          val onCompleteDownstreamStage = mock[Stage[Instant, String, String]]("onComplete downstream stage")
+          (downstreamEvolution.onComplete _).expects().returns(onCompleteDownstreamStage)
+          val onCompleteUpstreamStage = mock[Stage[Long, Instant, String]]("onComplete upstream stage")
+          (upstreamEvolution.onComplete _).expects().returns(onCompleteUpstreamStage)
+          evolution.onComplete() shouldBe onCompleteUpstreamStage ~> onCompleteDownstreamStage
 
-          val onErrorStage = mock[Stage[Long, Instant, String]]("onError stage")
-          (upstreamEvolution.onError _).expects().returns(onErrorStage)
-          evolution.onError() shouldBe onErrorStage ~> downstreamStage
+          val onErrorDownstreamStage = mock[Stage[Instant, String, String]]("onError downstream stage")
+          (downstreamEvolution.onError _).expects().returns(onErrorDownstreamStage)
+          val onErrorUpstreamStage = mock[Stage[Long, Instant, String]]("onError upstream stage")
+          (upstreamEvolution.onError _).expects().returns(onErrorUpstreamStage)
+          evolution.onError() shouldBe onErrorUpstreamStage ~> onErrorDownstreamStage
       }
     }
 
