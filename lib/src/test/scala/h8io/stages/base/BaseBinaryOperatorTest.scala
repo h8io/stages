@@ -1,6 +1,6 @@
 package h8io.stages.base
 
-import h8io.stages.{Stage, Yield}
+import h8io.stages.{Evolution, Stage, Yield}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -18,5 +18,6 @@ class BaseBinaryOperatorTest extends AnyFlatSpec with Matchers {
       override def left: Stage[Any, ?, ?] = fail("left should not be called")
       override def right: Stage[Any, ?, ?] = fail("right should not be called")
       override def apply(in: Any): Yield[Any, Nothing, Nothing] = fail("apply should not be called")
+      override def skip(): Evolution[Any, Nothing, Nothing] = fail("skip should not be called")
     }
 }
