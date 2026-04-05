@@ -51,28 +51,60 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       case _: Status.Error[E] => (evolution.onError _).expects().returns(stage)
     }
 
-  def testEvolutionComposition[I, OI, O, E](
+  /** Asserts that `evolution` correctly composes `leftEvolution` and `rightEvolution` for all three status branches.
+    *
+    * For each branch (`onSuccess`, `onComplete`, `onError`) the helper:
+    *   1. Registers ScalaMock expectations on both `leftEvolution` and `rightEvolution`.
+    *   1. Calls the corresponding branch on `evolution`.
+    *   1. Asserts the returned stage equals `compose(leftStage, rightStage)`.
+    *
+    * All six branch calls are ordered with `inSequence` to ensure deterministic expectation matching.
+    *
+    * @param evolution
+    *   the composed evolution under test
+    * @param leftEvolution
+    *   the mock left evolution whose branches supply the left continuation stages
+    * @param rightEvolution
+    *   the mock right evolution whose branches supply the right continuation stages
+    * @param compose
+    *   the function that reconstructs the expected composed stage from its two halves
+    * @tparam LI
+    *   the left evolution input type
+    * @tparam LO
+    *   the left evolution output type
+    * @tparam RI
+    *   the right evolution input type
+    * @tparam RO
+    *   the right evolution output type
+    * @tparam I
+    *   the composed evolution input type
+    * @tparam O
+    *   the composed evolution output type
+    * @tparam E
+    *   the error type
+    */
+  def testEvolutionComposition[LI, LO, RI, RO, I, O, E](
       evolution: Evolution[I, O, E],
-      upstreamEvolution: Evolution[I, OI, E],
-      downstreamEvolution: Evolution[OI, O, E],
-      compose: (Stage[I, OI, E], Stage[OI, O, E]) => Stage[I, O, E]): Unit =
+      leftEvolution: Evolution[LI, LO, E],
+      rightEvolution: Evolution[RI, RO, E],
+      compose: (Stage[LI, LO, E], Stage[RI, RO, E]) => Stage[I, O, E]): Unit =
     inSequence {
-      val onSuccessUpstreamStage = mock[Stage[I, OI, E]]
-      val onSuccessDownstreamStage = mock[Stage[OI, O, E]]
-      (downstreamEvolution.onSuccess _).expects().returns(onSuccessDownstreamStage)
-      (upstreamEvolution.onSuccess _).expects().returns(onSuccessUpstreamStage)
-      evolution.onSuccess() shouldBe compose(onSuccessUpstreamStage, onSuccessDownstreamStage)
+      val onSuccessLeftStage = mock[Stage[LI, LO, E]]
+      val onSuccessRightStage = mock[Stage[RI, RO, E]]
+      (rightEvolution.onSuccess _).expects().returns(onSuccessRightStage)
+      (leftEvolution.onSuccess _).expects().returns(onSuccessLeftStage)
+      evolution.onSuccess() shouldBe compose(onSuccessLeftStage, onSuccessRightStage)
 
-      val onCompleteUpstreamStage = mock[Stage[I, OI, E]]
-      val onCompleteDownstreamStage = mock[Stage[OI, O, E]]
-      (downstreamEvolution.onComplete _).expects().returns(onCompleteDownstreamStage)
-      (upstreamEvolution.onComplete _).expects().returns(onCompleteUpstreamStage)
-      evolution.onComplete() shouldBe compose(onCompleteUpstreamStage, onCompleteDownstreamStage)
+      val onCompleteLeftStage = mock[Stage[LI, LO, E]]
+      val onCompleteRightStage = mock[Stage[RI, RO, E]]
+      (rightEvolution.onComplete _).expects().returns(onCompleteRightStage)
+      (leftEvolution.onComplete _).expects().returns(onCompleteLeftStage)
+      evolution.onComplete() shouldBe compose(onCompleteLeftStage, onCompleteRightStage)
 
-      val onErrorUpstreamStage = mock[Stage[I, OI, E]]
-      val onErrorDownstreamStage = mock[Stage[OI, O, E]]
-      (downstreamEvolution.onError _).expects().returns(onErrorDownstreamStage)
-      (upstreamEvolution.onError _).expects().returns(onErrorUpstreamStage)
-      evolution.onError() shouldBe compose(onErrorUpstreamStage, onErrorDownstreamStage)
+      val onErrorLeftStage = mock[Stage[LI, LO, E]]
+      val onErrorRightStage = mock[Stage[RI, RO, E]]
+      (rightEvolution.onError _).expects().returns(onErrorRightStage)
+      (leftEvolution.onError _).expects().returns(onErrorLeftStage)
+      evolution.onError() shouldBe compose(onErrorLeftStage, onErrorRightStage)
     }
 }

@@ -59,9 +59,22 @@ object IOr {
       left: stages.Evolution[I, LO, E],
       right: stages.Evolution[I, RO, E])
       extends stages.Evolution[I, Ior[LO, RO], E] {
-    override def onSuccess(): Stage[I, Ior[LO, RO], E] = IOr(left.onSuccess(), right.onSuccess())
-    override def onComplete(): Stage[I, Ior[LO, RO], E] = IOr(left.onComplete(), right.onComplete())
-    override def onError(): Stage[I, Ior[LO, RO], E] = IOr(left.onError(), right.onError())
+    override def onSuccess(): Stage[I, Ior[LO, RO], E] = {
+      val rightStage = right.onSuccess()
+      val leftStage = left.onSuccess()
+      IOr(leftStage, rightStage)
+    }
+
+    override def onComplete(): Stage[I, Ior[LO, RO], E] = {
+      val rightStage = right.onComplete()
+      val leftStage = left.onComplete()
+      IOr(leftStage, rightStage)
+    }
+    override def onError(): Stage[I, Ior[LO, RO], E] = {
+      val rightStage = right.onError()
+      val leftStage = left.onError()
+      IOr(leftStage, rightStage)
+    }
   }
 
   /** Extracts the left value from an `cats.data.Ior`, yielding it when present in both `Ior.Left` and `Ior.Both`.

@@ -1,12 +1,12 @@
 package h8io.stages.cats
 
 import cats.data.Ior
-import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, Status, Yield}
+import h8io.stages.*
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.*
@@ -19,7 +19,8 @@ class IOrTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "IOr" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,
@@ -108,59 +109,50 @@ class IOrTest
       leftYield: Yield[I, LO, E],
       rightYield: Yield[I, RO, E],
       status: Status[E],
-      evolution: Evolution[I, Ior[LO, RO], E]): Assertion = {
+      evolution: Evolution[I, Ior[LO, RO], E]): Unit = {
     status shouldBe leftYield.status ++ rightYield.status
+    testEvolutionComposition(evolution, leftYield.evolution, rightYield.evolution, IOr.apply[I, LO, RO, E])
+  }
 
-    val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
-    val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")
+  it should "skip the left and the right stages in sequence" in {
+    val leftStage = mock[Stage[String, OffsetDateTime, Long]]("left stage")
+    val leftEvolution = mock[Evolution[String, OffsetDateTime, Long]]("left evolution")
+    val rightStage = mock[Stage[String, ZonedDateTime, Long]]("right stage")
+    val rightEvolution = mock[Evolution[String, ZonedDateTime, Long]]("right evolution")
     inSequence {
-      (leftYield.evolution.onSuccess _).expects().returns(leftOnSuccessStage)
-      (rightYield.evolution.onSuccess _).expects().returns(rightOnSuccessStage)
+      (leftStage.skip _).expects().returns(leftEvolution)
+      (rightStage.skip _).expects().returns(rightEvolution)
     }
-    evolution.onSuccess() shouldBe IOr(leftOnSuccessStage, rightOnSuccessStage)
-
-    val leftOnCompleteStage = mock[Stage[I, LO, E]]("left onComplete stage")
-    val rightOnCompleteStage = mock[Stage[I, RO, E]]("right onComplete stage")
-    inSequence {
-      (leftYield.evolution.onComplete _).expects().returns(leftOnCompleteStage)
-      (rightYield.evolution.onComplete _).expects().returns(rightOnCompleteStage)
-    }
-    evolution.onComplete() shouldBe IOr(leftOnCompleteStage, rightOnCompleteStage)
-
-    val leftOnErrorStage = mock[Stage[I, LO, E]]("left onError stage")
-    val rightOnErrorStage = mock[Stage[I, RO, E]]("right onError stage")
-    inSequence {
-      (leftYield.evolution.onError _).expects().returns(leftOnErrorStage)
-      (rightYield.evolution.onError _).expects().returns(rightOnErrorStage)
-    }
-    evolution.onError() shouldBe IOr(leftOnErrorStage, rightOnErrorStage)
+    val evolution = IOr(leftStage, rightStage).skip()
+    testEvolutionComposition(
+      evolution, leftEvolution, rightEvolution, IOr.apply[String, OffsetDateTime, ZonedDateTime, Long])
   }
 
   "Left" should "return Yield.Some if the input is cats.data.Ior.Left" in {
     val value = mock[AnyRef]
-    IOr.Left(cats.data.Ior.Left(value)) shouldBe Yield.Some(value, Status.Success, IOr.Left)
+    IOr.Left(Ior.Left(value)) shouldBe Yield.Some(value, Status.Success, IOr.Left)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Both" in {
     val value = mock[AnyRef]
-    IOr.Left(cats.data.Ior.Both(value, mock[AnyRef])) shouldBe Yield.Some(value, Status.Success, IOr.Left)
+    IOr.Left(Ior.Both(value, mock[AnyRef])) shouldBe Yield.Some(value, Status.Success, IOr.Left)
   }
 
   it should "return Yield.None if the input is cats.data.Ior.Right" in {
-    IOr.Left[AnyRef].apply(cats.data.Ior.Right(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Left)
+    IOr.Left[AnyRef].apply(Ior.Right(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Left)
   }
 
   "Right" should "return Yield.None if the input is cats.data.Ior.Left" in {
-    IOr.Right[AnyRef].apply(cats.data.Ior.Left(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Right)
+    IOr.Right[AnyRef].apply(Ior.Left(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Right)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Both" in {
     val value = mock[AnyRef]
-    IOr.Right(cats.data.Ior.Both(mock[AnyRef], value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
+    IOr.Right(Ior.Both(mock[AnyRef], value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Right" in {
     val value = mock[AnyRef]
-    IOr.Right(cats.data.Ior.Right(value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
+    IOr.Right(Ior.Right(value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
   }
 }
