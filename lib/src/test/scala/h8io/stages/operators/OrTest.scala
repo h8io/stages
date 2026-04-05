@@ -83,7 +83,7 @@ class OrTest
         }
     }
 
-  it should "skip the left and the right stages in sequence" in {
+  it should "skip the left and right stages in sequence" in {
     val leftStage = mock[Stage[String, OffsetDateTime, Long]]("left stage")
     val leftEvolution = mock[Evolution[String, OffsetDateTime, Long]]("left evolution")
     val rightStage = mock[Stage[String, ZonedDateTime, Long]]("right stage")

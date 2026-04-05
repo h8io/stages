@@ -20,7 +20,7 @@ class AndTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
-  "And" should "return Yield.None if left stage returns Yield.None" in
+  "And" should "return Yield.None if the left stage returns Yield.None" in
     forAll(Gen.zip(Gen.long, Arbitrary.arbitrary[EvolutionToYieldNone[Long, Duration, Exception]])) {
       case (in, leftYieldSupplier) =>
         val leftStage = mock[Stage[Long, Duration, Exception]]("left stage")
@@ -87,7 +87,7 @@ class AndTest
         }
     }
 
-  it should "skip the left and the right stages in sequence" in {
+  it should "skip the left and right stages in sequence" in {
     val leftStage = mock[Stage[String, OffsetDateTime, Long]]("left stage")
     val leftEvolution = mock[Evolution[String, OffsetDateTime, Long]]("left evolution")
     val rightStage = mock[Stage[String, ZonedDateTime, Long]]("right stage")
