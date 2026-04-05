@@ -53,22 +53,17 @@ object And {
       left: stages.Evolution[I, LO, E],
       right: stages.Evolution[I, RO, E])
       extends stages.Evolution[I, (LO, RO), E] {
-    override def onSuccess(): Stage[I, (LO, RO), E] = {
-      val rightStage = right.onSuccess()
-      val leftStage = left.onSuccess()
-      And(leftStage, rightStage)
-    }
-
-    override def onComplete(): Stage[I, (LO, RO), E] = {
-      val rightStage = right.onComplete()
-      val leftStage = left.onComplete()
-      And(leftStage, rightStage)
-    }
-
-    override def onError(): Stage[I, (LO, RO), E] = {
-      val rightStage = right.onError()
-      val leftStage = left.onError()
-      And(leftStage, rightStage)
-    }
+    override def onSuccess(): Stage[I, (LO, RO), E] = _apply(left.onSuccess(), right.onSuccess())
+    override def onComplete(): Stage[I, (LO, RO), E] = _apply(left.onComplete(), right.onComplete())
+    override def onError(): Stage[I, (LO, RO), E] = _apply(left.onError(), right.onError())
   }
+
+  @inline private def _apply[I, LO, RO, E](
+      lazyLeftStage: => Stage[I, LO, E],
+      lazyRightStage: => Stage[I, RO, E]): And[I, LO, RO, E] = {
+    val rightStage = lazyRightStage
+    val leftStage = lazyLeftStage
+    And(leftStage, rightStage)
+  }
+
 }

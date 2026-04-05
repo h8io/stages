@@ -1,15 +1,14 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.StagesBaseTestUtil
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.*
 import java.util.UUID
 import scala.concurrent.duration.Duration
 
@@ -20,7 +19,7 @@ class OrTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesBaseTestUtil {
+    with StagesCoreTestUtil {
   "Or" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,
@@ -37,7 +36,8 @@ class OrTest
         }
         inside(Or(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           status shouldBe leftYield.status ++ rightYield.status
-          test(leftYield.evolution, rightYield.evolution, evolution)
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, Or.apply[Long, Duration, Instant, Exception])
         }
     }
 
@@ -60,7 +60,8 @@ class OrTest
         inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Right(rightYield.out)
           status shouldBe leftYield.status ++ rightYield.status
-          test(leftYield.evolution, rightYield.evolution, evolution)
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, Or.apply[String, LocalDateTime, ZonedDateTime, UUID])
         }
     }
 
@@ -78,36 +79,21 @@ class OrTest
         inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Left(leftYield.out)
           status shouldBe leftYield.status
-          test(leftYield.evolution, rightEvolution, evolution)
+          testEvolutionComposition(evolution, leftYield.evolution, rightEvolution, Or.apply[UUID, Long, ZoneId, String])
         }
     }
 
-  private def test[I, LO, RO, E](
-      leftEvolution: Evolution[I, LO, E],
-      rightEvolution: Evolution[I, RO, E],
-      evolution: Evolution[I, Either[LO, RO], E]): Assertion = {
-    val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
-    val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")
+  it should "skip the left and the right stages in sequence" in {
+    val leftStage = mock[Stage[String, OffsetDateTime, Long]]("left stage")
+    val leftEvolution = mock[Evolution[String, OffsetDateTime, Long]]("left evolution")
+    val rightStage = mock[Stage[String, ZonedDateTime, Long]]("right stage")
+    val rightEvolution = mock[Evolution[String, ZonedDateTime, Long]]("right evolution")
     inSequence {
-      (leftEvolution.onSuccess _).expects().returns(leftOnSuccessStage)
-      (rightEvolution.onSuccess _).expects().returns(rightOnSuccessStage)
+      (leftStage.skip _).expects().returns(leftEvolution)
+      (rightStage.skip _).expects().returns(rightEvolution)
     }
-    evolution.onSuccess() shouldBe Or(leftOnSuccessStage, rightOnSuccessStage)
-
-    val leftOnCompleteStage = mock[Stage[I, LO, E]]("left onComplete stage")
-    val rightOnCompleteStage = mock[Stage[I, RO, E]]("right onComplete stage")
-    inSequence {
-      (leftEvolution.onComplete _).expects().returns(leftOnCompleteStage)
-      (rightEvolution.onComplete _).expects().returns(rightOnCompleteStage)
-    }
-    evolution.onComplete() shouldBe Or(leftOnCompleteStage, rightOnCompleteStage)
-
-    val leftOnErrorStage = mock[Stage[I, LO, E]]("left onError stage")
-    val rightOnErrorStage = mock[Stage[I, RO, E]]("right onError stage")
-    inSequence {
-      (leftEvolution.onError _).expects().returns(leftOnErrorStage)
-      (rightEvolution.onError _).expects().returns(rightOnErrorStage)
-    }
-    evolution.onError() shouldBe Or(leftOnErrorStage, rightOnErrorStage)
+    val evolution = Or(leftStage, rightStage).skip()
+    testEvolutionComposition(
+      evolution, leftEvolution, rightEvolution, Or.apply[String, OffsetDateTime, ZonedDateTime, Long])
   }
 }
