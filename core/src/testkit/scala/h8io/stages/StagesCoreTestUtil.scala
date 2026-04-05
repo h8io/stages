@@ -50,4 +50,29 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       case Status.Complete => (evolution.onComplete _).expects().returns(stage)
       case _: Status.Error[E] => (evolution.onError _).expects().returns(stage)
     }
+
+  def testEvolutionComposition[I, OI, O, E](
+      evolution: Evolution[I, O, E],
+      upstreamEvolution: Evolution[I, OI, E],
+      downstreamEvolution: Evolution[OI, O, E],
+      compose: (Stage[I, OI, E], Stage[OI, O, E]) => Stage[I, O, E]): Unit =
+    inSequence {
+      val onSuccessUpstreamStage = mock[Stage[I, OI, E]]
+      val onSuccessDownstreamStage = mock[Stage[OI, O, E]]
+      (downstreamEvolution.onSuccess _).expects().returns(onSuccessDownstreamStage)
+      (upstreamEvolution.onSuccess _).expects().returns(onSuccessUpstreamStage)
+      evolution.onSuccess() shouldBe compose(onSuccessUpstreamStage, onSuccessDownstreamStage)
+
+      val onCompleteUpstreamStage = mock[Stage[I, OI, E]]
+      val onCompleteDownstreamStage = mock[Stage[OI, O, E]]
+      (downstreamEvolution.onComplete _).expects().returns(onCompleteDownstreamStage)
+      (upstreamEvolution.onComplete _).expects().returns(onCompleteUpstreamStage)
+      evolution.onComplete() shouldBe compose(onCompleteUpstreamStage, onCompleteDownstreamStage)
+
+      val onErrorUpstreamStage = mock[Stage[I, OI, E]]
+      val onErrorDownstreamStage = mock[Stage[OI, O, E]]
+      (downstreamEvolution.onError _).expects().returns(onErrorDownstreamStage)
+      (upstreamEvolution.onError _).expects().returns(onErrorUpstreamStage)
+      evolution.onError() shouldBe compose(onErrorUpstreamStage, onErrorDownstreamStage)
+    }
 }

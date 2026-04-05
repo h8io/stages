@@ -1,5 +1,6 @@
 package h8io.stages
 
+import h8io.stages.Stage.AndThen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -154,6 +155,22 @@ class StageTest
         upstreamStatus(evolution) shouldBe evolvedUpstreamStage ~> evolvedDownstreamStage
       }
     }
+
+  it should "sequentially call skip methods for both stages" in {
+    val upstreamStage = mock[Stage[Int, String, String]]
+    val upstreamEvolution = mock[Evolution[Int, String, String]]
+    val downstreamStage = mock[Stage[String, Long, String]]
+    val downstreamEvolution = mock[Evolution[String, Long, String]]
+    inSequence {
+      (upstreamStage.skip _).expects().returns(upstreamEvolution)
+      (downstreamStage.skip _).expects().returns(downstreamEvolution)
+    }
+    testEvolutionComposition(
+      AndThen(upstreamStage, downstreamStage).skip(),
+      upstreamEvolution,
+      downstreamEvolution,
+      AndThen.apply[Int, String, Long, String])
+  }
 
   it should "call the downstream stage's dispose and then the upstream stage's dispose" in {
     val upstreamStage = mock[Stage[Int, String, String]]
