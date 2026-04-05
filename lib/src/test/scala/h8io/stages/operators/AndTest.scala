@@ -34,7 +34,7 @@ class AndTest
         inside(And(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           status shouldBe leftYield.status
           testEvolutionComposition(
-            evolution, leftYield.evolution, rightEvolution, And.apply[Long, Duration, Instant, Exception])
+            evolution, leftYield.evolution, rightEvolution, And[Long, Duration, Instant, Exception])
         }
     }
 
@@ -56,7 +56,7 @@ class AndTest
         inside(And(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution, leftYield.evolution, rightYield.evolution, And.apply[UUID, Long, ZoneId, String])
+            evolution, leftYield.evolution, rightYield.evolution, And[UUID, Long, ZoneId, String])
         }
     }
 
@@ -80,10 +80,7 @@ class AndTest
           out shouldBe leftYield.out -> rightYield.out
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution,
-            leftYield.evolution,
-            rightYield.evolution,
-            And.apply[ZoneOffset, OffsetDateTime, LocalDate, Short])
+            evolution, leftYield.evolution, rightYield.evolution, And[ZoneOffset, OffsetDateTime, LocalDate, Short])
         }
     }
 
@@ -98,6 +95,6 @@ class AndTest
     }
     val evolution = And(leftStage, rightStage).skip()
     testEvolutionComposition(
-      evolution, leftEvolution, rightEvolution, And.apply[String, OffsetDateTime, ZonedDateTime, Long])
+      evolution, leftEvolution, rightEvolution, And[String, OffsetDateTime, ZonedDateTime, Long])
   }
 }

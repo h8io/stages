@@ -37,7 +37,7 @@ class OrTest
         inside(Or(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution, leftYield.evolution, rightYield.evolution, Or.apply[Long, Duration, Instant, Exception])
+            evolution, leftYield.evolution, rightYield.evolution, Or[Long, Duration, Instant, Exception])
         }
     }
 
@@ -61,7 +61,7 @@ class OrTest
           out shouldBe Right(rightYield.out)
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution, leftYield.evolution, rightYield.evolution, Or.apply[String, LocalDateTime, ZonedDateTime, UUID])
+            evolution, leftYield.evolution, rightYield.evolution, Or[String, LocalDateTime, ZonedDateTime, UUID])
         }
     }
 
@@ -79,7 +79,7 @@ class OrTest
         inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Left(leftYield.out)
           status shouldBe leftYield.status
-          testEvolutionComposition(evolution, leftYield.evolution, rightEvolution, Or.apply[UUID, Long, ZoneId, String])
+          testEvolutionComposition(evolution, leftYield.evolution, rightEvolution, Or[UUID, Long, ZoneId, String])
         }
     }
 
@@ -93,7 +93,6 @@ class OrTest
       (rightStage.skip _).expects().returns(rightEvolution)
     }
     val evolution = Or(leftStage, rightStage).skip()
-    testEvolutionComposition(
-      evolution, leftEvolution, rightEvolution, Or.apply[String, OffsetDateTime, ZonedDateTime, Long])
+    testEvolutionComposition(evolution, leftEvolution, rightEvolution, Or[String, OffsetDateTime, ZonedDateTime, Long])
   }
 }

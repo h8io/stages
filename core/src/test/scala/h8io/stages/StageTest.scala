@@ -169,7 +169,7 @@ class StageTest
       AndThen(upstreamStage, downstreamStage).skip(),
       upstreamEvolution,
       downstreamEvolution,
-      AndThen.apply[Int, String, Long, String])
+      AndThen[Int, String, Long, String])
   }
 
   it should "call the downstream stage's dispose and then the upstream stage's dispose" in {

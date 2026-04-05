@@ -36,7 +36,9 @@ class IOrTest
           (rightStage.apply _).expects(in).returns(rightYield)
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IOr[Long, Duration, Instant, Exception])
         }
     }
 
@@ -57,7 +59,9 @@ class IOrTest
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Ior.Left(leftYield.out)
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IOr[UUID, Long, ZoneId, String])
         }
     }
 
@@ -79,7 +83,9 @@ class IOrTest
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Ior.Right(rightYield.out)
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IOr[String, LocalDateTime, ZonedDateTime, UUID])
         }
     }
 
@@ -101,18 +107,11 @@ class IOrTest
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Ior.Both(leftYield.out, rightYield.out)
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IOr[ZoneOffset, OffsetDateTime, LocalDate, Short])
         }
     }
-
-  private def test[I, LO, RO, E](
-      leftYield: Yield[I, LO, E],
-      rightYield: Yield[I, RO, E],
-      status: Status[E],
-      evolution: Evolution[I, Ior[LO, RO], E]): Unit = {
-    status shouldBe leftYield.status ++ rightYield.status
-    testEvolutionComposition(evolution, leftYield.evolution, rightYield.evolution, IOr.apply[I, LO, RO, E])
-  }
 
   it should "skip the left and the right stages in sequence" in {
     val leftStage = mock[Stage[String, OffsetDateTime, Long]]("left stage")

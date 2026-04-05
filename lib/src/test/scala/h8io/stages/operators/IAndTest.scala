@@ -37,7 +37,7 @@ class IAndTest
         inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution, leftYield.evolution, rightYield.evolution, IAnd.apply[Long, Duration, Instant, Exception])
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[Long, Duration, Instant, Exception])
         }
     }
 
@@ -59,7 +59,7 @@ class IAndTest
         inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution, leftYield.evolution, rightYield.evolution, IAnd.apply[UUID, Long, ZoneId, String])
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[UUID, Long, ZoneId, String])
         }
     }
 
@@ -82,10 +82,7 @@ class IAndTest
         inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution,
-            leftYield.evolution,
-            rightYield.evolution,
-            IAnd.apply[String, LocalDateTime, ZonedDateTime, UUID])
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[String, LocalDateTime, ZonedDateTime, UUID])
         }
     }
 
@@ -109,10 +106,7 @@ class IAndTest
           out shouldBe leftYield.out -> rightYield.out
           status shouldBe leftYield.status ++ rightYield.status
           testEvolutionComposition(
-            evolution,
-            leftYield.evolution,
-            rightYield.evolution,
-            IAnd.apply[ZoneOffset, OffsetDateTime, LocalDate, Short])
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[ZoneOffset, OffsetDateTime, LocalDate, Short])
         }
     }
 
@@ -127,6 +121,6 @@ class IAndTest
     }
     val evolution = IAnd(leftStage, rightStage).skip()
     testEvolutionComposition(
-      evolution, leftEvolution, rightEvolution, IAnd.apply[String, OffsetDateTime, ZonedDateTime, Long])
+      evolution, leftEvolution, rightEvolution, IAnd[String, OffsetDateTime, ZonedDateTime, Long])
   }
 }
