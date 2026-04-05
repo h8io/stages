@@ -3,7 +3,7 @@ package h8io.stages.cats
 import cats.data.Ior
 import h8io.stages
 import h8io.stages.base.{BaseBinaryOperator, LeftProjection, RightProjection}
-import h8io.stages.{Stage, Yield}
+import h8io.stages.{Evolution, Stage, Yield}
 
 /** A binary operator that applies two stages independently to the same input and combines their outputs into a
   * `cats.data.Ior` (inclusive-or).
@@ -49,6 +49,8 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
       case (Yield.None(leftStatus, leftEvolution), Yield.None(rightStatus, rightEvolution)) =>
         Yield.None(leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
     }
+
+  override def skip(): Evolution[I, Ior[LO, RO], E] = IOr.Evolution(left.skip(), right.skip())
 }
 
 /** Companion object for [[IOr]], containing the private evolution and projections. */

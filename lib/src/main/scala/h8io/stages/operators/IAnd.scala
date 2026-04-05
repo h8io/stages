@@ -2,7 +2,7 @@ package h8io.stages.operators
 
 import h8io.stages
 import h8io.stages.base.BaseBinaryOperator
-import h8io.stages.{Stage, Yield}
+import h8io.stages.{Evolution, Stage, Yield}
 
 /** An ''independent'' binary operator that applies two stages to the same input simultaneously and combines their
   * outputs into a tuple.
@@ -37,6 +37,8 @@ final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, R
         Yield.Some((leftOut, rightOut), leftStatus ++ rightStatus, IAnd.Evolution(leftEvolution, rightEvolution))
       case (left, right) => Yield.None(left.status ++ right.status, IAnd.Evolution(left.evolution, right.evolution))
     }
+
+  override def skip(): Evolution[I, (LO, RO), E] = IAnd.Evolution(left.skip(), right.skip())
 }
 
 /** Companion object for [[IAnd]]. */

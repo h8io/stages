@@ -1,8 +1,8 @@
 package h8io.stages.examples
 
 import h8io.stages.*
+import h8io.stages.base.BaseStage
 import h8io.stages.operators.{LocalSoftDeadline, Repeat}
-import h8io.stages.base.BaseEvolution
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -13,8 +13,7 @@ object Leibniz {
    * A local soft deadline stops the run after the requested duration, and Repeat
    * keeps stepping until completion.
    */
-  final case class Pi(n: Long, t: Double, s: Double)
-      extends Stage[Unit, Double, Nothing] with BaseEvolution[Unit, Double, Nothing] {
+  final case class Pi(n: Long, t: Double, s: Double) extends BaseStage[Unit, Double, Nothing] {
     override def apply(in: Unit): Yield.Some[Unit, Double, Nothing] = Yield.Some(4 * s, Status.Success, this)
 
     override def onSuccess(): Stage[Unit, Double, Nothing] = {

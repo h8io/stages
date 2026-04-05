@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.base.{BaseEvolution, BaseUnaryOperator, SafeStage}
-import h8io.stages.{Stage, Status, Yield}
+import h8io.stages.{Evolution, Stage, Status, Yield}
 
 /** A decorator that catches non-fatal exceptions thrown by the inner stage and converts them into
   * `h8io.stages.Status.Error` values.
@@ -35,4 +35,6 @@ final case class Safe[-I, +O, +E](alterand: Stage[I, O, E])
 
   override def recover(in: I, e: Throwable): Yield[I, O, Either[Throwable, E]] =
     Yield.None(Status.Error(Left(e)), this)
+
+  override def skip(): Evolution[I, O, Either[Throwable, E]] = alterand.skip().map(Safe(_))
 }

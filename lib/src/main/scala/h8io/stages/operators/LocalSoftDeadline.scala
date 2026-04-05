@@ -45,6 +45,9 @@ final case class LocalSoftDeadline[-I, +O, +E](
     if (now() - ts >= duration) yld.map(identity, _.break, _.map(LocalSoftDeadline(now, now, duration, _)))
     else yld.map(identity, identity, LocalSoftDeadline.Evolution(() => ts, now, duration, _))
   }
+
+  override def skip(): Evolution[I, O, E] =
+    LocalSoftDeadline.Evolution(() => tsSupplier(), now, duration, alterand.skip())
 }
 
 /** Companion object and factory for [[LocalSoftDeadline]]. */

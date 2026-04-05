@@ -2,6 +2,7 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.base.StagesBaseTestUtil
+import h8io.stages.examples.Cache.Cached
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -61,11 +62,22 @@ class CacheTest
   "Cached" should "keep output while the status is Success" in
     forAll(Gen.zip(Gen.long, Gen.uuid)) { case (in, out) =>
       val stage = mock[Stage[Long, UUID, Exception]]("underlying stage")
-      val cached = Cache.Cached(out, stage)
-      inside(cached(in)) { case Yield.Some(`out`, Status.Success, evolution) =>
-        evolution.onSuccess() shouldBe cached
-        evolution.onComplete() shouldBe Cache(stage)
-        evolution.onError() shouldBe Cache(stage)
+      val stageEvolution = mock[Evolution[Long, UUID, Exception]]("skip")
+      (stage.skip _).expects().returns(stageEvolution)
+      inside(Cache.Cached(out, stage)(in)) { case Yield.Some(`out`, Status.Success, evolution) =>
+        inSequence {
+          val onSuccessStage = mock[Stage[Long, UUID, Exception]]
+          (stageEvolution.onSuccess _).expects().returns(onSuccessStage)
+          evolution.onSuccess() shouldBe Cached(out, onSuccessStage)
+
+          val onCompleteStage = mock[Stage[Long, UUID, Exception]]
+          (stageEvolution.onComplete _).expects().returns(onCompleteStage)
+          evolution.onComplete() shouldBe Cache(onCompleteStage)
+
+          val onErrorStage = mock[Stage[Long, UUID, Exception]]
+          (stageEvolution.onError _).expects().returns(onErrorStage)
+          evolution.onError() shouldBe Cache(onErrorStage)
+        }
       }
     }
 }

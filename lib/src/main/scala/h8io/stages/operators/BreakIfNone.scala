@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.base.BaseDecorator
-import h8io.stages.{Stage, Status, Yield}
+import h8io.stages.{Evolution, Stage, Status, Yield}
 
 /** A decorator that stops the pipeline when the inner stage produces no output.
   *
@@ -27,4 +27,6 @@ final case class BreakIfNone[I, O, E](alterand: Stage[I, O, E]) extends BaseDeco
       case Yield.None(Status.Success, evolution) => Yield.None(Status.Complete, evolution.map(BreakIfNone(_)))
       case other => other.map(identity, identity, _.map(BreakIfNone(_)))
     }
+
+  override def skip(): Evolution[I, O, E] = alterand.skip().map(BreakIfNone(_))
 }

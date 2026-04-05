@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.base.{BaseDecorator, Fruitful}
-import h8io.stages.{Stage, Yield}
+import h8io.stages.{Evolution, Stage, Yield}
 
 /** A decorator that remembers the last output produced by the inner stage and re-emits it when the inner stage yields
   * no value.
@@ -35,6 +35,8 @@ object KeepLastOutput {
         case Yield.Some(out, status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
         case Yield.None(status, evolution) => Yield.None(status, evolution.map(None(_)))
       }
+
+    override def skip(): Evolution[I, O, E] = alterand.skip().map(None(_))
   }
 
   private[operators] final case class Some[-I, +O, +E](out: O, alterand: Stage[I, O, E])
@@ -44,6 +46,8 @@ object KeepLastOutput {
         case Yield.Some(out, status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
         case Yield.None(status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
       }
+
+    override def skip(): Evolution[I, O, E] = alterand.skip().map(Some(out, _))
   }
 
   /** Wraps `stage` in a `KeepLastOutput` starting in the initial (no remembered value) state.
