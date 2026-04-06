@@ -36,11 +36,11 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends Decorator[T, T,
         case Status.Success =>
           yld match {
             case Yield.Some(out, _, _) => loop(yld.evolution.onSuccess(), out)
-            case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.evolution.onComplete()).evolution)
+            case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.evolution.onComplete()).toEvolution)
           }
         case Status.Complete =>
-          yld.map(identity, _ => Status.Success, evolution => Loop(evolution.onComplete()).evolution)
-        case _: Status.Error[E] => yld.map(identity, identity, evolution => Loop(evolution.onError()).evolution)
+          yld.map(identity, _ => Status.Success, evolution => Loop(evolution.onComplete()).toEvolution)
+        case _: Status.Error[E] => yld.map(identity, identity, evolution => Loop(evolution.onError()).toEvolution)
       }
     }
     loop(alterand, in)

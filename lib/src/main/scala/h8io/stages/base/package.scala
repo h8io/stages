@@ -37,6 +37,6 @@ package object base {
   type Decoration[I, O, E] = Alteration[Stage[I, O, E], Stage[I, O, E]]
 
   implicit final class StageOps[I, O, E](val stage: Stage[I, O, E]) extends AnyVal {
-    def evolution: Evolution[I, O, E] = StageEvolution(stage)
+    def toEvolution: Evolution[I, O, E] = ConstEvolution(stage)
   }
 }
