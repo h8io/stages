@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.base.StagesBaseTestUtil
-import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, Yield}
+import h8io.stages.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -18,6 +18,7 @@ class LiftTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
+    with StagesCoreTestUtil
     with StagesBaseTestUtil {
   "Lift" should "transform output of Yield.Some to Some" in
     forAll { (in: Int, yieldSupplier: EvolutionToYieldSome[Int, String, UUID]) =>
@@ -40,4 +41,11 @@ class LiftTest
         testWrappedEvolution(wrappedEvolution, evolution, Lift[Long, Instant, String])
       }
     }
+
+  it should "call the alterand.skip() method" in {
+    val stage = mock[Stage[UUID, Long, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, Long, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(Lift(stage).skip(), evolution, Lift[UUID, Long, Exception])
+  }
 }

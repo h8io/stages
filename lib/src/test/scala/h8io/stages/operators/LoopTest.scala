@@ -17,7 +17,8 @@ class LoopTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "Loop" should "be executed until the status is Complete" in
     forAll(
       Gen.zip(
@@ -107,6 +108,13 @@ class LoopTest
         genStage(tail, evolved, yld.out)
       case Nil => (in, stage)
     }
+
+  it should "call the alterand.skip() method" in {
+    val stage = mock[Stage.Endo[UUID, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, UUID, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(Loop(stage).skip(), evolution, Loop[UUID, Exception])
+  }
 
   "dispose" should "call alterand's dispose" in {
     val alterand = mock[Stage[Any, Nothing, Nothing]]

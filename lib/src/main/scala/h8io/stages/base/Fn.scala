@@ -20,7 +20,7 @@ import h8io.stages.{Status, Yield}
   * @tparam O
   *   the output type (covariant)
   */
-trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with BaseEvolution[I, O, Nothing] {
+trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with BaseStage[I, O, Nothing] {
 
   /** The pure mapping function applied to each input value.
     *

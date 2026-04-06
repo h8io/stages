@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.base.StagesBaseTestUtil
-import h8io.stages.{Evolution, Stage, StagesCoreArbitraries, Yield}
+import h8io.stages.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.{Instant, LocalDate}
+import java.util.UUID
 
 class BreakIfNoneTest
     extends AnyFlatSpec
@@ -17,6 +18,7 @@ class BreakIfNoneTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
+    with StagesCoreTestUtil
     with StagesBaseTestUtil {
   "BreakIfNone" should "return Yield.Some if the alterand result is Yield.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, Instant, String]) =>
@@ -40,4 +42,11 @@ class BreakIfNoneTest
         testWrappedEvolution(binEvolution, evolution, BreakIfNone[String, LocalDate, Long])
       }
     }
+
+  it should "call the alterand.skip() method" in {
+    val stage = mock[Stage[Long, UUID, Exception]]("alterand")
+    val evolution = mock[Evolution[Long, UUID, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(BreakIfNone(stage).skip(), evolution, BreakIfNone[Long, UUID, Exception])
+  }
 }

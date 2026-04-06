@@ -1,6 +1,6 @@
 package h8io.stages.std
 
-import h8io.stages.base.{BaseEvolution, Fruitful}
+import h8io.stages.base.{BaseStage, Fruitful}
 import h8io.stages.{Status, Yield}
 
 /** A stage that immediately signals pipeline completion without dropping the input value.
@@ -11,7 +11,7 @@ import h8io.stages.{Status, Yield}
   *
   * The singleton operates on `Any` and can be safely cast to any `Fruitful.Endo[T]` via `apply[T]`.
   */
-object Break extends Fruitful.Endo[Any, Nothing] with BaseEvolution.Endo[Any, Nothing] {
+object Break extends Fruitful.Endo[Any, Nothing] with BaseStage.Endo[Any, Nothing] {
 
   /** Returns a typed view of this singleton as a `Fruitful.Endo[T]`.
     *

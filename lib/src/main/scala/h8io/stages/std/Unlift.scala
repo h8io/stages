@@ -1,6 +1,6 @@
 package h8io.stages.std
 
-import h8io.stages.base.BaseEvolution
+import h8io.stages.base.BaseStage
 import h8io.stages.{Stage, Status, Yield}
 
 /** A stage that extracts the value from an `Option`, forwarding it when present and producing no output when absent.
@@ -12,7 +12,7 @@ import h8io.stages.{Stage, Status, Yield}
   *
   * The singleton operates on `Option[Any]` and can be safely cast to `Stage[Option[T], T, Nothing]` via `apply[T]`.
   */
-object Unlift extends Stage[Option[Any], Any, Nothing] with BaseEvolution[Option[Any], Any, Nothing] {
+object Unlift extends Stage[Option[Any], Any, Nothing] with BaseStage[Option[Any], Any, Nothing] {
   override def apply(in: Option[Any]): Yield[Option[Any], Any, Nothing] =
     in match {
       case Some(out) => Yield.Some(out, Status.Success, this)

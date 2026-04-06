@@ -5,11 +5,25 @@ import scala.util.control.NonFatal
 
 /** A single processing unit in a pipeline that transforms input values into [[Yield]] results.
   *
-  * A `Stage` is a functional interface: given an input of type `I`, it produces a [[Yield]] that carries an optional
-  * output of type `O`, a [[Status]], and an [[Evolution]] strategy describing how to continue processing.
+  * A `Stage` produces a [[Yield]] that carries an optional output of type `O`, a [[Status]], and an [[Evolution]]
+  * strategy describing how to continue processing.
   *
   * Stages are contravariant in `I` and covariant in both `O` and `E`, which allows them to be composed safely in a
   * pipeline via the [[~>]] operator.
+  *
+  * ==Lifecycle==
+  *
+  * Every `Stage` instance participates in exactly one of these lifecycle paths during a pipeline run:
+  *
+  *   - '''Active''': [[apply]] is called with an input value. The stage processes it and returns a [[Yield]].
+  *   - '''Skipped''': [[skip]] is called when the stage is bypassed — for example, because an upstream stage produced
+  *     no output, or because of a non-inclusive binary operation. The stage must return its [[Evolution]] without
+  *     performing any processing.
+  *   - '''Disposed''': [[dispose]] is called when the pipeline is torn down. All stages in the pipeline receive this
+  *     call, regardless of whether they were active or skipped.
+  *
+  * Exactly one of [[apply]] or [[skip]] is called per pipeline run; [[dispose]] is called once when the pipeline is
+  * released. Fatal exceptions are not accounted for by this contract.
   *
   * Example — building a pipeline:
   * {{{
@@ -25,7 +39,6 @@ import scala.util.control.NonFatal
   * @tparam E
   *   the error type (covariant)
   */
-@FunctionalInterface
 trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   /** Applies this stage to the given input, producing a [[Yield]].
@@ -37,15 +50,27 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     */
   def apply(in: I): Yield[I, O, E]
 
+  /** Returns the [[Evolution]] for this stage without processing any input.
+    *
+    * Called when the stage is bypassed during a pipeline run — for instance, because an upstream stage produced no
+    * output ([[Yield.None]]), or because a non-inclusive binary operation excluded this branch. The stage must return
+    * its [[Evolution]] as it would have appeared had it run, but must not perform any side effects or consume input.
+    *
+    * See the ''Lifecycle'' section in [[Stage]] for the full contract.
+    *
+    * @return
+    *   the [[Evolution]] representing how the pipeline should continue from this stage
+    */
+  def skip(): Evolution[I, O, E]
+
   /** Releases any resources held by this stage.
     *
     * Called by pipeline owners (for example, [[Stage.AndThen]]) when disposing a composed stage. [[execute]] disposes
     * only the next stage selected from the [[Evolution]] and does not call `dispose()` on this stage.
     *
-    * The default implementation is a no-op; override it when the stage holds external resources (connections, file
-    * handles, etc.).
+    * Stages that hold no external resources may implement this as a no-op.
     */
-  def dispose(): Unit = {}
+  def dispose(): Unit
 
   /** Executes this stage end-to-end and returns a plain [[Outcome]].
     *
@@ -135,8 +160,10 @@ object Stage {
     override def apply(in: I): Yield[I, O, E] =
       upstream(in) match {
         case some @ Yield.Some(out, _, _) => some.compose(downstream(out))
-        case none: Yield.None[I, OI, E] => none.compose(downstream)
+        case none: Yield.None[I, OI, E] => none.compose(downstream.skip())
       }
+
+    override def skip(): Evolution[I, O, E] = upstream.skip().compose(downstream.skip())
 
     override def dispose(): Unit = {
       try downstream.dispose()

@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.base.{BaseUnaryOperator, Fruitful}
-import h8io.stages.{Stage, Yield}
+import h8io.stages.{Evolution, Stage, Yield}
 
 /** A decorator that wraps a stage's optional output into an `Option`, making the result always present.
   *
@@ -32,4 +32,6 @@ final case class Lift[I, O, E](alterand: Stage[I, O, E])
       case Yield.Some(out, status, evolution) => Yield.Some(Some(out), status, evolution.map(Lift(_)))
       case Yield.None(status, evolution) => Yield.Some(None, status, evolution.map(Lift(_)))
     }
+
+  override def skip(): Evolution[I, Option[O], E] = alterand.skip().map(Lift(_))
 }

@@ -3,9 +3,9 @@ package h8io.stages.operators
 import h8io.stages.*
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.*
@@ -18,7 +18,8 @@ class IAndTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "IAnd" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,
@@ -34,7 +35,9 @@ class IAndTest
           (rightStage.apply _).expects(in).returns(rightYield)
         }
         inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[Long, Duration, Instant, Exception])
         }
     }
 
@@ -54,7 +57,9 @@ class IAndTest
           (rightStage.apply _).expects(in).returns(rightYield)
         }
         inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[UUID, Long, ZoneId, String])
         }
     }
 
@@ -75,7 +80,9 @@ class IAndTest
           (rightStage.apply _).expects(in).returns(rightYield)
         }
         inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[String, LocalDateTime, ZonedDateTime, UUID])
         }
     }
 
@@ -97,39 +104,23 @@ class IAndTest
         }
         inside(IAnd(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe leftYield.out -> rightYield.out
-          test(leftYield, rightYield, status, evolution)
+          status shouldBe leftYield.status ++ rightYield.status
+          testEvolutionComposition(
+            evolution, leftYield.evolution, rightYield.evolution, IAnd[ZoneOffset, OffsetDateTime, LocalDate, Short])
         }
     }
 
-  private def test[I, LO, RO, E](
-      leftYield: Yield[I, LO, E],
-      rightYield: Yield[I, RO, E],
-      status: Status[E],
-      evolution: Evolution[I, (LO, RO), E]): Assertion = {
-    status shouldBe leftYield.status ++ rightYield.status
-
-    val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
-    val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")
+  it should "skip the left and right stages in sequence" in {
+    val leftStage = mock[Stage[String, OffsetDateTime, Long]]("left stage")
+    val leftEvolution = mock[Evolution[String, OffsetDateTime, Long]]("left evolution")
+    val rightStage = mock[Stage[String, ZonedDateTime, Long]]("right stage")
+    val rightEvolution = mock[Evolution[String, ZonedDateTime, Long]]("right evolution")
     inSequence {
-      (leftYield.evolution.onSuccess _).expects().returns(leftOnSuccessStage)
-      (rightYield.evolution.onSuccess _).expects().returns(rightOnSuccessStage)
+      (leftStage.skip _).expects().returns(leftEvolution)
+      (rightStage.skip _).expects().returns(rightEvolution)
     }
-    evolution.onSuccess() shouldBe IAnd(leftOnSuccessStage, rightOnSuccessStage)
-
-    val leftOnCompleteStage = mock[Stage[I, LO, E]]("left onComplete stage")
-    val rightOnCompleteStage = mock[Stage[I, RO, E]]("right onComplete stage")
-    inSequence {
-      (leftYield.evolution.onComplete _).expects().returns(leftOnCompleteStage)
-      (rightYield.evolution.onComplete _).expects().returns(rightOnCompleteStage)
-    }
-    evolution.onComplete() shouldBe IAnd(leftOnCompleteStage, rightOnCompleteStage)
-
-    val leftOnErrorStage = mock[Stage[I, LO, E]]("left onError stage")
-    val rightOnErrorStage = mock[Stage[I, RO, E]]("right onError stage")
-    inSequence {
-      (leftYield.evolution.onError _).expects().returns(leftOnErrorStage)
-      (rightYield.evolution.onError _).expects().returns(rightOnErrorStage)
-    }
-    evolution.onError() shouldBe IAnd(leftOnErrorStage, rightOnErrorStage)
+    val evolution = IAnd(leftStage, rightStage).skip()
+    testEvolutionComposition(
+      evolution, leftEvolution, rightEvolution, IAnd[String, OffsetDateTime, ZonedDateTime, Long])
   }
 }

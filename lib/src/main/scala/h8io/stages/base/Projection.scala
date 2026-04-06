@@ -1,6 +1,6 @@
 package h8io.stages.base
 
-import h8io.stages.{Stage, Status, Yield}
+import h8io.stages.{Status, Yield}
 
 /** Base trait for stages that extract a value from a container type `C`.
   *
@@ -16,7 +16,7 @@ import h8io.stages.{Stage, Status, Yield}
   * @tparam O
   *   the extracted value type
   */
-trait Projection[-I, O] extends Stage[I, O, Nothing] with BaseEvolution[I, O, Nothing] {
+trait Projection[-I, O] extends BaseStage[I, O, Nothing] {
 
   /** Creates a successful `h8io.stages.Yield.Some` carrying `out`. */
   protected def some(out: O): Yield.Some[I, O, Nothing] = Yield.Some(out, Status.Success, this)

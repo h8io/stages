@@ -1,5 +1,6 @@
 package h8io.stages
 
+import h8io.stages.Stage.AndThen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -18,12 +19,6 @@ class StageTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
-  "dispose" should "do nothing" in {
-    noException should be thrownBy new Stage[Instant, Timestamp, String] {
-      def apply(in: Instant): Yield[Instant, Timestamp, String] = throw new NotImplementedError
-    }.dispose()
-  }
-
   "execute" should "run evolution and return Outcome.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
@@ -52,7 +47,7 @@ class StageTest
       stage.execute(in) shouldBe Outcome.None(yld.status, None)
     }
 
-  it should "should not fail on dispose throw and return Outcome.Some" in
+  it should "not fail on dispose throw and return Outcome.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
       val evolution = mock[Evolution[Long, String, UUID]]
@@ -67,7 +62,7 @@ class StageTest
       stage.execute(in) shouldBe Outcome.Some(yld.out, yld.status, Some(disposeFailure))
     }
 
-  it should "should not fail on dispose throw and return Outcome.None" in
+  it should "not fail on dispose throw and return Outcome.None" in
     forAll { (in: Instant, yieldSupplier: EvolutionToYieldNone[Instant, Boolean, Long]) =>
       val stage = mock[Stage[Instant, Boolean, Long]]
       val evolution = mock[Evolution[Instant, Boolean, Long]]
@@ -147,13 +142,35 @@ class StageTest
       val upstreamStage = mock[Stage[Int, String, String]]
       val upstreamEvolution = mock[Evolution[Int, String, String]]
       val downstreamStage = mock[Stage[String, Long, String]]
-      (upstreamStage.apply _).expects(in).returns(Yield.None(upstreamStatus, upstreamEvolution))
+      val downstreamEvolution = mock[Evolution[String, Long, String]]
+      inSequence {
+        (upstreamStage.apply _).expects(in).returns(Yield.None(upstreamStatus, upstreamEvolution))
+        (downstreamStage.skip _).expects().returns(downstreamEvolution)
+      }
       inside(Stage.AndThen(upstreamStage, downstreamStage)(in)) { case Yield.None(`upstreamStatus`, evolution) =>
+        val evolvedDownstreamStage = mock[Stage[String, Long, String]]
+        evolutionMock(downstreamEvolution, upstreamStatus, evolvedDownstreamStage)
         val evolvedUpstreamStage = mock[Stage[Int, String, String]]
         evolutionMock(upstreamEvolution, upstreamStatus, evolvedUpstreamStage)
-        upstreamStatus(evolution) shouldBe Stage.AndThen(evolvedUpstreamStage, downstreamStage)
+        upstreamStatus(evolution) shouldBe evolvedUpstreamStage ~> evolvedDownstreamStage
       }
     }
+
+  it should "sequentially call skip methods for both stages" in {
+    val upstreamStage = mock[Stage[Int, String, String]]
+    val upstreamEvolution = mock[Evolution[Int, String, String]]
+    val downstreamStage = mock[Stage[String, Long, String]]
+    val downstreamEvolution = mock[Evolution[String, Long, String]]
+    inSequence {
+      (upstreamStage.skip _).expects().returns(upstreamEvolution)
+      (downstreamStage.skip _).expects().returns(downstreamEvolution)
+    }
+    testEvolutionComposition(
+      AndThen(upstreamStage, downstreamStage).skip(),
+      upstreamEvolution,
+      downstreamEvolution,
+      AndThen[Int, String, Long, String])
+  }
 
   it should "call the downstream stage's dispose and then the upstream stage's dispose" in {
     val upstreamStage = mock[Stage[Int, String, String]]

@@ -35,21 +35,28 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory {
     evolution.onError() shouldBe stage
   }
 
-  it should "compose Evolution and Stage objects correctly" in {
+  it should "compose Evolution objects correctly for each branch independently" in {
     val upstreamEvolution = mock[Evolution[String, Instant, Exception]]
-    val upstreamStage = mock[Stage[String, Instant, Exception]]
-    val downstreamStage = mock[Stage[Instant, Long, Exception]]
-    val evolution = upstreamEvolution.compose(downstreamStage)
-    val stage = upstreamStage ~> downstreamStage
+    val downstreamEvolution = mock[Evolution[Instant, Long, Exception]]
+    val evolution = upstreamEvolution.compose(downstreamEvolution)
 
-    (upstreamEvolution.onSuccess _).expects().returns(upstreamStage)
-    evolution.onSuccess() shouldBe stage
+    val onSuccessDownstreamStage = mock[Stage[Instant, Long, Exception]]("onSuccess downstream stage")
+    (downstreamEvolution.onSuccess _).expects().returns(onSuccessDownstreamStage)
+    val onSuccessUpstreamStage = mock[Stage[String, Instant, Exception]]("onSuccess upstream stage")
+    (upstreamEvolution.onSuccess _).expects().returns(onSuccessUpstreamStage)
+    evolution.onSuccess() shouldBe onSuccessUpstreamStage ~> onSuccessDownstreamStage
 
-    (upstreamEvolution.onComplete _).expects().returns(upstreamStage)
-    evolution.onComplete() shouldBe stage
+    val onCompleteDownstreamStage = mock[Stage[Instant, Long, Exception]]("onComplete downstream stage")
+    (downstreamEvolution.onComplete _).expects().returns(onCompleteDownstreamStage)
+    val onCompleteUpstreamStage = mock[Stage[String, Instant, Exception]]("onComplete upstream stage")
+    (upstreamEvolution.onComplete _).expects().returns(onCompleteUpstreamStage)
+    evolution.onComplete() shouldBe onCompleteUpstreamStage ~> onCompleteDownstreamStage
 
-    (upstreamEvolution.onError _).expects().returns(upstreamStage)
-    evolution.onError() shouldBe stage
+    val onErrorDownstreamStage = mock[Stage[Instant, Long, Exception]]("onError downstream stage")
+    (downstreamEvolution.onError _).expects().returns(onErrorDownstreamStage)
+    val onErrorUpstreamStage = mock[Stage[String, Instant, Exception]]("onError upstream stage")
+    (upstreamEvolution.onError _).expects().returns(onErrorUpstreamStage)
+    evolution.onError() shouldBe onErrorUpstreamStage ~> onErrorDownstreamStage
   }
 
   "map" should "transform stages correctly" in {

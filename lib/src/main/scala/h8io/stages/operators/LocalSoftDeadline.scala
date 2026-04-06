@@ -11,9 +11,10 @@ import scala.concurrent.duration.FiniteDuration
   * `h8io.stages.Evolution` transition.
   *
   * Unlike [[h8io.stages.std.GlobalSoftDeadline]], which measures time from the moment the stage is created,
-  * `LocalSoftDeadline` resets its clock on every `onSuccess` transition: the timestamp is captured fresh each time the
-  * stage is selected by `h8io.stages.Evolution.onSuccess`. On `onComplete` and `onError` transitions the clock is also
-  * reset (to `now`), but the deadline is checked on the very next `apply` call.
+  * `LocalSoftDeadline` resets its clock on every `onSuccess` transition: the timestamp is captured at each `apply` call
+  * and preserved through the `onSuccess` transition, so the deadline window of the next stage starts from when the
+  * previous `apply` was evaluated. On `onComplete` and `onError` transitions the clock is also reset (to `now`), but
+  * the deadline is checked on the very next `apply` call.
   *
   * If the deadline is exceeded, the `h8io.stages.Status` of the current `h8io.stages.Yield` is upgraded to its break
   * variant (e.g. `Success` → `Complete`) by applying `break` to the status.
@@ -22,7 +23,7 @@ import scala.concurrent.duration.FiniteDuration
   * terminates.
   *
   * @param tsSupplier
-  *   a thunk that returns the timestamp captured at the last evolution transition
+  *   a thunk that returns the timestamp captured at the last `apply` call
   * @param now
   *   a supplier of the current time in nanoseconds
   * @param duration
@@ -45,6 +46,9 @@ final case class LocalSoftDeadline[-I, +O, +E](
     if (now() - ts >= duration) yld.map(identity, _.break, _.map(LocalSoftDeadline(now, now, duration, _)))
     else yld.map(identity, identity, LocalSoftDeadline.Evolution(() => ts, now, duration, _))
   }
+
+  override def skip(): Evolution[I, O, E] =
+    LocalSoftDeadline.Evolution(tsSupplier, now, duration, alterand.skip())
 }
 
 /** Companion object and factory for [[LocalSoftDeadline]]. */

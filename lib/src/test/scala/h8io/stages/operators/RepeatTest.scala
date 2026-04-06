@@ -18,7 +18,8 @@ class RepeatTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "Repeat" should "be executed until the status is Complete" in
     forAll(
       Gen.zip(Gen.nonEmptyListOf(Arbitrary.arbitrary[StatusAndEvolutionToYield[Long, String, Nothing]]), Gen.long)) {
@@ -85,6 +86,13 @@ class RepeatTest
       id: String,
       yieldSupplier: StatusAndEvolutionToYield[I, O, E], status: Status[E]): Yield[I, O, E] =
     yieldSupplier(status, mock[Evolution[I, O, E]](s"evolution $id"))
+
+  it should "call the alterand.skip() method" in {
+    val stage = mock[Stage[UUID, String, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, String, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(Repeat(stage).skip(), evolution, Repeat[UUID, String, Exception])
+  }
 
   "dispose" should "call alterand's dispose" in {
     val alterand = mock[Stage[Any, Nothing, Nothing]]

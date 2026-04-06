@@ -44,4 +44,6 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends BaseDecorator[T
     }
     loop(alterand, in)
   }
+
+  override def skip(): Evolution[T, T, E] = alterand.skip().map(Loop(_))
 }

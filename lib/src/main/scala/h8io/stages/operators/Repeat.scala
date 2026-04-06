@@ -39,4 +39,6 @@ final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E])
     }
     repeat(alterand)
   }
+
+  override def skip(): Evolution[I, O, E] = alterand.skip().map(Repeat(_))
 }

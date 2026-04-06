@@ -2,7 +2,7 @@ package h8io.stages.operators
 
 import h8io.stages
 import h8io.stages.base.BaseBinaryOperator
-import h8io.stages.{Stage, Yield}
+import h8io.stages.{Evolution, Stage, Yield}
 
 /** An ''independent'' binary operator that applies two stages to the same input simultaneously and combines their
   * outputs into a tuple.
@@ -37,6 +37,8 @@ final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, R
         Yield.Some((leftOut, rightOut), leftStatus ++ rightStatus, IAnd.Evolution(leftEvolution, rightEvolution))
       case (left, right) => Yield.None(left.status ++ right.status, IAnd.Evolution(left.evolution, right.evolution))
     }
+
+  override def skip(): Evolution[I, (LO, RO), E] = IAnd.Evolution(left.skip(), right.skip())
 }
 
 /** Companion object for [[IAnd]]. */
@@ -45,8 +47,16 @@ object IAnd {
       left: stages.Evolution[I, LO, E],
       right: stages.Evolution[I, RO, E])
       extends stages.Evolution[I, (LO, RO), E] {
-    override def onSuccess(): Stage[I, (LO, RO), E] = IAnd(left.onSuccess(), right.onSuccess())
-    override def onComplete(): Stage[I, (LO, RO), E] = IAnd(left.onComplete(), right.onComplete())
-    override def onError(): Stage[I, (LO, RO), E] = IAnd(left.onError(), right.onError())
+    override def onSuccess(): Stage[I, (LO, RO), E] = _apply(left.onSuccess(), right.onSuccess())
+    override def onComplete(): Stage[I, (LO, RO), E] = _apply(left.onComplete(), right.onComplete())
+    override def onError(): Stage[I, (LO, RO), E] = _apply(left.onError(), right.onError())
+  }
+
+  @inline private def _apply[I, LO, RO, E](
+      lazyLeftStage: => Stage[I, LO, E],
+      lazyRightStage: => Stage[I, RO, E]): IAnd[I, LO, RO, E] = {
+    val rightStage = lazyRightStage
+    val leftStage = lazyLeftStage
+    IAnd(leftStage, rightStage)
   }
 }

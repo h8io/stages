@@ -2,6 +2,7 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.base.StagesBaseTestUtil
+import h8io.stages.examples.Cache.Cached
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -18,6 +19,7 @@ class CacheTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
+    with StagesCoreTestUtil
     with StagesBaseTestUtil {
   "Cache" should "cache output only if the yield is Some and the status is Success" in {
     def test(
@@ -58,14 +60,68 @@ class CacheTest
     }
   }
 
+  it should "call the alterand.skip() method" in {
+    val stage = mock[Stage[UUID, String, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, String, Exception]]("evolution")
+    (stage.skip _).expects().returns(evolution)
+    testAlteredEvolution(Cache(stage).skip(), evolution, Cache[UUID, String, Exception])
+  }
+
+  "dispose" should "call alterand's dispose for Cache" in {
+    val stage = mock[Stage[Any, Nothing, Nothing]]
+    (stage.dispose _).expects()
+    noException should be thrownBy Cache(stage).dispose()
+  }
+
+  it should "call alterand's dispose for Cached" in {
+    val stage = mock[Stage[Any, Nothing, Nothing]]
+    (stage.dispose _).expects()
+    noException should be thrownBy Cache.Cached(mock[AnyRef], stage).dispose()
+  }
+
   "Cached" should "keep output while the status is Success" in
     forAll(Gen.zip(Gen.long, Gen.uuid)) { case (in, out) =>
       val stage = mock[Stage[Long, UUID, Exception]]("underlying stage")
-      val cached = Cache.Cached(out, stage)
-      inside(cached(in)) { case Yield.Some(`out`, Status.Success, evolution) =>
-        evolution.onSuccess() shouldBe cached
-        evolution.onComplete() shouldBe Cache(stage)
-        evolution.onError() shouldBe Cache(stage)
+      val stageEvolution = mock[Evolution[Long, UUID, Exception]]("skip")
+      (stage.skip _).expects().returns(stageEvolution)
+      inside(Cache.Cached(out, stage)(in)) { case Yield.Some(`out`, Status.Success, evolution) =>
+        inSequence {
+          val onSuccessStage = mock[Stage[Long, UUID, Exception]]
+          (stageEvolution.onSuccess _).expects().returns(onSuccessStage)
+          evolution.onSuccess() shouldBe Cached(out, onSuccessStage)
+
+          val onCompleteStage = mock[Stage[Long, UUID, Exception]]
+          (stageEvolution.onComplete _).expects().returns(onCompleteStage)
+          evolution.onComplete() shouldBe Cache(onCompleteStage)
+
+          val onErrorStage = mock[Stage[Long, UUID, Exception]]
+          (stageEvolution.onError _).expects().returns(onErrorStage)
+          evolution.onError() shouldBe Cache(onErrorStage)
+        }
       }
     }
+
+  it should "call the alterand.skip() method" in {
+    val out = mock[AnyRef]
+    val stage = mock[Stage[UUID, AnyRef, Exception]]("alterand")
+    val evolution = mock[Evolution[UUID, AnyRef, Exception]]("evolution")
+    val cached = Cached(out, stage)
+    inSequence {
+      (stage.skip _).expects().returns(evolution)
+
+      val cachedEvolution = cached.skip()
+
+      val onSuccessStage = mock[Stage[UUID, AnyRef, Exception]]
+      (evolution.onSuccess _).expects().returns(onSuccessStage)
+      cachedEvolution.onSuccess() shouldBe Cached(out, onSuccessStage)
+
+      val onCompleteStage = mock[Stage[UUID, AnyRef, Exception]]
+      (evolution.onComplete _).expects().returns(onCompleteStage)
+      cachedEvolution.onComplete() shouldBe Cache(onCompleteStage)
+
+      val onErrorStage = mock[Stage[UUID, AnyRef, Exception]]
+      (evolution.onError _).expects().returns(onErrorStage)
+      cachedEvolution.onError() shouldBe Cache(onErrorStage)
+    }
+  }
 }

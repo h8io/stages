@@ -50,4 +50,79 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       case Status.Complete => (evolution.onComplete _).expects().returns(stage)
       case _: Status.Error[E] => (evolution.onError _).expects().returns(stage)
     }
+
+  /** Asserts that `evolution` correctly composes `leftEvolution` and `rightEvolution` for all three status branches.
+    *
+    * For each branch (`onSuccess`, `onComplete`, `onError`) the helper:
+    *   1. Registers ScalaMock expectations on both `leftEvolution` and `rightEvolution`.
+    *   1. Calls the corresponding branch on `evolution`.
+    *   1. Asserts the returned stage equals `compose(leftStage, rightStage)`.
+    *
+    * All six branch calls are ordered with `inSequence` to ensure deterministic expectation matching.
+    *
+    * @param composition
+    *   the composed evolution under test
+    * @param leftEvolution
+    *   the mock left evolution whose branches supply the left continuation stages
+    * @param rightEvolution
+    *   the mock right evolution whose branches supply the right continuation stages
+    * @param compose
+    *   the function that reconstructs the expected composed stage from its two halves
+    * @tparam LI
+    *   the left evolution input type
+    * @tparam LO
+    *   the left evolution output type
+    * @tparam RI
+    *   the right evolution input type
+    * @tparam RO
+    *   the right evolution output type
+    * @tparam I
+    *   the composed evolution input type
+    * @tparam O
+    *   the composed evolution output type
+    * @tparam E
+    *   the error type
+    */
+  def testEvolutionComposition[LI, LO, RI, RO, I, O, E](
+      composition: Evolution[I, O, E],
+      leftEvolution: Evolution[LI, LO, E],
+      rightEvolution: Evolution[RI, RO, E],
+      compose: (Stage[LI, LO, E], Stage[RI, RO, E]) => Stage[I, O, E]): Unit =
+    inSequence {
+      val onSuccessLeftStage = mock[Stage[LI, LO, E]]
+      val onSuccessRightStage = mock[Stage[RI, RO, E]]
+      (rightEvolution.onSuccess _).expects().returns(onSuccessRightStage)
+      (leftEvolution.onSuccess _).expects().returns(onSuccessLeftStage)
+      composition.onSuccess() shouldBe compose(onSuccessLeftStage, onSuccessRightStage)
+
+      val onCompleteLeftStage = mock[Stage[LI, LO, E]]
+      val onCompleteRightStage = mock[Stage[RI, RO, E]]
+      (rightEvolution.onComplete _).expects().returns(onCompleteRightStage)
+      (leftEvolution.onComplete _).expects().returns(onCompleteLeftStage)
+      composition.onComplete() shouldBe compose(onCompleteLeftStage, onCompleteRightStage)
+
+      val onErrorLeftStage = mock[Stage[LI, LO, E]]
+      val onErrorRightStage = mock[Stage[RI, RO, E]]
+      (rightEvolution.onError _).expects().returns(onErrorRightStage)
+      (leftEvolution.onError _).expects().returns(onErrorLeftStage)
+      composition.onError() shouldBe compose(onErrorLeftStage, onErrorRightStage)
+    }
+
+  def testAlteredEvolution[AI, AO, AE, I, O, E](
+      altered: Evolution[I, O, E],
+      evolution: Evolution[AI, AO, AE],
+      f: Stage[AI, AO, AE] => Stage[I, O, E]): Unit =
+    inSequence {
+      val onSuccessStage = mock[Stage[AI, AO, AE]]
+      (evolution.onSuccess _).expects().returns(onSuccessStage)
+      altered.onSuccess() shouldBe f(onSuccessStage)
+
+      val onCompleteStage = mock[Stage[AI, AO, AE]]
+      (evolution.onComplete _).expects().returns(onCompleteStage)
+      altered.onComplete() shouldBe f(onCompleteStage)
+
+      val onErrorStage = mock[Stage[AI, AO, AE]]
+      (evolution.onError _).expects().returns(onErrorStage)
+      altered.onError() shouldBe f(onErrorStage)
+    }
 }

@@ -3,7 +3,7 @@ package h8io.stages.cats
 import cats.data.Ior
 import h8io.stages
 import h8io.stages.base.{BaseBinaryOperator, LeftProjection, RightProjection}
-import h8io.stages.{Stage, Yield}
+import h8io.stages.{Evolution, Stage, Yield}
 
 /** A binary operator that applies two stages independently to the same input and combines their outputs into a
   * `cats.data.Ior` (inclusive-or).
@@ -49,6 +49,8 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
       case (Yield.None(leftStatus, leftEvolution), Yield.None(rightStatus, rightEvolution)) =>
         Yield.None(leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
     }
+
+  override def skip(): Evolution[I, Ior[LO, RO], E] = IOr.Evolution(left.skip(), right.skip())
 }
 
 /** Companion object for [[IOr]], containing the private evolution and projections. */
@@ -57,9 +59,17 @@ object IOr {
       left: stages.Evolution[I, LO, E],
       right: stages.Evolution[I, RO, E])
       extends stages.Evolution[I, Ior[LO, RO], E] {
-    override def onSuccess(): Stage[I, Ior[LO, RO], E] = IOr(left.onSuccess(), right.onSuccess())
-    override def onComplete(): Stage[I, Ior[LO, RO], E] = IOr(left.onComplete(), right.onComplete())
-    override def onError(): Stage[I, Ior[LO, RO], E] = IOr(left.onError(), right.onError())
+    override def onSuccess(): Stage[I, Ior[LO, RO], E] = _apply(left.onSuccess(), right.onSuccess())
+    override def onComplete(): Stage[I, Ior[LO, RO], E] = _apply(left.onComplete(), right.onComplete())
+    override def onError(): Stage[I, Ior[LO, RO], E] = _apply(left.onError(), right.onError())
+  }
+
+  @inline private def _apply[I, LO, RO, E](
+      lazyLeftStage: => Stage[I, LO, E],
+      lazyRightStage: => Stage[I, RO, E]): IOr[I, LO, RO, E] = {
+    val rightStage = lazyRightStage
+    val leftStage = lazyLeftStage
+    IOr(leftStage, rightStage)
   }
 
   /** Extracts the left value from an `cats.data.Ior`, yielding it when present in both `Ior.Left` and `Ior.Both`.
