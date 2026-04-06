@@ -1,9 +1,9 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.base.{BaseDecorator, Fruitful}
+import h8io.stages.base.{Decorator, Fruitful}
 
-final case class Cache[-I, +O, +E](alterand: Stage[I, O, E]) extends BaseDecorator[I, O, E] {
+final case class Cache[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] {
   /*
    * Example: a simple cache decorator for stages.
    * On Success it switches to a Cached stage that replays the last output without
@@ -31,7 +31,7 @@ final case class Cache[-I, +O, +E](alterand: Stage[I, O, E]) extends BaseDecorat
 
 object Cache {
   private[examples] final case class Cached[-I, +O, +E](out: O, alterand: Stage[I, O, E])
-      extends BaseDecorator[I, O, E] with Fruitful[I, O, E] {
+      extends Decorator[I, O, E] with Fruitful[I, O, E] {
     override def apply(in: I): Yield.Some[I, O, E] = Yield.Some(out, Status.Success, skip())
 
     override def skip(): Evolution[I, O, E] = {

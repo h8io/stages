@@ -1,6 +1,6 @@
 package h8io.stages.operators
 
-import h8io.stages.base.{BaseEvolution, BaseUnaryOperator, SafeStage}
+import h8io.stages.base.{Alterator, BaseEvolution, SafeStage}
 import h8io.stages.{Evolution, Stage, Status, Yield}
 
 /** A decorator that catches non-fatal exceptions thrown by the inner stage and converts them into
@@ -27,7 +27,7 @@ import h8io.stages.{Evolution, Stage, Status, Yield}
   *   the original error type of the inner stage (covariant)
   */
 final case class Safe[-I, +O, +E](alterand: Stage[I, O, E])
-    extends BaseUnaryOperator[Stage[I, O, E], I, O, Either[Throwable, E]]
+    extends Alterator[Stage[I, O, E], I, O, Either[Throwable, E]]
     with SafeStage[I, O, Either[Throwable, E]]
     with BaseEvolution[I, O, Either[Throwable, E]] {
   override def body(in: I): Yield[I, O, Either[Throwable, E]] =

@@ -1,6 +1,6 @@
 package h8io.stages.operators
 
-import h8io.stages.base.{BaseDecorator, Fruitful}
+import h8io.stages.base.{Decorator, Fruitful}
 import h8io.stages.{Evolution, Stage, Yield}
 
 /** A decorator that remembers the last output produced by the inner stage and re-emits it when the inner stage yields
@@ -29,7 +29,7 @@ import h8io.stages.{Evolution, Stage, Yield}
   *   the error type
   */
 object KeepLastOutput {
-  private[operators] final case class None[-I, +O, +E](alterand: Stage[I, O, E]) extends BaseDecorator[I, O, E] {
+  private[operators] final case class None[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] {
     override def apply(in: I): Yield[I, O, E] =
       alterand(in) match {
         case Yield.Some(out, status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
@@ -40,7 +40,7 @@ object KeepLastOutput {
   }
 
   private[operators] final case class Some[-I, +O, +E](out: O, alterand: Stage[I, O, E])
-      extends BaseDecorator[I, O, E] with Fruitful[I, O, E] {
+      extends Decorator[I, O, E] with Fruitful[I, O, E] {
     override def apply(in: I): Yield.Some[I, O, E] =
       alterand(in) match {
         case Yield.Some(out, status, evolution) => Yield.Some(out, status, evolution.map(Some(out, _)))
