@@ -35,7 +35,7 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory {
     evolution.onError() shouldBe stage
   }
 
-  it should "compose Evolution and Stage objects correctly" in {
+  it should "compose Evolution objects correctly for each branch independently" in {
     val upstreamEvolution = mock[Evolution[String, Instant, Exception]]
     val downstreamEvolution = mock[Evolution[Instant, Long, Exception]]
     val evolution = upstreamEvolution.compose(downstreamEvolution)

@@ -47,7 +47,7 @@ class StageTest
       stage.execute(in) shouldBe Outcome.None(yld.status, None)
     }
 
-  it should "should not fail on dispose throw and return Outcome.Some" in
+  it should "not fail on dispose throw and return Outcome.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
       val evolution = mock[Evolution[Long, String, UUID]]
@@ -62,7 +62,7 @@ class StageTest
       stage.execute(in) shouldBe Outcome.Some(yld.out, yld.status, Some(disposeFailure))
     }
 
-  it should "should not fail on dispose throw and return Outcome.None" in
+  it should "not fail on dispose throw and return Outcome.None" in
     forAll { (in: Instant, yieldSupplier: EvolutionToYieldNone[Instant, Boolean, Long]) =>
       val stage = mock[Stage[Instant, Boolean, Long]]
       val evolution = mock[Evolution[Instant, Boolean, Long]]
