@@ -67,6 +67,18 @@ class CacheTest
     testAlteredEvolution(Cache(stage).skip(), evolution, Cache[UUID, String, Exception])
   }
 
+  "dispose" should "call alterand's dispose for Cache" in {
+    val stage = mock[Stage[Any, Nothing, Nothing]]
+    (stage.dispose _).expects()
+    noException should be thrownBy Cache(stage).dispose()
+  }
+
+  it should "call alterand's dispose for Cached" in {
+    val stage = mock[Stage[Any, Nothing, Nothing]]
+    (stage.dispose _).expects()
+    noException should be thrownBy Cache.Cached(mock[AnyRef], stage).dispose()
+  }
+
   "Cached" should "keep output while the status is Success" in
     forAll(Gen.zip(Gen.long, Gen.uuid)) { case (in, out) =>
       val stage = mock[Stage[Long, UUID, Exception]]("underlying stage")
