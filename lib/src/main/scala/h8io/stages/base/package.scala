@@ -36,7 +36,14 @@ package object base {
     */
   type Decoration[I, O, E] = Alteration[Stage[I, O, E], Stage[I, O, E]]
 
+  /** Extension methods for `Stage`. */
   implicit final class StageOps[I, O, E](val stage: Stage[I, O, E]) extends AnyVal {
+
+    /** Lifts this stage into a [[ConstEvolution]] that returns it for every status branch.
+      *
+      * Useful inside [[h8io.stages.operators.Loop]] and [[h8io.stages.operators.Repeat]] to produce the evolution
+      * embedded in a `Yield` without mixing in [[BaseEvolution]].
+      */
     def toEvolution: Evolution[I, O, E] = ConstEvolution(stage)
   }
 }
