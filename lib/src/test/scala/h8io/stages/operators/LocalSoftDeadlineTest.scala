@@ -22,6 +22,7 @@ class LocalSoftDeadlineTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
+    with StagesCoreTestUtil
     with StagesBaseTestUtil {
   "LocalSoftDeadline" should "return DeadEnd if Scala duration is not positive" in
     forAll(Gen.choose(Long.MinValue, 0L)) { nanos =>
@@ -84,7 +85,8 @@ class LocalSoftDeadlineTest
         test(ts + duration + overdue)
     }
 
-  it should "return a yield with Break status and the initial stage (tsSupplier == now) when not overdue" in
+  it should
+    "return a yield with unchanged status and preserved timestamp on success, reset clock on complete/error when not overdue" in
     forAll(
       Gen.zip(
         Gen.long,
@@ -133,6 +135,30 @@ class LocalSoftDeadlineTest
         test(ts)
         test(ts + spent)
     }
+
+  it should "call the alterand.skip() method" in {
+    val tsSupplier = mock[() => Long]("timestamp supplier")
+    val now = mock[() => Long]("now")
+    val duration = 42
+    val stage = mock[Stage[Long, UUID, Exception]]("alterand")
+    val evolution = mock[Evolution[Long, UUID, Exception]]("evolution")
+    inSequence {
+      (stage.skip _).expects().returns(evolution)
+      val lsdEvolution = LocalSoftDeadline[Long, UUID, Exception](tsSupplier, now, duration, stage).skip()
+
+      val onSuccessStage = mock[Stage[Long, UUID, Exception]]
+      (evolution.onSuccess _).expects().returns(onSuccessStage)
+      lsdEvolution.onSuccess() shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
+
+      val onCompleteStage = mock[Stage[Long, UUID, Exception]]
+      (evolution.onComplete _).expects().returns(onCompleteStage)
+      lsdEvolution.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
+
+      val onErrorStage = mock[Stage[Long, UUID, Exception]]
+      (evolution.onError _).expects().returns(onErrorStage)
+      lsdEvolution.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+    }
+  }
 
   "Evolution" should "return Tail on success and Head on complete and on error" in
     forAll(Gen.zip(Gen.function0(Gen.long), Gen.posNum[Long])) { case (tsSupplier, duration) =>
