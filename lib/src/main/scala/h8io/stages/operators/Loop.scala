@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.{BaseDecorator, BaseEvolution}
+import h8io.stages.base.{Decorator, StageOps}
 
 import scala.annotation.tailrec
 
@@ -28,7 +28,7 @@ import scala.annotation.tailrec
   * @tparam E
   *   the error type (covariant)
   */
-final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends BaseDecorator[T, T, E] with BaseEvolution.Endo[T, E] {
+final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends Decorator[T, T, E] {
   override def apply(in: T): Yield[T, T, E] = {
     @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
       val yld = stage(in)
@@ -36,10 +36,11 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends BaseDecorator[T
         case Status.Success =>
           yld match {
             case Yield.Some(out, _, _) => loop(yld.evolution.onSuccess(), out)
-            case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.evolution.onComplete()))
+            case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.evolution.onComplete()).evolution)
           }
-        case Status.Complete => yld.map(identity, _ => Status.Success, evolution => Loop(evolution.onComplete()))
-        case _: Status.Error[E] => yld.map(identity, identity, evolution => Loop(evolution.onError()))
+        case Status.Complete =>
+          yld.map(identity, _ => Status.Success, evolution => Loop(evolution.onComplete()).evolution)
+        case _: Status.Error[E] => yld.map(identity, identity, evolution => Loop(evolution.onError()).evolution)
       }
     }
     loop(alterand, in)

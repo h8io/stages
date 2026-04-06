@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages
-import h8io.stages.base.BaseBinaryOperator
+import h8io.stages.base.BinaryOperator
 import h8io.stages.{Stage, Yield}
 
 /** A binary operator that applies `left` and `right` to the same input sequentially, producing a tuple of both outputs
@@ -31,7 +31,7 @@ import h8io.stages.{Stage, Yield}
   *   the error type (covariant)
   */
 final case class And[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
-    extends BaseBinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, (LO, RO), E] {
+    extends BinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, (LO, RO), E] {
   override def apply(in: I): Yield[I, (LO, RO), E] =
     left(in) match {
       case Yield.Some(leftOut, leftStatus, leftEvolution) =>
