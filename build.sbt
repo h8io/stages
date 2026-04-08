@@ -1,8 +1,5 @@
 import Dependencies.*
 import h8io.sbt.dependencies.*
-import laika.helium.Helium
-import laika.helium.config.{HeliumIcon, IconLink}
-import sbt.url
 
 val ProjectName = "stages"
 
@@ -75,21 +72,15 @@ val root = (project in file("."))
   .settings(name := ProjectName)
   .dependsOn(core, lib, cats)
   .aggregate(core, lib, cats, examples)
-  .enablePlugins(ScoverageSummaryPlugin, MdocPlugin)
+  .enablePlugins(ScoverageSummaryPlugin)
 
 val pages = (project in file("pages"))
   .settings(
     name := "stages-pages",
     publish / skip := true,
     publishLocal / skip := true,
-    mdocVariables := Map("VERSION" -> version.value),
-    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
-    Laika / sourceDirectories := Seq(mdocOut.value),
-    laikaTheme :=
-      Helium.defaults.site
-        .topNavigationBar(homeLink = IconLink.internal(laika.ast.Path.Root / "index.md", HeliumIcon.home))
-        .build
+    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit)
   )
   .dependsOn(root)
   .aggregate(core, lib, cats)
-  .enablePlugins(MdocPlugin, LaikaPlugin, ScalaUnidocPlugin)
+  .enablePlugins(ScalaUnidocPlugin, TypelevelSitePlugin)
