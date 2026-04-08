@@ -3,5 +3,5 @@
 To install the package:
 
 ```scala
-libraryDependencies += "com" % "lib" % "@VERSION@"
+libraryDependencies += "io.h8" % "stages" % "@VERSION@"
 ```
