@@ -2,13 +2,14 @@ import Dependencies.*
 import h8io.sbt.dependencies.*
 
 val ProjectName = "stages"
+val SiteRoot = s"https://h8io.github.io/$ProjectName/"
 
 inThisBuild(
   List(
     organization := "io.h8",
     organizationName := "H8IO",
     organizationHomepage := Some(url("https://github.com/h8io/")),
-    homepage := Some(url(s"https://github.com/h8io/$ProjectName")),
+    homepage := Some(url(SiteRoot)),
     scmInfo := Some(ScmInfo(url(s"https://github.com/h8io/$ProjectName"), s"scm:git@github.com:h8io/$ProjectName.git")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
     developers := List(
@@ -79,7 +80,9 @@ val pages = (project in file("pages"))
     name := "stages-pages",
     publish / skip := true,
     publishLocal / skip := true,
-    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit)
+    TestScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
+    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
+    tlSiteApiUrl := Some(url(s"${SiteRoot}api/scala-2.13/"))
   )
   .dependsOn(root)
   .aggregate(core, lib, cats)
