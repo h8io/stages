@@ -80,6 +80,7 @@ val pages = (project in file("pages"))
     name := "stages-pages",
     publish / skip := true,
     publishLocal / skip := true,
+    TestScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
     TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
     tlSiteApiUrl := Some(url(s"${SiteRoot}api/scala-2.13/"))
   )
