@@ -1,5 +1,7 @@
 import Dependencies.*
 import h8io.sbt.dependencies.*
+import laika.helium.Helium
+import laika.helium.config.{HeliumIcon, IconLink}
 import sbt.url
 
 val ProjectName = "stages"
@@ -57,23 +59,37 @@ val cats = (project in file("cats"))
   .settings(name := "stages-cats", libraryDependencies ++= Cats)
   .dependsOn(core, core % "test->testkit", lib)
 
-val examples = (project in file("examples")).settings(
-  name := "stages-examples",
-  publish / skip := true,
-  publishLocal / skip := true,
-  Compile / packageBin / mappings := Nil,
-  Compile / packageDoc / mappings := Nil,
-  Compile / packageSrc / mappings := Nil,
-  Compile / doc / skip := true
-).dependsOn(core, core % "test->testkit", lib, lib % "test->testkit")
+val examples = (project in file("examples"))
+  .settings(
+    name := "stages-examples",
+    publish / skip := true,
+    publishLocal / skip := true,
+    Compile / packageBin / mappings := Nil,
+    Compile / packageDoc / mappings := Nil,
+    Compile / packageSrc / mappings := Nil,
+    Compile / doc / skip := true
+  )
+  .dependsOn(core, core % "test->testkit", lib, lib % "test->testkit")
 
 val root = (project in file("."))
-  .settings(
-    name := ProjectName,
-    mdocVariables := Map("VERSION" -> version.value),
-    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
-    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit)
-  )
+  .settings(name := ProjectName)
   .dependsOn(core, lib, cats)
   .aggregate(core, lib, cats, examples)
-  .enablePlugins(ScoverageSummaryPlugin, MdocPlugin, ScalaUnidocPlugin)
+  .enablePlugins(ScoverageSummaryPlugin, MdocPlugin)
+
+val pages = (project in file("pages"))
+  .settings(
+    name := "stages-pages",
+    publish / skip := true,
+    publishLocal / skip := true,
+    mdocVariables := Map("VERSION" -> version.value),
+    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
+    Laika / sourceDirectories := Seq(mdocOut.value),
+    laikaTheme :=
+      Helium.defaults.site
+        .topNavigationBar(homeLink = IconLink.internal(laika.ast.Path.Root / "index.md", HeliumIcon.home))
+        .build
+  )
+  .dependsOn(root)
+  .aggregate(core, lib, cats)
+  .enablePlugins(MdocPlugin, LaikaPlugin, ScalaUnidocPlugin)
