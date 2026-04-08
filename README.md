@@ -82,8 +82,8 @@ can live in separate documentation.
 If the idea of composable stateful pipelines in Scala appeals to you, `stages` may already be interesting at the level
 of the model itself.
 
-## API documentation
-See [the documentation](https://h8io.github.io/stages/api/scala-2.13/).
+## Documentation
+See [the documentation](https://h8io.github.io/stages/).
 
 ## License
 
