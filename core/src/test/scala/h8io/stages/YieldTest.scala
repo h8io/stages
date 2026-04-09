@@ -145,4 +145,22 @@ class YieldTest
         Yield.None(initialStatus, initialEvolution).map(mapOut, mapStatus, mapEvolution) shouldBe
           Yield.None(mappedStatus, mappedEvolution)
     }
+
+  "evolve method" should "call evolution according to status" in
+    forAll { (yldSupplier: EvolutionToYield[Instant, LocalDateTime, Long]) =>
+      val evolution = mock[Evolution[Instant, LocalDateTime, Long]]("evolution")
+      val yld = yldSupplier(evolution)
+      val stage = mock[Stage[Instant, LocalDateTime, Long]]
+      yld.status match {
+        case Status.Success =>
+          (evolution.onSuccess _).expects().returns(stage)
+          yld.evolve() should be theSameInstanceAs stage
+        case Status.Complete =>
+          (evolution.onComplete _).expects().returns(stage)
+          yld.evolve() should be theSameInstanceAs stage
+        case _: Status.Error[?] =>
+          (evolution.onError _).expects().returns(stage)
+          yld.evolve() should be theSameInstanceAs stage
+      }
+    }
 }

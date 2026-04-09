@@ -46,6 +46,16 @@ sealed trait Yield[-I, +O, +E] {
       mapOut: O => _O,
       mapStatus: Status[E] => Status[_E],
       mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E]
+
+  /** Resolves the next [[Stage]] by applying the current [[status]] to the [[evolution]].
+    *
+    * This is the primary way to advance a pipeline after processing an input: the status selects the appropriate branch
+    * of the evolution (success, complete, or error), returning the stage that should handle the next input.
+    *
+    * @return
+    *   the next `Stage` to use for re-processing, as determined by `status(evolution)`
+    */
+  final def evolve(): Stage[I, O, E] = status(evolution)
 }
 
 /** Companion object containing the two concrete variants of [[Yield]]. */
