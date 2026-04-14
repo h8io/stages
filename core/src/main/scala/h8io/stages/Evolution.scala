@@ -11,8 +11,8 @@ import scala.util.control.NonFatal
   *   - [[onComplete]] — invoked when the pipeline signalled normal completion ([[Status.Complete]]).
   *   - [[onError]] — invoked when one or more errors were accumulated ([[Status.Error]]).
   *
-  * The branch is selected by `Status.apply` inside `[[Yield]].evolve`, so callers never need to dispatch on the status
-  * themselves.
+  * The appropriate branch is selected based on the [[Yield.status]] — callers use `[[Yield.evolve]]` rather than
+  * dispatching on the status directly.
   *
   * `Evolution` is contravariant in `I` and covariant in `O` and `E`, mirroring the variance of the [[Stage]] values it
   * returns.
@@ -51,14 +51,13 @@ trait Evolution[-I, +O, +E] {
   /** Releases all resources held by the [[Stage]] that produced this evolution.
     *
     * After this call the producing stage must be considered permanently unusable — it must not be applied or skipped
-    * again. This mirrors the role that `dispose()` played on [[Stage]] in earlier designs, but is now the exclusive
-    * cleanup point for stage-owned resources.
+    * again. This is the exclusive cleanup point for resources owned by the producing stage.
     *
-    * Called in situations where the evolution will never be used to select a branch:
+    * Called when the producing stage is permanently shut down:
     *   - by [[Stage.execute]] after the pipeline has produced its terminal [[Outcome]], so the continuation is released
     *     immediately rather than carried forward;
-    *   - when a status method ([[onSuccess]], [[onComplete]], [[onError]]) throws a [[Throwable]], so that any
-    *     resources that would otherwise have been released by that method are still cleaned up.
+    *   - when a status method ([[onSuccess]], [[onComplete]], [[onError]]) throws a [[Throwable]], since the stage can
+    *     no longer be used and all its resources must still be released.
     *
     * Implementations that hold no external resources may leave this as a no-op.
     */
