@@ -85,4 +85,9 @@ class StatusTest
         initalError.map(f) shouldBe mappedError
       }
     }
+
+  "Error.apply" should "create an Error status from a single error" in {
+    val error = mock[AnyRef]
+    Status.Error(error) shouldBe Status.Error(error, Nil)
+  }
 }

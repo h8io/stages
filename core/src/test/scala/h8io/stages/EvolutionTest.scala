@@ -35,6 +35,9 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
     (evolution.onError _).expects().returns(onErrorStage)
     (f.apply _).expects(onErrorStage).returns(onErrorMappedStage)
     evolution.map(f).onError() shouldBe onErrorMappedStage
+
+    (evolution.dispose _).expects()
+    noException should be thrownBy evolution.map(f).dispose()
   }
 
   "AndThen" should "compose Evolution objects correctly" in {
@@ -45,5 +48,43 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
       downstreamEvolution,
       upstreamEvolution,
       Stage.AndThen[String, Instant, Long, Exception])
+  }
+
+  it should "call downstream dispose even when upstream dispose throws" in {
+    val upstreamEvolution = mock[Evolution[Instant, Long, Exception]]
+    val downstreamEvolution = mock[Evolution[String, Instant, Exception]]
+    val upstreamException = new Exception("upstream")
+    inSequence {
+      (upstreamEvolution.dispose _).expects().throws(upstreamException)
+      (downstreamEvolution.dispose _).expects()
+    }
+    the[Exception] thrownBy Evolution.AndThen(upstreamEvolution, downstreamEvolution).dispose() shouldBe
+      upstreamException
+  }
+
+  it should "propagate downstream dispose exception" in {
+    val upstreamEvolution = mock[Evolution[Instant, Long, Exception]]
+    val downstreamEvolution = mock[Evolution[String, Instant, Exception]]
+    val downstreamException = new Exception("downstream")
+    inSequence {
+      (upstreamEvolution.dispose _).expects()
+      (downstreamEvolution.dispose _).expects().throws(downstreamException)
+    }
+    the[Exception] thrownBy Evolution.AndThen(upstreamEvolution, downstreamEvolution).dispose() shouldBe
+      downstreamException
+  }
+
+  it should "suppress downstream exception when both disposes throw" in {
+    val upstreamEvolution = mock[Evolution[Instant, Long, Exception]]
+    val downstreamEvolution = mock[Evolution[String, Instant, Exception]]
+    val upstreamException = new Exception("upstream")
+    val downstreamException = new Exception("downstream")
+    inSequence {
+      (upstreamEvolution.dispose _).expects().throws(upstreamException)
+      (downstreamEvolution.dispose _).expects().throws(downstreamException)
+    }
+    val thrown = the[Exception] thrownBy Evolution.AndThen(upstreamEvolution, downstreamEvolution).dispose()
+    thrown shouldBe upstreamException
+    thrown.getSuppressed should contain only downstreamException
   }
 }
