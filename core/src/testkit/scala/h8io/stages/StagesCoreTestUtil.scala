@@ -106,6 +106,10 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       (rightEvolution.onError _).expects().returns(onErrorRightStage)
       (leftEvolution.onError _).expects().returns(onErrorLeftStage)
       composition.onError() shouldBe compose(onErrorLeftStage, onErrorRightStage)
+
+      (rightEvolution.dispose _).expects()
+      (leftEvolution.dispose _).expects()
+      noException should be thrownBy composition.dispose()
     }
 
   def testAlteredEvolution[AI, AO, AE, I, O, E](
