@@ -96,7 +96,7 @@ class StageTest
         }
         inside(Stage.AndThen(upstreamStage, downstreamStage)(in)) {
           case Yield.Some(`downstreamOut`, status, evolution) =>
-            status shouldBe upstreamStatus ++ downstreamStatus
+            status shouldBe upstreamStatus.combine(downstreamStatus)
             val updatedUpstreamStage = mock[Stage[Int, String, String]]
             val updatedDownstreamStage = mock[Stage[String, Long, Nothing]]
             inSequence {
@@ -118,7 +118,7 @@ class StageTest
         (downstreamStage.apply _).expects(out).returns(Yield.None(downstreamStatus, downstreamEvolution))
       }
       inside(Stage.AndThen(upstreamStage, downstreamStage)(in)) { case Yield.None(status, evolution) =>
-        status shouldBe upstreamStatus ++ downstreamStatus
+        status shouldBe upstreamStatus.combine(downstreamStatus)
         val updatedUpstreamStage = mock[Stage[Int, String, String]]
         val updatedDownstreamStage = mock[Stage[String, Long, Nothing]]
         inSequence {

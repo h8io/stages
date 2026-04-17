@@ -83,7 +83,7 @@ object Yield {
 
     /** Merges this `Some` with the [[Yield]] produced by the next stage in a pipeline.
       *
-      * The statuses are combined with `++` and the evolutions are composed. The resulting `Yield` type depends on
+      * The statuses are combined with `combine` and the evolutions are composed. The resulting `Yield` type depends on
       * whether `that` is a `Some` or `None`.
       *
       * @param that
@@ -98,8 +98,8 @@ object Yield {
     private[stages] def compose[_O, _E >: E](that: Yield[O, _O, _E]): Yield[I, _O, _E] =
       that match {
         case Yield.Some(out, status, evolution) =>
-          Yield.Some(out, this.status ++ status, this.evolution.compose(evolution))
-        case Yield.None(status, evolution) => Yield.None(this.status ++ status, this.evolution.compose(evolution))
+          Yield.Some(out, this.status.combine(status), this.evolution.compose(evolution))
+        case Yield.None(status, evolution) => Yield.None(this.status.combine(status), this.evolution.compose(evolution))
       }
 
     override def map[_I, _O, _E](

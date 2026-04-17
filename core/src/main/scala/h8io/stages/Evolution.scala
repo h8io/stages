@@ -25,7 +25,6 @@ import scala.util.control.NonFatal
   *   the error type (covariant)
   */
 trait Evolution[-I, +O, +E] {
-  self =>
 
   /** Returns the next [[Stage]] when the previous yield had [[Status.Success]].
     *
@@ -56,8 +55,8 @@ trait Evolution[-I, +O, +E] {
     * Called when the producing stage is permanently shut down:
     *   - by [[Stage.execute]] after the pipeline has produced its terminal [[Outcome]], so the continuation is released
     *     immediately rather than carried forward;
-    *   - when a status method ([[onSuccess]], [[onComplete]], [[onError]]) throws a [[Throwable]], since the stage can
-    *     no longer be used and all its resources must still be released.
+    *   - when a status method ([[onSuccess]], [[onComplete]], [[onError]]) throws a `Throwable`, since the stage can no
+    *     longer be used and all its resources must still be released.
     *
     * Implementations that hold no external resources may leave this as a no-op.
     */
@@ -82,7 +81,7 @@ trait Evolution[-I, +O, +E] {
     * @return
     *   a new evolution representing `self` followed by `that`
     */
-  @inline private[stages] final def compose[_O, _E >: E](that: Evolution[O, _O, _E]): Evolution[I, _O, _E] =
+  @inline final def compose[_O, _E >: E](that: Evolution[O, _O, _E]): Evolution[I, _O, _E] =
     Evolution.AndThen(that, this)
 
   /** Transforms every branch of this evolution by applying `f` to the stage it returns.
@@ -101,19 +100,16 @@ trait Evolution[-I, +O, +E] {
     * @return
     *   a new evolution with all branches mapped by `f`
     */
-  final def map[_I, _O, _E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Evolution[_I, _O, _E] =
-    new Evolution[_I, _O, _E] {
-      override def onSuccess(): Stage[_I, _O, _E] = f(self.onSuccess())
-      override def onComplete(): Stage[_I, _O, _E] = f(self.onComplete())
-      override def onError(): Stage[_I, _O, _E] = f(self.onError())
-      override def dispose(): Unit = self.dispose()
-    }
+  @inline final def map[_I, _O, _E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Evolution[_I, _O, _E] =
+    Evolution.Mapped(this, f)
 }
 
 object Evolution {
   type Endo[T, +E] = Evolution[T, T, E]
 
-  /** An [[Evolution]] composed of two sequential evolutions, produced by [[Evolution.compose]].
+  type Any = Evolution[?, ?, ?]
+
+  /** An [[Evolution]] composed of two sequential evolutions, produced by [[Evolution#compose]].
     *
     * ==Parameter naming==
     *
@@ -184,5 +180,15 @@ object Evolution {
       }
       downstream.dispose()
     }
+  }
+
+  final case class Mapped[II, IO, IE, -OI, +OO, +OE](
+      evolution: Evolution[II, IO, IE],
+      f: Stage[II, IO, IE] => Stage[OI, OO, OE])
+      extends Evolution[OI, OO, OE] {
+    override def onSuccess(): Stage[OI, OO, OE] = f(evolution.onSuccess())
+    override def onComplete(): Stage[OI, OO, OE] = f(evolution.onComplete())
+    override def onError(): Stage[OI, OO, OE] = f(evolution.onError())
+    override def dispose(): Unit = evolution.dispose()
   }
 }

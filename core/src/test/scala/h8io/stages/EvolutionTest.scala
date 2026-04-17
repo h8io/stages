@@ -1,5 +1,6 @@
 package h8io.stages
 
+import h8io.stages.Evolution.Mapped
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -17,27 +18,7 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
   "map" should "transform stages correctly" in {
     val evolution = mock[Evolution[Long, Instant, UUID]]
     val f = mock[Stage[Long, Instant, UUID] => Stage[ZoneId, ZonedDateTime, String]]
-
-    val onSuccessStage = mock[Stage[Long, Instant, UUID]]
-    val onSuccessMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
-    (evolution.onSuccess _).expects().returns(onSuccessStage)
-    (f.apply _).expects(onSuccessStage).returns(onSuccessMappedStage)
-    evolution.map(f).onSuccess() shouldBe onSuccessMappedStage
-
-    val onCompleteStage = mock[Stage[Long, Instant, UUID]]
-    val onCompleteMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
-    (evolution.onComplete _).expects().returns(onCompleteStage)
-    (f.apply _).expects(onCompleteStage).returns(onCompleteMappedStage)
-    evolution.map(f).onComplete() shouldBe onCompleteMappedStage
-
-    val onErrorStage = mock[Stage[Long, Instant, UUID]]
-    val onErrorMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
-    (evolution.onError _).expects().returns(onErrorStage)
-    (f.apply _).expects(onErrorStage).returns(onErrorMappedStage)
-    evolution.map(f).onError() shouldBe onErrorMappedStage
-
-    (evolution.dispose _).expects()
-    noException should be thrownBy evolution.map(f).dispose()
+    evolution.map(f) shouldBe Mapped(evolution, f)
   }
 
   "AndThen" should "compose Evolution objects correctly" in {
@@ -86,5 +67,32 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
     val thrown = the[Exception] thrownBy Evolution.AndThen(upstreamEvolution, downstreamEvolution).dispose()
     thrown shouldBe upstreamException
     thrown.getSuppressed should contain only downstreamException
+  }
+
+  "Mapped" should "transform stages correctly" in {
+    val evolution = mock[Evolution[Long, Instant, UUID]]
+    val f = mock[Stage[Long, Instant, UUID] => Stage[ZoneId, ZonedDateTime, String]]
+    val mapped = Evolution.Mapped(evolution, f)
+
+    val onSuccessStage = mock[Stage[Long, Instant, UUID]]
+    val onSuccessMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
+    (evolution.onSuccess _).expects().returns(onSuccessStage)
+    (f.apply _).expects(onSuccessStage).returns(onSuccessMappedStage)
+    mapped.onSuccess() shouldBe onSuccessMappedStage
+
+    val onCompleteStage = mock[Stage[Long, Instant, UUID]]
+    val onCompleteMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
+    (evolution.onComplete _).expects().returns(onCompleteStage)
+    (f.apply _).expects(onCompleteStage).returns(onCompleteMappedStage)
+    mapped.onComplete() shouldBe onCompleteMappedStage
+
+    val onErrorStage = mock[Stage[Long, Instant, UUID]]
+    val onErrorMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
+    (evolution.onError _).expects().returns(onErrorStage)
+    (f.apply _).expects(onErrorStage).returns(onErrorMappedStage)
+    mapped.onError() shouldBe onErrorMappedStage
+
+    (evolution.dispose _).expects()
+    noException should be thrownBy mapped.dispose()
   }
 }

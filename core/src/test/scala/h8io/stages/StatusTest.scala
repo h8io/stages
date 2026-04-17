@@ -12,7 +12,7 @@ import scala.concurrent.duration.Duration
 
 class StatusTest
     extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with StagesCoreArbitraries {
-  "Success" should "be idempotent" in { Status.Success ++ Status.Success shouldBe Status.Success }
+  "Success" should "be idempotent" in { Status.Success.combine(Status.Success) shouldBe Status.Success }
 
   it should "call onSuccess() on the Evolution object" in {
     val evolution = mock[Evolution[Long, Instant, Exception]]
@@ -23,10 +23,10 @@ class StatusTest
 
   it should "become Complete when break is called" in { Status.Success.break shouldBe Status.Complete }
 
-  "Complete" should "be idempotent" in { Status.Complete ++ Status.Complete shouldBe Status.Complete }
+  "Complete" should "be idempotent" in { Status.Complete.combine(Status.Complete) shouldBe Status.Complete }
 
   it should "be overridden by Error" in
-    forAll((error: Status.Error[String]) => Status.Complete ++ error shouldBe error)
+    forAll((error: Status.Error[String]) => Status.Complete.combine(error) shouldBe error)
 
   it should "call onComplete() on the Evolution object" in {
     val evolution = mock[Evolution[Long, Instant, Exception]]
@@ -39,10 +39,11 @@ class StatusTest
 
   "Error" should "keep the order of causes in composition" in
     forAll { (previous: Status.Error[String], next: Status.Error[String]) =>
-      previous ++ next shouldBe Status.Error(previous.head, previous.tail ::: next.head :: next.tail)
+      previous.combine(next) shouldBe Status.Error(previous.head, previous.tail ::: next.head :: next.tail)
     }
 
-  it should "override Complete" in forAll((error: Status.Error[String]) => error ++ Status.Complete shouldBe error)
+  it should "override Complete" in
+    forAll((error: Status.Error[String]) => error.combine(Status.Complete) shouldBe error)
 
   it should "call onError() on the Evolution object" in
     forAll { (error: Status.Error[String]) =>

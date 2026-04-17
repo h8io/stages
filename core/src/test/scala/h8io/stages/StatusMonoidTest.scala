@@ -10,7 +10,7 @@ class StatusMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers
   private implicit def statusMonoid[E]: Monoid[Status[E]] =
     new Monoid[Status[E]] {
       def empty: Status[E] = Status.Success
-      def combine(x: Status[E], y: Status[E]): Status[E] = x ++ y
+      def combine(x: Status[E], y: Status[E]): Status[E] = x.combine(y)
     }
 
   private implicit def statusEq[E]: Eq[Status[E]] = Eq.fromUniversalEquals[Status[E]]
