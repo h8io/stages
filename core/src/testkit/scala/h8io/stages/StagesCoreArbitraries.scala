@@ -9,8 +9,8 @@ import org.scalacheck.{Arbitrary, Gen}
   *
   * The trait provides generators for:
   *   - `Status` and `Status.Error`
-  *   - Functions that produce `Yield.Some`, `Yield.None`, or either `Yield` variant, parameterised by `Status`
-  *     and/or `Evolution`.
+  *   - Functions that produce `Yield.Some`, `Yield.None`, or either `Yield` variant, parameterised by `Status` and/or
+  *     `Evolution`.
   *
   * The function-typed aliases (e.g. [[StatusAndEvolutionToYieldSome]]) make it possible to generate partially applied
   * `Yield` constructors and compose them into larger generators.
@@ -29,8 +29,8 @@ trait StagesCoreArbitraries {
         Status.Error(head, tail)
       })
 
-  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.Complete`, or a
-    * generated `Status.Error`.
+  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.Complete`, or a generated
+    * `Status.Error`.
     *
     * @tparam E
     *   the error type; requires an implicit `Arbitrary[E]`
@@ -102,8 +102,7 @@ trait StagesCoreArbitraries {
     */
   type EvolutionToYieldNone[I, O, E] = Evolution[I, O, E] => Yield.None[I, O, E]
 
-  /** Generates an [[EvolutionToYieldNone]] function by drawing a random `Status` and partially applying
-    * `Yield.None`.
+  /** Generates an [[EvolutionToYieldNone]] function by drawing a random `Status` and partially applying `Yield.None`.
     *
     * @tparam I
     *   the stage input type
@@ -115,8 +114,8 @@ trait StagesCoreArbitraries {
   implicit def arbEvolutionToYieldNone[I, O, E: Arbitrary]: Arbitrary[EvolutionToYieldNone[I, O, E]] =
     Arbitrary(Arbitrary.arbitrary[Status[E]].map(status => Yield.None(status, _: Evolution[I, O, E])))
 
-  /** A function type that constructs either a `Yield.Some` or a `Yield.None` given only an `Evolution` (the
-    * `Status` is baked in).
+  /** A function type that constructs either a `Yield.Some` or a `Yield.None` given only an `Evolution` (the `Status` is
+    * baked in).
     */
   type EvolutionToYield[I, O, E] = Evolution[I, O, E] => Yield[I, O, E]
 
