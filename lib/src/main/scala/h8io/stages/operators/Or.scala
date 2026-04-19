@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages
-import h8io.stages.base.BinaryOperator
+import h8io.stages.base.{BaseBinaryOperator, BinaryOperator}
 import h8io.stages.{Stage, Yield}
 
 /** A binary operator that tries `left` first; if `left` produces no output, it falls back to `right`, wrapping the
@@ -15,7 +15,7 @@ import h8io.stages.{Stage, Yield}
   *     - `right` yields `Some` → `Yield.Some(Right(rightOut), mergedStatus, ...)`.
   *     - `right` yields `None` → `Yield.None(mergedStatus, ...)`.
   *
-  * Statuses are merged with `++`.
+  * Statuses are merged with `combine`.
   *
   * @param left
   *   the preferred stage; tried first
@@ -39,9 +39,9 @@ final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO,
       case Yield.None(leftStatus, leftEvolution) =>
         right(in) match {
           case Yield.Some(out, rightStatus, rightEvolution) =>
-            Yield.Some(Right(out), leftStatus ++ rightStatus, Or.Evolution(leftEvolution, rightEvolution))
+            Yield.Some(Right(out), leftStatus.combine(rightStatus), Or.Evolution(leftEvolution, rightEvolution))
           case Yield.None(rightStatus, rightEvolution) =>
-            Yield.None(leftStatus ++ rightStatus, Or.Evolution(leftEvolution, rightEvolution))
+            Yield.None(leftStatus.combine(rightStatus), Or.Evolution(leftEvolution, rightEvolution))
         }
     }
 
@@ -50,22 +50,11 @@ final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO,
 
 /** Companion object for [[Or]]. */
 object Or {
-  private final case class Evolution[-I, +LO, +RO, +E](
+  private final case class Evolution[-I, LO, RO, +E](
       left: stages.Evolution[I, LO, E],
       right: stages.Evolution[I, RO, E])
-      extends stages.Evolution[I, Either[LO, RO], E] {
-    override def onSuccess(): Stage[I, Either[LO, RO], E] = _apply(left.onSuccess(), right.onSuccess())
-
-    override def onComplete(): Stage[I, Either[LO, RO], E] = _apply(left.onComplete(), right.onComplete())
-
-    override def onError(): Stage[I, Either[LO, RO], E] = _apply(left.onError(), right.onError())
-  }
-
-  @inline private def _apply[I, LO, RO, E](
-      lazyLeftStage: => Stage[I, LO, E],
-      lazyRightStage: => Stage[I, RO, E]): Or[I, LO, RO, E] = {
-    val rightStage = lazyRightStage
-    val leftStage = lazyLeftStage
-    Or(leftStage, rightStage)
+      extends BaseBinaryOperator.Evolution[I, LO, RO, Either[LO, RO], E] {
+    override protected def apply[_I <: I, _E >: E](leftStage: Stage[_I, LO, _E], rightStage: Stage[_I, RO, _E])
+        : Stage[_I, Either[LO, RO], _E] = Or(leftStage, rightStage)
   }
 }

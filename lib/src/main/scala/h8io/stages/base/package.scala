@@ -1,5 +1,7 @@
 package h8io.stages
 
+import h8io.stages
+
 /** Type aliases used throughout the `lib` module for describing stage transformations.
   *
   * {{{
@@ -45,5 +47,35 @@ package object base {
       * embedded in a `Yield` without mixing in [[BaseEvolution]].
       */
     def toEvolution: Evolution[I, O, E] = ConstEvolution(stage)
+  }
+
+  type BaseBinaryOperator[-I, +LO, +RO, +O, +E] = BinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, O, E]
+
+  object BaseBinaryOperator {
+    trait Evolution[-I, LO, RO, +O, +E]
+        extends BinaryOperator.Evolution[stages.Evolution[I, LO, E], stages.Evolution[I, RO, E], I, O, E] {
+      protected def apply[_I <: I, _E >: E](leftStage: Stage[_I, LO, _E], rightStage: Stage[_I, RO, _E])
+          : Stage[_I, O, _E]
+
+      override def onSuccess(): Stage[I, O, E] = {
+        val rightStage = right.onSuccess()
+        val leftStage = left.onSuccess()
+        apply(leftStage, rightStage)
+      }
+
+      override def onComplete(): Stage[I, O, E] = {
+        val rightStage = right.onComplete()
+        val leftStage = left.onComplete()
+        apply(leftStage, rightStage)
+      }
+
+      override def onError(): Stage[I, O, E] = {
+        val rightStage = right.onError()
+        val leftStage = left.onError()
+        apply(leftStage, rightStage)
+      }
+
+      override def dispose(): Unit = right.dispose(); left.dispose()
+    }
   }
 }
