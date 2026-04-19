@@ -3,14 +3,14 @@ package h8io.stages.cats
 import cats.{Eq, Monoid}
 import h8io.stages.Status
 
-/** Cats typeclass instances for [[h8io.stages.Status]].
+/** Cats typeclass instances for `h8io.stages.Status`.
   *
-  * `Status` forms a [[cats.Monoid]] with [[h8io.stages.Status.Success]] as the identity element and
-  * [[h8io.stages.Status.combine]] as the binary operation.
+  * `Status` forms a `cats.Monoid` with `h8io.stages.Status.Success` as the identity element and
+  * `h8io.stages.Status.combine` as the binary operation.
   *
-  * Import [[StatusInstances.given]] (or `StatusInstances.*` in Scala 2) to bring the instances into scope:
+  * Import `StatusInstances.*` to bring the instances into scope:
   * {{{
-  * import h8io.stages.cats.StatusInstances._
+  * import h8io.stages.cats.StatusInstances.*
   * }}}
   */
 object StatusInstances {
