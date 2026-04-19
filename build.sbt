@@ -71,19 +71,19 @@ val examples = (project in file("examples"))
 
 val root = (project in file("."))
   .settings(name := ProjectName)
-  .dependsOn(core, lib, cats)
-  .aggregate(core, lib, cats, examples)
+  .dependsOn(core, lib /*, cats*/ )
+  .aggregate(core, lib /*, cats, examples */ )
   .enablePlugins(ScoverageSummaryPlugin)
 
-val pages = (project in file("pages"))
-  .settings(
-    name := "stages-pages",
-    publish / skip := true,
-    publishLocal / skip := true,
-    TestScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
-    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
-    tlSiteApiUrl := Some(url(s"${SiteRoot}api/scala-2.13/"))
-  )
-  .dependsOn(root)
-  .aggregate(core, lib, cats)
-  .enablePlugins(ScalaUnidocPlugin, TypelevelSitePlugin)
+//val pages = (project in file("pages"))
+//  .settings(
+//    name := "stages-pages",
+//    publish / skip := true,
+//    publishLocal / skip := true,
+//    TestScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
+//    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
+//    tlSiteApiUrl := Some(url(s"${SiteRoot}api/scala-2.13/"))
+//  )
+//  .dependsOn(root)
+//  .aggregate(core, lib, cats)
+//  .enablePlugins(ScalaUnidocPlugin, TypelevelSitePlugin)

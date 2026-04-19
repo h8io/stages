@@ -1,6 +1,5 @@
 package h8io.stages.base
 
-import h8io.stages
 import h8io.stages.Stage
 
 /** A `h8io.stages.Stage` that composes two sub-stages operating on the same input type.
@@ -30,14 +29,4 @@ trait BinaryOperator[+LS <: Stage[I, ?, ?], +RS <: Stage[I, ?, ?], -I, +O, +E] e
 
   /** The right sub-stage. */
   def right: RS
-}
-
-object BinaryOperator {
-  trait Evolution[+LE <: stages.Evolution[I, ?, ?], +RE <: stages.Evolution[I, ?, ?], -I, +O, +E]
-      extends stages.Evolution[I, O, E] {
-    def left: LE
-    def right: RE
-
-    override def dispose(): Unit = right.dispose(); left.dispose()
-  }
 }

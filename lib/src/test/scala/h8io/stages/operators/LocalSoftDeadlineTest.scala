@@ -153,7 +153,6 @@ class LocalSoftDeadlineTest
       lsdEvolution.onSuccess() shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
 
       val onCompleteStage = mock[Stage[Long, UUID, Exception]]
-      (onCompleteStage.toString _).expects().returns("onCompleteStage").anyNumberOfTimes()
       (evolution.onComplete _).expects().returns(onCompleteStage)
       lsdEvolution.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 

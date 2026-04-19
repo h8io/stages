@@ -36,7 +36,7 @@ class IOrTest
           (rightStage.apply _).expects(in).returns(rightYield)
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
-          status shouldBe leftYield.status ++ rightYield.status
+          status shouldBe leftYield.status.combine(rightYield.status)
           testEvolutionComposition(
             evolution, leftYield.evolution, rightYield.evolution, IOr[Long, Duration, Instant, Exception])
         }
@@ -59,7 +59,7 @@ class IOrTest
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Ior.Left(leftYield.out)
-          status shouldBe leftYield.status ++ rightYield.status
+          status shouldBe leftYield.status.combine(rightYield.status)
           testEvolutionComposition(
             evolution, leftYield.evolution, rightYield.evolution, IOr[UUID, Long, ZoneId, String])
         }
@@ -83,7 +83,7 @@ class IOrTest
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Ior.Right(rightYield.out)
-          status shouldBe leftYield.status ++ rightYield.status
+          status shouldBe leftYield.status.combine(rightYield.status)
           testEvolutionComposition(
             evolution, leftYield.evolution, rightYield.evolution, IOr[String, LocalDateTime, ZonedDateTime, UUID])
         }
@@ -107,7 +107,7 @@ class IOrTest
         }
         inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Ior.Both(leftYield.out, rightYield.out)
-          status shouldBe leftYield.status ++ rightYield.status
+          status shouldBe leftYield.status.combine(rightYield.status)
           testEvolutionComposition(
             evolution, leftYield.evolution, rightYield.evolution, IOr[ZoneOffset, OffsetDateTime, LocalDate, Short])
         }
