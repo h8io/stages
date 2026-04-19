@@ -119,8 +119,7 @@ class LocalSoftDeadlineTest
           val onSuccessStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onSuccess stage")
           (evolution.onSuccess _).expects().returns(onSuccessStage)
           inside(lsdYield.evolution.onSuccess()) {
-            case LocalSoftDeadline(tsSupplier, `now`, `duration`, `onSuccessStage`) =>
-              tsSupplier() shouldBe ts
+            case LocalSoftDeadline(tsSupplier, `now`, `duration`, `onSuccessStage`) => tsSupplier() shouldBe ts
           }
 
           val onCompleteStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onComplete stage")
@@ -130,6 +129,9 @@ class LocalSoftDeadlineTest
           val onErrorStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onError stage")
           (evolution.onError _).expects().returns(onErrorStage)
           lsdYield.evolution.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+
+          (evolution.dispose _).expects()
+          noException should be thrownBy lsdYield.evolution.dispose()
         }
 
         test(ts)
@@ -151,16 +153,20 @@ class LocalSoftDeadlineTest
       lsdEvolution.onSuccess() shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
 
       val onCompleteStage = mock[Stage[Long, UUID, Exception]]
+      (onCompleteStage.toString _).expects().returns("onCompleteStage").anyNumberOfTimes()
       (evolution.onComplete _).expects().returns(onCompleteStage)
       lsdEvolution.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 
       val onErrorStage = mock[Stage[Long, UUID, Exception]]
       (evolution.onError _).expects().returns(onErrorStage)
       lsdEvolution.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+
+      (evolution.dispose _).expects()
+      noException should be thrownBy lsdEvolution.dispose()
     }
   }
 
-  "Evolution" should "return Tail on success and Head on complete and on error" in
+  "Evolution" should "call the according method of the nested evolution" in
     forAll(Gen.zip(Gen.function0(Gen.long), Gen.posNum[Long])) { case (tsSupplier, duration) =>
       val now = mock[() => Long]("now")
       val evolution = mock[Evolution[Any, Nothing, Nothing]]("evolution")

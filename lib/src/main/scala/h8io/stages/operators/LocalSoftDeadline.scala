@@ -1,8 +1,9 @@
 package h8io.stages.operators
 
-import h8io.stages.*
+import h8io.stages
 import h8io.stages.base.{Decoration, Decorator}
 import h8io.stages.std.DeadEnd
+import h8io.stages.{Stage, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -42,15 +43,29 @@ final case class LocalSoftDeadline[-I, +O, +E](
   override def apply(in: I): Yield[I, O, E] = {
     val ts = tsSupplier()
     val yld = alterand(in)
-    if (now() - ts >= duration) yld.map(identity, _.break, _.map(LocalSoftDeadline(now, now, duration, _)))
-    else yld.map(identity, identity, _.map(LocalSoftDeadline(() => ts, now, duration, _)))
+    if (now() - ts >= duration) yld.map(identity, _.break, LocalSoftDeadline.Evolution(now, now, duration, _))
+    else yld.map(identity, identity, LocalSoftDeadline.Evolution(() => ts, now, duration, _))
   }
 
-  override def skip(): Evolution[I, O, E] = alterand.skip().map(LocalSoftDeadline(tsSupplier, now, duration, _))
+  override def skip(): stages.Evolution[I, O, E] =
+    LocalSoftDeadline.Evolution(tsSupplier, now, duration, alterand.skip())
 }
 
 /** Companion object and factory for [[LocalSoftDeadline]]. */
 object LocalSoftDeadline {
+
+  private[operators] final case class Evolution[-I, +O, +E](
+      tsSupplier: () => Long,
+      now: () => Long,
+      duration: Long,
+      evolution: stages.Evolution[I, O, E])
+      extends stages.Evolution[I, O, E] {
+    override def onSuccess(): Stage[I, O, E] = LocalSoftDeadline(tsSupplier, now, duration, evolution.onSuccess())
+    override def onComplete(): Stage[I, O, E] = LocalSoftDeadline(now, now, duration, evolution.onComplete())
+    override def onError(): Stage[I, O, E] = LocalSoftDeadline(now, now, duration, evolution.onError())
+
+    override def dispose(): Unit = evolution.dispose()
+  }
 
   /** Wraps `stage` with a local deadline of the given `scala.concurrent.duration.FiniteDuration`.
     *
