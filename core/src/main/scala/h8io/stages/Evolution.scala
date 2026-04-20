@@ -182,6 +182,27 @@ object Evolution {
     }
   }
 
+  /** An [[Evolution]] whose branches are produced by applying `f` to the corresponding branches of `evolution`.
+    *
+    * Created by [[Evolution#map]]. Disposal is delegated to the wrapped `evolution`.
+    *
+    * @param evolution
+    *   the inner evolution whose branches are transformed
+    * @param f
+    *   the function applied to each branch stage
+    * @tparam II
+    *   input type of the inner stages
+    * @tparam IO
+    *   output type of the inner stages
+    * @tparam IE
+    *   error type of the inner stages
+    * @tparam OI
+    *   input type of the resulting stages (contravariant)
+    * @tparam OO
+    *   output type of the resulting stages (covariant)
+    * @tparam OE
+    *   error type of the resulting stages (covariant)
+    */
   final case class Mapped[II, IO, IE, -OI, +OO, +OE](
       evolution: Evolution[II, IO, IE],
       f: Stage[II, IO, IE] => Stage[OI, OO, OE])
