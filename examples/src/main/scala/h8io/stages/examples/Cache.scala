@@ -21,6 +21,8 @@ final case class Cache[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I
             override def onSuccess(): Stage[I, O, E] = Cache.Cached(out, evolution.onSuccess())
             override def onComplete(): Stage[I, O, E] = Cache(evolution.onComplete())
             override def onError(): Stage[I, O, E] = Cache(evolution.onError())
+
+            override def dispose(): Unit = evolution.dispose()
           }
         )
       case yld => yld.map(identity, identity, _.map(Cache(_)))
@@ -40,6 +42,8 @@ object Cache {
         override def onSuccess(): Stage[I, O, E] = Cached(out, alterandEvolution.onSuccess())
         override def onComplete(): Stage[I, O, E] = Cache(alterandEvolution.onComplete())
         override def onError(): Stage[I, O, E] = Cache(alterandEvolution.onError())
+
+        override def dispose(): Unit = alterandEvolution.dispose()
       }
     }
   }

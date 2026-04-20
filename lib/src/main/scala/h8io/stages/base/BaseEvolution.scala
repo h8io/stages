@@ -24,6 +24,8 @@ trait BaseEvolution[-I, +O, +E] extends Evolution[I, O, E] {
   override def onSuccess(): Stage[I, O, E] = this
   override def onComplete(): Stage[I, O, E] = this
   override def onError(): Stage[I, O, E] = this
+
+  override def dispose(): Unit = ()
 }
 
 /** Companion object for [[BaseEvolution]]. */

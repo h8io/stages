@@ -46,6 +46,16 @@ sealed trait Yield[-I, +O, +E] {
       mapOut: O => _O,
       mapStatus: Status[E] => Status[_E],
       mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E]
+
+  /** Returns the next [[Stage]] to invoke when the pipeline is ready to re-process.
+    *
+    * The stage returned depends on the current [[status]]: [[Status.Success]] yields the continuation for the normal
+    * path, [[Status.Complete]] for the finished path, and [[Status.Error]] for the error path.
+    *
+    * @return
+    *   the next `Stage` to use for re-processing
+    */
+  def evolve(): Stage[I, O, E] = status(evolution)
 }
 
 /** Companion object containing the two concrete variants of [[Yield]]. */
@@ -73,7 +83,7 @@ object Yield {
 
     /** Merges this `Some` with the [[Yield]] produced by the next stage in a pipeline.
       *
-      * The statuses are combined with `++` and the evolutions are composed. The resulting `Yield` type depends on
+      * The statuses are combined with `combine` and the evolutions are composed. The resulting `Yield` type depends on
       * whether `that` is a `Some` or `None`.
       *
       * @param that
@@ -88,8 +98,8 @@ object Yield {
     private[stages] def compose[_O, _E >: E](that: Yield[O, _O, _E]): Yield[I, _O, _E] =
       that match {
         case Yield.Some(out, status, evolution) =>
-          Yield.Some(out, this.status ++ status, this.evolution.compose(evolution))
-        case Yield.None(status, evolution) => Yield.None(this.status ++ status, this.evolution.compose(evolution))
+          Yield.Some(out, this.status.combine(status), this.evolution.compose(evolution))
+        case Yield.None(status, evolution) => Yield.None(this.status.combine(status), this.evolution.compose(evolution))
       }
 
     override def map[_I, _O, _E](
@@ -122,15 +132,15 @@ object Yield {
     */
   final case class None[-I, +O, +E](status: Status[E], evolution: Evolution[I, O, E]) extends Yield[I, O, E] {
 
-    /** Composes this `None` with `next` by threading `next` through all branches of the evolution.
+    /** Composes this `None` with `downstream` by threading it through all branches of the evolution.
       *
-      * Because no output was produced, `next` cannot be applied immediately; instead it becomes part of the evolution
-      * so that the entire composed stage is invoked when the pipeline resumes.
+      * Because no output was produced, `downstream` cannot be applied immediately; instead it becomes part of the
+      * evolution so that the entire composed stage is invoked when the pipeline resumes.
       *
       * @param downstream
-      *   the next stage in the pipeline
+      *   the evolution of the next stage in the pipeline
       * @tparam _O
-      *   the output type of `next`
+      *   the output type of `downstream`'s stages
       * @tparam _E
       *   the combined error type
       * @return

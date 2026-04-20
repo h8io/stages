@@ -103,5 +103,8 @@ trait StagesBaseTestUtil extends MockFactory with Matchers {
     val onErrorStage = mock[Stage[II, IO, IE]]("onError stage")
     (evolution.onError _).expects().returns(onErrorStage)
     wrappedEvolution.onError() shouldBe onErrorAlteration(onErrorStage)
+
+    (evolution.dispose _).expects()
+    noException should be thrownBy wrappedEvolution.dispose()
   }
 }

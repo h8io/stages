@@ -2,8 +2,6 @@ package h8io.stages.base
 
 import h8io.stages.Stage
 
-import scala.util.control.NonFatal
-
 /** A `h8io.stages.Stage` that composes two sub-stages operating on the same input type.
   *
   * `BinaryOperator` provides exception-safe disposal of both sub-stages: `right.dispose()` is called first, then
@@ -31,20 +29,4 @@ trait BinaryOperator[+LS <: Stage[I, ?, ?], +RS <: Stage[I, ?, ?], -I, +O, +E] e
 
   /** The right sub-stage. */
   def right: RS
-
-  /** Disposes both sub-stages, `right` first then `left`.
-    *
-    * If `right.dispose()` throws, `left.dispose()` is still called; any exception it throws is added as a suppressed
-    * exception to the one from `right.dispose()`.
-    */
-  override final def dispose(): Unit = {
-    try right.dispose()
-    catch {
-      case NonFatal(primary) =>
-        try left.dispose()
-        catch { case NonFatal(secondary) => primary.addSuppressed(secondary) }
-        throw primary
-    }
-    left.dispose()
-  }
 }

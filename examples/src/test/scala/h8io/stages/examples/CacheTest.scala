@@ -67,36 +67,27 @@ class CacheTest
     testAlteredEvolution(Cache(stage).skip(), evolution, Cache[UUID, String, Exception])
   }
 
-  "dispose" should "call alterand's dispose for Cache" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    (stage.dispose _).expects()
-    noException should be thrownBy Cache(stage).dispose()
-  }
-
-  it should "call alterand's dispose for Cached" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    (stage.dispose _).expects()
-    noException should be thrownBy Cache.Cached(mock[AnyRef], stage).dispose()
-  }
-
   "Cached" should "keep output while the status is Success" in
     forAll(Gen.zip(Gen.long, Gen.uuid)) { case (in, out) =>
       val stage = mock[Stage[Long, UUID, Exception]]("underlying stage")
-      val stageEvolution = mock[Evolution[Long, UUID, Exception]]("skip")
-      (stage.skip _).expects().returns(stageEvolution)
-      inside(Cache.Cached(out, stage)(in)) { case Yield.Some(`out`, Status.Success, evolution) =>
+      val evolution = mock[Evolution[Long, UUID, Exception]]("skip")
+      (stage.skip _).expects().returns(evolution)
+      inside(Cache.Cached(out, stage)(in)) { case Yield.Some(`out`, Status.Success, cachedEvolution) =>
         inSequence {
           val onSuccessStage = mock[Stage[Long, UUID, Exception]]
-          (stageEvolution.onSuccess _).expects().returns(onSuccessStage)
-          evolution.onSuccess() shouldBe Cached(out, onSuccessStage)
+          (evolution.onSuccess _).expects().returns(onSuccessStage)
+          cachedEvolution.onSuccess() shouldBe Cached(out, onSuccessStage)
 
           val onCompleteStage = mock[Stage[Long, UUID, Exception]]
-          (stageEvolution.onComplete _).expects().returns(onCompleteStage)
-          evolution.onComplete() shouldBe Cache(onCompleteStage)
+          (evolution.onComplete _).expects().returns(onCompleteStage)
+          cachedEvolution.onComplete() shouldBe Cache(onCompleteStage)
 
           val onErrorStage = mock[Stage[Long, UUID, Exception]]
-          (stageEvolution.onError _).expects().returns(onErrorStage)
-          evolution.onError() shouldBe Cache(onErrorStage)
+          (evolution.onError _).expects().returns(onErrorStage)
+          cachedEvolution.onError() shouldBe Cache(onErrorStage)
+
+          (evolution.dispose _).expects()
+          noException should be thrownBy cachedEvolution.dispose()
         }
       }
     }
@@ -122,6 +113,9 @@ class CacheTest
       val onErrorStage = mock[Stage[UUID, AnyRef, Exception]]
       (evolution.onError _).expects().returns(onErrorStage)
       cachedEvolution.onError() shouldBe Cache(onErrorStage)
+
+      (evolution.dispose _).expects()
+      noException should be thrownBy cachedEvolution.dispose()
     }
   }
 }

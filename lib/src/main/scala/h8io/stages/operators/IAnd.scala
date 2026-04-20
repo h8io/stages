@@ -1,7 +1,7 @@
 package h8io.stages.operators
 
 import h8io.stages
-import h8io.stages.base.BinaryOperator
+import h8io.stages.base.{BaseBinaryOperator, BinaryOperator}
 import h8io.stages.{Evolution, Stage, Yield}
 
 /** An ''independent'' binary operator that applies two stages to the same input simultaneously and combines their
@@ -13,8 +13,8 @@ import h8io.stages.{Evolution, Stage, Yield}
   *     mergedStatus, ...)`.
   *   - If either stage yields `h8io.stages.Yield.None`, the result is `h8io.stages.Yield.None``(mergedStatus, ...)`.
   *
-  * Statuses from both stages are merged with `++` (i.e., `leftStatus ++ rightStatus`). The evolution pairs each
-  * branch's continuations symmetrically.
+  * Statuses from both stages are merged with `combine` (i.e., `leftStatus.combine(rightStatus)`). The evolution pairs
+  * each branch's continuations symmetrically.
   *
   * @param left
   *   the first stage
@@ -34,8 +34,9 @@ final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, R
   override def apply(in: I): Yield[I, (LO, RO), E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
-        Yield.Some((leftOut, rightOut), leftStatus ++ rightStatus, IAnd.Evolution(leftEvolution, rightEvolution))
-      case (left, right) => Yield.None(left.status ++ right.status, IAnd.Evolution(left.evolution, right.evolution))
+        Yield.Some((leftOut, rightOut), leftStatus.combine(rightStatus), IAnd.Evolution(leftEvolution, rightEvolution))
+      case (left, right) =>
+        Yield.None(left.status.combine(right.status), IAnd.Evolution(left.evolution, right.evolution))
     }
 
   override def skip(): Evolution[I, (LO, RO), E] = IAnd.Evolution(left.skip(), right.skip())
@@ -43,20 +44,11 @@ final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, R
 
 /** Companion object for [[IAnd]]. */
 object IAnd {
-  private final case class Evolution[-I, +LO, +RO, +E](
+  private final case class Evolution[-I, LO, RO, +E](
       left: stages.Evolution[I, LO, E],
       right: stages.Evolution[I, RO, E])
-      extends stages.Evolution[I, (LO, RO), E] {
-    override def onSuccess(): Stage[I, (LO, RO), E] = _apply(left.onSuccess(), right.onSuccess())
-    override def onComplete(): Stage[I, (LO, RO), E] = _apply(left.onComplete(), right.onComplete())
-    override def onError(): Stage[I, (LO, RO), E] = _apply(left.onError(), right.onError())
-  }
-
-  @inline private def _apply[I, LO, RO, E](
-      lazyLeftStage: => Stage[I, LO, E],
-      lazyRightStage: => Stage[I, RO, E]): IAnd[I, LO, RO, E] = {
-    val rightStage = lazyRightStage
-    val leftStage = lazyLeftStage
-    IAnd(leftStage, rightStage)
+      extends BaseBinaryOperator.Evolution[I, LO, RO, (LO, RO), E] {
+    override protected def apply[_I <: I, _E >: E](leftStage: Stage[_I, LO, _E], rightStage: Stage[_I, RO, _E])
+        : Stage[_I, (LO, RO), _E] = IAnd(leftStage, rightStage)
   }
 }

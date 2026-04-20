@@ -9,8 +9,8 @@ package h8io.stages
   *   - [[Status.Complete]] — the pipeline has finished successfully; no further input should be processed.
   *   - [[Status.Error]] — one or more errors occurred; the pipeline should stop and report them.
   *
-  * Statuses form a semigroup under the internal `++` operation used when merging the results of composed stages:
-  * `Success` is the identity element, `Complete` dominates `Success` but yields to `Error`, and `Error` dominates all.
+  * Statuses form a semigroup under `combine`, used when merging the results of composed stages: `Success` is the
+  * identity element, `Complete` dominates `Success` but yields to `Error`, and `Error` dominates all.
   *
   * @tparam E
   *   the error type (covariant)
@@ -22,7 +22,7 @@ sealed trait Status[+E] {
     * Precedence (lowest to highest): `Success` < `Complete` < `Error`. When two `Error` statuses are combined their
     * error lists are concatenated.
     */
-  private[stages] def ++[_E >: E](next: Status[_E]): Status[_E]
+  def combine[_E >: E](next: Status[_E]): Status[_E]
 
   /** Selects the appropriate continuation stage from `evolution` based on this status. */
   private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E]
@@ -50,10 +50,10 @@ object Status {
 
   /** Indicates that a [[Stage]] completed successfully and the pipeline may continue.
     *
-    * `Success` is the identity element of status composition: `Success ++ s == s` for any `s`.
+    * `Success` is the identity element of status composition: `Success.combine(s) == s` for any `s`.
     */
   case object Success extends Status[Nothing] {
-    private[stages] def ++[E](next: Status[E]): Status[E] =
+    def combine[E](next: Status[E]): Status[E] =
       next match {
         case Success => this
         case that => that
@@ -80,11 +80,11 @@ object Status {
 
   /** Indicates that the pipeline has finished processing normally, without errors.
     *
-    * `Complete` dominates [[Success]] but yields to [[Error]] in composition: `Complete ++ Success == Complete` and
-    * `Complete ++ e: Error == e`.
+    * `Complete` dominates [[Success]] but yields to [[Error]] in composition: `Complete.combine(Success) == Complete`
+    * and `Complete.combine(e: Error) == e`.
     */
   case object Complete extends Break[Nothing] {
-    private[stages] def ++[E](next: Status[E]): Status[E] =
+    def combine[E](next: Status[E]): Status[E] =
       next match {
         case Success | Complete => this
         case that => that
@@ -115,7 +115,7 @@ object Status {
     *   the error type (covariant)
     */
   final case class Error[+E](override val head: E, override val tail: List[E]) extends Break[E] with Iterable[E] {
-    private[stages] def ++[_E >: E](next: Status[_E]): Status[_E] =
+    def combine[_E >: E](next: Status[_E]): Status[_E] =
       next match {
         case Success | Complete => this
         case Error(head, tail) => Error(this.head, this.tail ::: head :: tail)
