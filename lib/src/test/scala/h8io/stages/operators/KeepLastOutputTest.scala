@@ -80,16 +80,4 @@ class KeepLastOutputTest
     testAlteredEvolution(
       KeepLastOutput.Some(out, stage).skip(), evolution, KeepLastOutput.Some[UUID, AnyRef, Exception](out, _))
   }
-
-  "dispose" should "call alterand's dispose for None" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    (stage.dispose _).expects()
-    noException should be thrownBy KeepLastOutput.None(stage).dispose()
-  }
-
-  it should "call alterand's dispose for Some" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    (stage.dispose _).expects()
-    noException should be thrownBy KeepLastOutput.Some(mock[AnyRef], stage).dispose()
-  }
 }

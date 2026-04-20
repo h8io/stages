@@ -22,7 +22,7 @@ import h8io.stages.{Evolution, Stage}
   */
 trait BaseStage[-I, +O, +E] extends Stage[I, O, E] with BaseEvolution[I, O, E] {
   override def skip(): Evolution[I, O, E] = this
-  override def dispose(): Unit = {}
+  override def dispose(): Unit = ()
 }
 
 /** Companion object for [[BaseStage]]. */

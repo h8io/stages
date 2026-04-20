@@ -1,7 +1,6 @@
 package h8io.stages
 
 import scala.util.Try
-import scala.util.control.NonFatal
 
 /** A single processing unit in a pipeline that transforms input values into [[Yield]] results.
   *
@@ -19,11 +18,10 @@ import scala.util.control.NonFatal
   *   - '''Skipped''': [[skip]] is called when the stage is bypassed — for example, because an upstream stage produced
   *     no output, or because of a non-inclusive binary operation. The stage must return its [[Evolution]] without
   *     performing any processing.
-  *   - '''Disposed''': [[dispose]] is called when the pipeline is torn down. All stages in the pipeline receive this
-  *     call, regardless of whether they were active or skipped.
   *
-  * Exactly one of [[apply]] or [[skip]] is called per pipeline run; [[dispose]] is called once when the pipeline is
-  * released. Fatal exceptions are not accounted for by this contract.
+  * Exactly one of [[apply]] or [[skip]] is called per pipeline run. Resource cleanup is the responsibility of the
+  * [[Evolution]] returned from either call: [[Evolution.dispose]] releases the resources held by this stage, and after
+  * that call the stage must be considered unusable. Fatal exceptions are not accounted for by this contract.
   *
   * Example — building a pipeline:
   * {{{
@@ -63,27 +61,17 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     */
   def skip(): Evolution[I, O, E]
 
-  /** Releases any resources held by this stage.
-    *
-    * Called by pipeline owners (for example, [[Stage.AndThen]]) when disposing a composed stage. [[execute]] disposes
-    * only the next stage selected from the [[Evolution]] and does not call `dispose()` on this stage.
-    *
-    * Stages that hold no external resources may implement this as a no-op.
-    */
-  def dispose(): Unit
-
   /** Executes this stage end-to-end and returns a plain [[Outcome]].
     *
     * Internally this method:
     *   1. Applies the stage to `in`, obtaining a [[Yield]].
-    *   1. Selects the next stage from the [[Evolution]] based on the current [[Status]].
-    *   1. Disposes the selected next stage — since `execute` is a terminal operation, the continuation is not needed
-    *      and must be cleaned up immediately.
+    *   1. Disposes the [[Evolution]] carried by the [[Yield]] — since `execute` is a terminal operation, the
+    *      continuation is not needed and the resources held by this stage must be released immediately.
     *   1. Wraps the result in an [[Outcome.Some]] or [[Outcome.None]].
     *
-    * Disposal failures do not prevent the result from being returned. Any non-fatal exception raised by disposing the
-    * selected next stage is captured in [[Outcome.disposeFailure]] and the outcome is still produced. Fatal exceptions
-    * are not caught and will propagate.
+    * Disposal failures do not prevent the result from being returned. Any non-fatal exception raised by
+    * [[Evolution.dispose]] is captured in [[Outcome.disposeFailure]] and the outcome is still produced. Fatal
+    * exceptions are not caught and will propagate.
     *
     * @param in
     *   the input value
@@ -92,7 +80,7 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     */
   @inline final def execute(in: I): Outcome[O, E] = {
     val yld = this(in)
-    val disposeFailure = Try(yld.evolve().dispose()).failed.toOption
+    val disposeFailure = Try(yld.evolution.dispose()).failed.toOption
     yld match {
       case Yield.Some(out, status, _) => Outcome.Some(out, status, disposeFailure)
       case Yield.None(status, _) => Outcome.None(status, disposeFailure)
@@ -139,9 +127,6 @@ object Stage {
     *   - If `upstream` produces a [[Yield.None]], the evolution is composed with `downstream` so that it is applied
     *     when the pipeline resumes.
     *
-    * Disposal is performed in reverse order (`downstream` first, then `upstream`). If `downstream.dispose()` throws,
-    * the exception from `upstream.dispose()` is added as a suppressed exception.
-    *
     * @param upstream
     *   the first stage in the sequence
     * @param downstream
@@ -164,17 +149,5 @@ object Stage {
       }
 
     override def skip(): Evolution[I, O, E] = upstream.skip().compose(downstream.skip())
-
-    override def dispose(): Unit = {
-      try downstream.dispose()
-      catch {
-        case NonFatal(primary) => try upstream.dispose()
-          catch {
-            case NonFatal(secondary) =>
-              primary.addSuppressed(secondary)
-          } finally throw primary
-      }
-      upstream.dispose()
-    }
   }
 }

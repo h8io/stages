@@ -20,4 +20,8 @@ class ConstEvolutionTest extends AnyFlatSpec with Matchers with MockFactory {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     ConstEvolution(stage).onError() should be theSameInstanceAs stage
   }
+
+  "dispose" should "not throw exceptions" in {
+    noException should be thrownBy ConstEvolution(mock[Stage[Any, Nothing, Nothing]]).dispose()
+  }
 }

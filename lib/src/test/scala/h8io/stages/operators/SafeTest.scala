@@ -96,10 +96,4 @@ class SafeTest
     (stage.skip _).expects().returns(evolution)
     testAlteredEvolution(Safe(stage).skip(), evolution, Safe[UUID, String, Exception])
   }
-
-  it should "dispose the alterand" in {
-    val alterand = mock[Stage[Any, Nothing, Nothing]]
-    (alterand.dispose _).expects()
-    noException should be thrownBy Safe(alterand).dispose()
-  }
 }

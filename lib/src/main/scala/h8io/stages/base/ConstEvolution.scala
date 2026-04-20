@@ -20,4 +20,5 @@ final case class ConstEvolution[-I, +O, +E](stage: Stage[I, O, E]) extends Evolu
   override def onSuccess(): Stage[I, O, E] = stage
   override def onComplete(): Stage[I, O, E] = stage
   override def onError(): Stage[I, O, E] = stage
+  override def dispose(): Unit = ()
 }

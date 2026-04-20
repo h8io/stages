@@ -27,7 +27,4 @@ trait Alterator[+S <: Stage.Any, -I, +O, +E] extends Stage[I, O, E] {
 
   /** The wrapped stage whose behavior is modified by this operator. */
   def alterand: S
-
-  /** Disposes this stage by forwarding the call to [[alterand]]. */
-  override final def dispose(): Unit = alterand.dispose()
 }

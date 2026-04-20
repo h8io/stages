@@ -2,7 +2,7 @@ package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages
-import h8io.stages.base.{BinaryOperator, LeftProjection, RightProjection}
+import h8io.stages.base.{BaseBinaryOperator, BinaryOperator, LeftProjection, RightProjection}
 import h8io.stages.{Evolution, Stage, Yield}
 
 /** A binary operator that applies two stages independently to the same input and combines their outputs into a
@@ -20,7 +20,7 @@ import h8io.stages.{Evolution, Stage, Yield}
   * Unlike `h8io.stages.operators.And` (which short-circuits on the left) and `h8io.stages.operators.Or` (which
   * short-circuits on the right), `IOr` always applies both stages, making it the inclusive variant.
   *
-  * Statuses from both stages are merged with `++`. The evolution pairs corresponding branches symmetrically (like
+  * Statuses from both stages are merged with `combine`. The evolution pairs corresponding branches symmetrically (like
   * `h8io.stages.operators.IAnd`).
   *
   * @param left
@@ -41,13 +41,14 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
   override def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
-        Yield.Some(Ior.Both(leftOut, rightOut), leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
+        Yield.Some(
+          Ior.Both(leftOut, rightOut), leftStatus.combine(rightStatus), IOr.Evolution(leftEvolution, rightEvolution))
       case (Yield.Some(leftOut, leftStatus, leftEvolution), Yield.None(rightStatus, rightEvolution)) =>
-        Yield.Some(Ior.Left(leftOut), leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
+        Yield.Some(Ior.Left(leftOut), leftStatus.combine(rightStatus), IOr.Evolution(leftEvolution, rightEvolution))
       case (Yield.None(leftStatus, leftEvolution), Yield.Some(rightOut, rightStatus, rightEvolution)) =>
-        Yield.Some(Ior.Right(rightOut), leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
+        Yield.Some(Ior.Right(rightOut), leftStatus.combine(rightStatus), IOr.Evolution(leftEvolution, rightEvolution))
       case (Yield.None(leftStatus, leftEvolution), Yield.None(rightStatus, rightEvolution)) =>
-        Yield.None(leftStatus ++ rightStatus, IOr.Evolution(leftEvolution, rightEvolution))
+        Yield.None(leftStatus.combine(rightStatus), IOr.Evolution(leftEvolution, rightEvolution))
     }
 
   override def skip(): Evolution[I, Ior[LO, RO], E] = IOr.Evolution(left.skip(), right.skip())
@@ -55,21 +56,12 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
 
 /** Companion object for [[IOr]], containing the private evolution and projections. */
 object IOr {
-  private final case class Evolution[-I, +LO, +RO, +E](
+  private final case class Evolution[-I, LO, RO, +E](
       left: stages.Evolution[I, LO, E],
       right: stages.Evolution[I, RO, E])
-      extends stages.Evolution[I, Ior[LO, RO], E] {
-    override def onSuccess(): Stage[I, Ior[LO, RO], E] = _apply(left.onSuccess(), right.onSuccess())
-    override def onComplete(): Stage[I, Ior[LO, RO], E] = _apply(left.onComplete(), right.onComplete())
-    override def onError(): Stage[I, Ior[LO, RO], E] = _apply(left.onError(), right.onError())
-  }
-
-  @inline private def _apply[I, LO, RO, E](
-      lazyLeftStage: => Stage[I, LO, E],
-      lazyRightStage: => Stage[I, RO, E]): IOr[I, LO, RO, E] = {
-    val rightStage = lazyRightStage
-    val leftStage = lazyLeftStage
-    IOr(leftStage, rightStage)
+      extends BaseBinaryOperator.Evolution[I, LO, RO, Ior[LO, RO], E] {
+    override protected def apply[_I <: I, _E >: E](leftStage: Stage[_I, LO, _E], rightStage: Stage[_I, RO, _E])
+        : Stage[_I, Ior[LO, RO], _E] = IOr(leftStage, rightStage)
   }
 
   /** Extracts the left value from an `cats.data.Ior`, yielding it when present in both `Ior.Left` and `Ior.Both`.

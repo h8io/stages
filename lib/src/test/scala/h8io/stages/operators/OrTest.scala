@@ -35,7 +35,7 @@ class OrTest
           (rightStage.apply _).expects(in).returns(rightYield)
         }
         inside(Or(leftStage, rightStage)(in)) { case Yield.None(status, evolution) =>
-          status shouldBe leftYield.status ++ rightYield.status
+          status shouldBe leftYield.status.combine(rightYield.status)
           testEvolutionComposition(
             evolution, leftYield.evolution, rightYield.evolution, Or[Long, Duration, Instant, Exception])
         }
@@ -59,7 +59,7 @@ class OrTest
         }
         inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, status, evolution) =>
           out shouldBe Right(rightYield.out)
-          status shouldBe leftYield.status ++ rightYield.status
+          status shouldBe leftYield.status.combine(rightYield.status)
           testEvolutionComposition(
             evolution, leftYield.evolution, rightYield.evolution, Or[String, LocalDateTime, ZonedDateTime, UUID])
         }

@@ -28,7 +28,7 @@ class YieldTest
         val downstreamYield = downstreamYieldSupplier(downstreamEvolution)
         inside(upstreamYield.compose(downstreamYield)) {
           case Yield.Some(downstreamYield.out, status, evolution) =>
-            status shouldBe upstreamYield.status ++ downstreamYield.status
+            status shouldBe upstreamYield.status.combine(downstreamYield.status)
             val upstreamStage = mock[Stage[Long, Instant, String]]
             val downstreamStage = mock[Stage[Instant, String, String]]
             val stage = upstreamStage ~> downstreamStage
@@ -63,7 +63,7 @@ class YieldTest
         val downstreamYield = downstreamYieldSupplier(downstreamEvolution)
         inside(upstreamYield.compose(downstreamYield)) {
           case Yield.None(status, evolution) =>
-            status shouldBe upstreamYield.status ++ downstreamYield.status
+            status shouldBe upstreamYield.status.combine(downstreamYield.status)
             val upstreamStage = mock[Stage[Long, Instant, String]]
             val downstreamStage = mock[Stage[Instant, String, String]]
             val stage = upstreamStage ~> downstreamStage

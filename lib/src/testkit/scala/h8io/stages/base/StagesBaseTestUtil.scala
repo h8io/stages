@@ -7,8 +7,8 @@ import org.scalatest.matchers.should.Matchers
 
 /** Test utilities for specs that verify `h8io.stages.Evolution` wrapping behaviour.
   *
-  * Mix this trait into a ScalaTest suite to gain access to `testWrappedEvolution`, which sets up ScalaMock
-  * expectations on an inner evolution and asserts that the outer (wrapped) evolution delegates to it correctly.
+  * Mix this trait into a ScalaTest suite to gain access to `testWrappedEvolution`, which sets up ScalaMock expectations
+  * on an inner evolution and asserts that the outer (wrapped) evolution delegates to it correctly.
   *
   * {{{
   * class MyOperatorSpec extends AnyFunSuite with StagesBaseTestUtil {
@@ -26,8 +26,8 @@ trait StagesBaseTestUtil extends MockFactory with Matchers {
   /** Asserts that `wrappedEvolution` delegates every branch to `evolution` via the same `alteration` function.
     *
     * For each of the three branches (`onSuccess`, `onComplete`, `onError`), this method:
-    *   1. Creates a mock `h8io.stages.Stage` and registers an expectation that the corresponding method on
-    *      `evolution` will be called once and return it.
+    *   1. Creates a mock `h8io.stages.Stage` and registers an expectation that the corresponding method on `evolution`
+    *      will be called once and return it.
     *   1. Calls the matching method on `wrappedEvolution`.
     *   1. Asserts that the result equals `alteration(mockStage)`.
     *
@@ -103,5 +103,8 @@ trait StagesBaseTestUtil extends MockFactory with Matchers {
     val onErrorStage = mock[Stage[II, IO, IE]]("onError stage")
     (evolution.onError _).expects().returns(onErrorStage)
     wrappedEvolution.onError() shouldBe onErrorAlteration(onErrorStage)
+
+    (evolution.dispose _).expects()
+    noException should be thrownBy wrappedEvolution.dispose()
   }
 }

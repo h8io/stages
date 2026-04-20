@@ -106,8 +106,41 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       (rightEvolution.onError _).expects().returns(onErrorRightStage)
       (leftEvolution.onError _).expects().returns(onErrorLeftStage)
       composition.onError() shouldBe compose(onErrorLeftStage, onErrorRightStage)
+
+      (rightEvolution.dispose _).expects()
+      (leftEvolution.dispose _).expects()
+      noException should be thrownBy composition.dispose()
     }
 
+  /** Asserts that `altered` correctly maps every branch of `evolution` through `f`, and that disposal delegates.
+    *
+    * For each branch (`onSuccess`, `onComplete`, `onError`) the helper:
+    *   1. Creates a mock `Stage` and registers an expectation that the corresponding method on `evolution` will be
+    *      called once and return it.
+    *   1. Calls the matching method on `altered`.
+    *   1. Asserts the result equals `f(mockStage)`.
+    *
+    * Also verifies that `altered.dispose()` delegates to `evolution.dispose()`.
+    *
+    * @param altered
+    *   the evolution under test (wraps `evolution` via `f`)
+    * @param evolution
+    *   the mock inner evolution
+    * @param f
+    *   the transformation expected to be applied to each branch's stage
+    * @tparam AI
+    *   input type of the inner stages
+    * @tparam AO
+    *   output type of the inner stages
+    * @tparam AE
+    *   error type of the inner stages
+    * @tparam I
+    *   input type of the altered stages
+    * @tparam O
+    *   output type of the altered stages
+    * @tparam E
+    *   error type of the altered stages
+    */
   def testAlteredEvolution[AI, AO, AE, I, O, E](
       altered: Evolution[I, O, E],
       evolution: Evolution[AI, AO, AE],
@@ -124,5 +157,8 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       val onErrorStage = mock[Stage[AI, AO, AE]]
       (evolution.onError _).expects().returns(onErrorStage)
       altered.onError() shouldBe f(onErrorStage)
+
+      (evolution.dispose _).expects()
+      noException should be thrownBy altered.dispose()
     }
 }

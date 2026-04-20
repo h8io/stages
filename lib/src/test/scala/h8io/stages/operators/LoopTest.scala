@@ -115,10 +115,4 @@ class LoopTest
     (stage.skip _).expects().returns(evolution)
     testAlteredEvolution(Loop(stage).skip(), evolution, Loop[UUID, Exception])
   }
-
-  "dispose" should "call alterand's dispose" in {
-    val alterand = mock[Stage[Any, Nothing, Nothing]]
-    (alterand.dispose _).expects()
-    noException should be thrownBy Loop(alterand).dispose()
-  }
 }
