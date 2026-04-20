@@ -15,5 +15,7 @@ class BaseEvolutionTest extends AnyFlatSpec with Matchers {
     stage.onSuccess() should be theSameInstanceAs stage
     stage.onComplete() should be theSameInstanceAs stage
     stage.onError() should be theSameInstanceAs stage
+
+    noException should be thrownBy stage.dispose()
   }
 }
