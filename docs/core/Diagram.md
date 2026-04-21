@@ -226,7 +226,8 @@ yld2.evolution.dispose()
 ![Pipeline](Diagram.svg)
 
 The diagram shows the same scenario as the code, but as a sequence of concrete objects and calls.  
-The circled labels mark the execution steps, so in the description below I will refer to them directly.
+The circled labels mark the execution steps, so in the description below I will refer to them directly.  
+Dashed arrows indicate the execution sequence and show how control flows between objects.
 
 In the first generation, the input value `3` is sent to `Stage 1-1` ①.  
 `Stage 1-1` computes `3 - 3`, returns `Yield.Some` with value `0`, status `Success`, and an `Evolution` object ②.  
