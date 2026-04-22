@@ -2,7 +2,7 @@ import Dependencies.*
 import h8io.sbt.dependencies.*
 
 val ProjectName = "stages"
-val SiteRoot = s"https://h8io.github.io/$ProjectName/"
+val SiteRoot = s"https://stages.h8.io/"
 
 inThisBuild(
   List(
