@@ -14,13 +14,6 @@ Three ideas make `Evolution` work:
 
 ```scala mdoc
 import h8io.stages.*
-
-trait MockEvolution[-I, +O, +E] extends Evolution[I, O, E] {
-  override def onSuccess(): Stage[I, O, E] = ???
-  override def onComplete(): Stage[I, O, E] = ???
-  override def onError(): Stage[I, O, E] = ???
-  override def dispose(): Unit = ()
-}
 ```
 
 ## The Three Status Branches
@@ -34,10 +27,11 @@ A stage that does not change between generations can return itself from every br
 
 ```scala mdoc
 object ParseInt extends Stage[String, Int, String] {
-  private val alwaysSelf = new MockEvolution[String, Int, String] {
+  private val alwaysSelf = new Evolution[String, Int, String] {
     override def onSuccess(): Stage[String, Int, String] = ParseInt
     override def onComplete(): Stage[String, Int, String] = ParseInt
     override def onError(): Stage[String, Int, String] = ParseInt
+    override def dispose(): Unit = ()
   }
 
   override def apply(in: String): Yield[String, Int, String] =
@@ -79,8 +73,7 @@ Two situations guarantee `dispose()` will be called:
 - If a status branch method throws a `Throwable`, the caller is still required to call `dispose()` so that nothing
   is leaked even when evolution itself fails.
 
-Implementations that hold no external resources may leave `dispose()` as a no-op, which is the default in
-`MockEvolution` above.
+Implementations that hold no external resources may leave `dispose()` as a no-op.
 
 ## Composing Evolutions
 
