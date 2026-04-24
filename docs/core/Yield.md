@@ -12,13 +12,6 @@ Every `Yield` bundles three things together:
 
 ```scala mdoc
 import h8io.stages.*
-
-trait MockEvolution[-I, +O, +E] extends Evolution[I, O, E] {
-  override def onSuccess(): Stage[I, O, E] = ???
-  override def onComplete(): Stage[I, O, E] = ???
-  override def onError(): Stage[I, O, E] = ???
-  override def dispose(): Unit = ()
-}
 ```
 
 ## Carrying a Value vs Carrying Nothing
@@ -29,7 +22,12 @@ There are exactly two variants.
 status and the evolution:
 
 ```scala mdoc
-val some = Yield.Some(42, Status.Success, new MockEvolution[Int, Int, Nothing] {})
+val some = Yield.Some(42, Status.Success, new Evolution[Int, Int, Nothing] {
+  override def onSuccess(): Stage[Int, Int, Nothing] = ???
+  override def onComplete(): Stage[Int, Int, Nothing] = ???
+  override def onError(): Stage[Int, Int, Nothing] = ???
+  override def dispose(): Unit = ()
+})
 some.out
 some.status
 ```
@@ -39,13 +37,30 @@ input. There is no output value, but the status and the evolution are still pres
 correctly:
 
 ```scala mdoc
-val none = Yield.None[Int, String, String](Status.Error("filtered out"), new MockEvolution[Int, String, String] {})
+val none = Yield.None[Int, String, String](Status.Error("filtered out"), new Evolution[Int, String, String] {
+  override def onSuccess(): Stage[Int, String, String] = ???
+  override def onComplete(): Stage[Int, String, String] = ???
+  override def onError(): Stage[Int, String, String] = ???
+  override def dispose(): Unit = ()
+})
 none.status
 ```
 
 When a `Yield.None` reaches a `Stage.AndThen`, the downstream stage is not applied to the current input.  
 Instead it is wired into the evolution so that the full composed stage will be called when a value eventually
 arrives.
+
+## Accessing the Output
+
+`outOption` returns the output wrapped in `Some`, or `None` when no value was produced:
+
+```scala mdoc
+some.outOption   // Some(42)
+none.outOption   // None
+```
+
+Use `outOption` when you only need to know whether a value was produced. When you also need the `status` or
+`evolution`, pattern-match on the concrete subtype directly instead.
 
 ## Evolving the Pipeline
 
@@ -61,25 +76,41 @@ The returned `Stage` becomes the pipeline for the next run.
 
 ```scala mdoc
 object DoubleStage extends Stage[Int, Int, Nothing] {
-  override def apply(in: Int): Yield[Int, Int, Nothing] =
-    Yield.Some(in * 2, Status.Success, new MockEvolution[Int, Int, Nothing] {})
+  private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
+    override def onSuccess(): Stage[Int, Int, Nothing] = ???
+    override def onComplete(): Stage[Int, Int, Nothing] = ???
+    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def dispose(): Unit = ()
+  }
 
-  override def skip(): Evolution[Int, Int, Nothing] = new MockEvolution[Int, Int, Nothing] {}
+  override def apply(in: Int): Yield[Int, Int, Nothing] =
+    Yield.Some(in * 2, Status.Success, stub)
+
+  override def skip(): Evolution[Int, Int, Nothing] = stub
 }
 
 object ErrorRecovery extends Stage[Int, Int, Nothing] {
-  override def apply(in: Int): Yield[Int, Int, Nothing] =
-    Yield.Some(0, Status.Complete, new MockEvolution[Int, Int, Nothing] {})
+  private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
+    override def onSuccess(): Stage[Int, Int, Nothing] = ???
+    override def onComplete(): Stage[Int, Int, Nothing] = ???
+    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def dispose(): Unit = ()
+  }
 
-  override def skip(): Evolution[Int, Int, Nothing] = new MockEvolution[Int, Int, Nothing] {}
+  override def apply(in: Int): Yield[Int, Int, Nothing] =
+    Yield.Some(0, Status.Complete, stub)
+
+  override def skip(): Evolution[Int, Int, Nothing] = stub
 }
 
 val yldSuccess = Yield.Some(
   21,
   Status.Success,
-  new MockEvolution[Int, Int, Nothing] {
+  new Evolution[Int, Int, Nothing] {
     override def onSuccess(): Stage[Int, Int, Nothing] = DoubleStage
+    override def onComplete(): Stage[Int, Int, Nothing] = ???
     override def onError(): Stage[Int, Int, Nothing] = ErrorRecovery
+    override def dispose(): Unit = ()
   })
 
 val nextStage = yldSuccess.evolve()
@@ -94,30 +125,58 @@ nextStage(21)
 
 ## Transforming a Yield
 
-`map` transforms all three components of a `Yield` in one step. Each component gets its own mapping function.  
-This is mainly used inside pipeline combinators rather than in application code, but it is part of the public API:
+`map` transforms all three components of a `Yield` in one step. Each component gets its own mapping function.
+This is mainly used inside pipeline combinators rather than in application code, but it is part of the public API.
+
+Imagine a stage that reads a temperature sensor and yields the value in Celsius. A downstream combinator
+needs Fahrenheit: it converts the value, marks each successful reading as complete, and wraps the evolution
+with `Evolution.map` so that future stages also go through the same conversion:
 
 ```scala mdoc
-val original = Yield.Some(
-  10,
-  Status.Success,
-  new MockEvolution[Int, Int, Nothing] {})
+object ThermStage extends Stage[Int, Int, Nothing] {
+  private val evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
+    override def onSuccess(): Stage[Int, Int, Nothing] = ThermStage
+    override def onComplete(): Stage[Int, Int, Nothing] = ThermStage
+    override def onError(): Stage[Int, Int, Nothing] = ThermStage
+    override def dispose(): Unit = ()
+  }
+  override def apply(in: Int): Yield[Int, Int, Nothing] = Yield.Some(25, Status.Success, evo)
+  override def skip(): Evolution[Int, Int, Nothing] = evo
+}
 
-val transformed = original.map(
-  mapOut = _ * 3,
+object ToFahrenheit extends Stage[Int, Int, Nothing] {
+  private val evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
+    override def onSuccess(): Stage[Int, Int, Nothing] = ToFahrenheit
+    override def onComplete(): Stage[Int, Int, Nothing] = ToFahrenheit
+    override def onError(): Stage[Int, Int, Nothing] = ToFahrenheit
+    override def dispose(): Unit = ()
+  }
+  override def apply(in: Int): Yield[Int, Int, Nothing] = Yield.Some(in * 9 / 5 + 32, Status.Success, evo)
+  override def skip(): Evolution[Int, Int, Nothing] = evo
+}
+
+val celsius = ThermStage(0)
+
+val fahrenheit = celsius.map(
+  mapOut    = c => c * 9 / 5 + 32,
   mapStatus = _ => Status.Complete,
-  mapEvolution = _ => new MockEvolution[Int, Int, Nothing] {})
+  mapEvolution = evo => evo.map(_ ~> ToFahrenheit))
 
-transformed.out
-transformed.status
+fahrenheit.outOption
+fahrenheit.status
 ```
 
-For `Yield.None`, `map` applies `mapStatus` and `mapEvolution` as usual — `mapOut` is accepted for type-consistency
-but is never invoked because there is no value to transform:
+For `Yield.None`, `map` applies `mapStatus` and `mapEvolution` as usual — `mapOut` is accepted for
+type-consistency but is never invoked because there is no value to transform. Here the sensor went
+offline before any reading was taken:
 
 ```scala mdoc
-val noneTransformed = Yield.None[Int, Int, String](Status.Error("blocked"), new MockEvolution[Int, Int, String] {})
-  .map(_ + 1, _ => Status.Complete, _ => new MockEvolution[Int, Int, Nothing] {})
+val noReading = Yield.None[Int, Int, String](Status.Error("sensor offline"), ThermStage.skip())
+  .map(
+    mapOut    = c => c * 9 / 5 + 32,   // not called — no value
+    mapStatus = _ => Status.Error("no data"),
+    mapEvolution = evo => evo.map(_ ~> ToFahrenheit))
 
-noneTransformed.status
+noReading.outOption
+noReading.status
 ```

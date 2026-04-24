@@ -11,13 +11,6 @@ specific one is expected, and outputs can flow naturally from one stage to the n
 
 ```scala mdoc
 import h8io.stages.*
-
-trait MockEvolution[-I, +O, +E] extends Evolution[I, O, E] {
-  override def onSuccess(): Stage[I, O, E] = ???
-  override def onComplete(): Stage[I, O, E] = ???
-  override def onError(): Stage[I, O, E] = ???
-  override def dispose(): Unit = ()
-}
 ```
 
 ## The Lifecycle: apply and skip
@@ -40,10 +33,11 @@ Here is a minimal stage that doubles its input on the active path and supplies i
 
 ```scala mdoc
 object Double extends Stage[Int, Int, Nothing] {
-  private def evo: MockEvolution[Int, Int, Nothing] = new MockEvolution[Int, Int, Nothing] {
+  private def evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
     override def onSuccess(): Stage[Int, Int, Nothing] = Double
     override def onComplete(): Stage[Int, Int, Nothing] = Double
     override def onError(): Stage[Int, Int, Nothing] = Double
+    override def dispose(): Unit = ()
   }
 
   override def apply(in: Int): Yield[Int, Int, Nothing] =
@@ -63,10 +57,11 @@ The result is itself a `Stage`, so further stages can be appended with additiona
 
 ```scala mdoc
 object ToString extends Stage[Int, String, Nothing] {
-  private def evo: MockEvolution[Int, String, Nothing] = new MockEvolution[Int, String, Nothing] {
+  private def evo: Evolution[Int, String, Nothing] = new Evolution[Int, String, Nothing] {
     override def onSuccess(): Stage[Int, String, Nothing] = ToString
     override def onComplete(): Stage[Int, String, Nothing] = ToString
     override def onError(): Stage[Int, String, Nothing] = ToString
+    override def dispose(): Unit = ()
   }
 
   override def apply(in: Int): Yield[Int, String, Nothing] =
@@ -76,10 +71,11 @@ object ToString extends Stage[Int, String, Nothing] {
 }
 
 object Shout extends Stage[String, String, Nothing] {
-  private def evo: MockEvolution[String, String, Nothing] = new MockEvolution[String, String, Nothing] {
+  private def evo: Evolution[String, String, Nothing] = new Evolution[String, String, Nothing] {
     override def onSuccess(): Stage[String, String, Nothing] = Shout
     override def onComplete(): Stage[String, String, Nothing] = Shout
     override def onError(): Stage[String, String, Nothing] = Shout
+    override def dispose(): Unit = ()
   }
 
   override def apply(in: String): Yield[String, String, Nothing] =

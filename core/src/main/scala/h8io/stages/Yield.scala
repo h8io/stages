@@ -19,6 +19,13 @@ package h8io.stages
   */
 sealed trait Yield[-I, +O, +E] {
 
+  /** Returns `scala.Some(out)` if this is a [[Yield.Some]], or `scala.None` if this is a [[Yield.None]].
+    *
+    * Prefer pattern-matching on [[Yield.Some]] / [[Yield.None]] when you also need the `status` or `evolution`.
+    * Use `outOption` when you only care about whether a value was produced.
+    */
+  def outOption: Option[O]
+
   /** The status produced by the stage that created this `Yield`. */
   val status: Status[E]
 
@@ -81,6 +88,8 @@ object Yield {
     */
   final case class Some[-I, +O, +E](out: O, status: Status[E], evolution: Evolution[I, O, E]) extends Yield[I, O, E] {
 
+    def outOption: Option[O] = scala.Some(out)
+
     /** Merges this `Some` with the [[Yield]] produced by the next stage in a pipeline.
       *
       * The statuses are combined with `combine` and the evolutions are composed. The resulting `Yield` type depends on
@@ -131,6 +140,8 @@ object Yield {
     *   the error type (covariant)
     */
   final case class None[-I, +O, +E](status: Status[E], evolution: Evolution[I, O, E]) extends Yield[I, O, E] {
+
+    override def outOption: Option[O] = scala.None
 
     /** Composes this `None` with `downstream` by threading it through all branches of the evolution.
       *

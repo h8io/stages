@@ -8,17 +8,6 @@ caller once the pipeline has finished processing a single input and all resource
 disposal threw an exception, that is recorded in `disposeFailure` without preventing the outcome from being
 returned.
 
-```scala mdoc
-import h8io.stages.*
-
-trait MockEvolution[-I, +O, +E] extends Evolution[I, O, E] {
-  override def onSuccess(): Stage[I, O, E] = ???
-  override def onComplete(): Stage[I, O, E] = ???
-  override def onError(): Stage[I, O, E] = ???
-  override def dispose(): Unit = ()
-}
-```
-
 ## Outcome.Some and Outcome.None
 
 There are two variants, mirroring the two variants of [`Yield`](Yield.md).
@@ -26,11 +15,20 @@ There are two variants, mirroring the two variants of [`Yield`](Yield.md).
 `Outcome.Some` is produced when the executed stage yielded a `Yield.Some`. It carries the output value:
 
 ```scala mdoc
-object Double extends Stage[Int, Int, Nothing] {
-  override def apply(in: Int): Yield[Int, Int, Nothing] =
-    Yield.Some(in * 2, Status.Success, new MockEvolution[Int, Int, Nothing] {})
+import h8io.stages.*
 
-  override def skip(): Evolution[Int, Int, Nothing] = new MockEvolution[Int, Int, Nothing] {}
+object Double extends Stage[Int, Int, Nothing] {
+  private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
+    override def onSuccess(): Stage[Int, Int, Nothing] = ???
+    override def onComplete(): Stage[Int, Int, Nothing] = ???
+    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def dispose(): Unit = ()
+  }
+
+  override def apply(in: Int): Yield[Int, Int, Nothing] =
+    Yield.Some(in * 2, Status.Success, stub)
+
+  override def skip(): Evolution[Int, Int, Nothing] = stub
 }
 
 val some = Double.execute(21)
@@ -41,10 +39,17 @@ output for the given input:
 
 ```scala mdoc
 object Drop extends Stage[Int, String, String] {
-  override def apply(in: Int): Yield[Int, String, String] =
-    Yield.None(Status.Error(s"dropped $in"), new MockEvolution[Int, String, String] {})
+  private def stub: Evolution[Int, String, String] = new Evolution[Int, String, String] {
+    override def onSuccess(): Stage[Int, String, String] = ???
+    override def onComplete(): Stage[Int, String, String] = ???
+    override def onError(): Stage[Int, String, String] = ???
+    override def dispose(): Unit = ()
+  }
 
-  override def skip(): Evolution[Int, String, String] = new MockEvolution[Int, String, String] {}
+  override def apply(in: Int): Yield[Int, String, String] =
+    Yield.None(Status.Error(s"dropped $in"), stub)
+
+  override def skip(): Evolution[Int, String, String] = stub
 }
 
 val none = Drop.execute(99)
@@ -65,11 +70,19 @@ object LeakyDispose extends Stage[Int, Int, Nothing] {
     Yield.Some(
       in * 2,
       Status.Success,
-      new MockEvolution[Int, Int, Nothing] {
+      new Evolution[Int, Int, Nothing] {
+        override def onSuccess(): Stage[Int, Int, Nothing] = ???
+        override def onComplete(): Stage[Int, Int, Nothing] = ???
+        override def onError(): Stage[Int, Int, Nothing] = ???
         override def dispose(): Unit = throw new RuntimeException("cleanup failed")
       })
 
-  override def skip(): Evolution[Int, Int, Nothing] = new MockEvolution[Int, Int, Nothing] {}
+  override def skip(): Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
+    override def onSuccess(): Stage[Int, Int, Nothing] = ???
+    override def onComplete(): Stage[Int, Int, Nothing] = ???
+    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def dispose(): Unit = ()
+  }
 }
 
 val leaky = LeakyDispose.execute(5)
