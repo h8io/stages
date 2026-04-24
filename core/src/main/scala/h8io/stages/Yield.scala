@@ -21,8 +21,8 @@ sealed trait Yield[-I, +O, +E] {
 
   /** Returns `scala.Some(out)` if this is a [[Yield.Some]], or `scala.None` if this is a [[Yield.None]].
     *
-    * Prefer pattern-matching on [[Yield.Some]] / [[Yield.None]] when you also need the `status` or `evolution`.
-    * Use `outOption` when you only care about whether a value was produced.
+    * Prefer pattern-matching on [[Yield.Some]] / [[Yield.None]] when you also need the `status` or `evolution`. Use
+    * `outOption` when you only care about whether a value was produced.
     */
   def outOption: Option[O]
 
