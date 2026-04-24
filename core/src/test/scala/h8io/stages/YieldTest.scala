@@ -163,4 +163,15 @@ class YieldTest
           yld.evolve() should be theSameInstanceAs stage
       }
     }
+
+  "outOption method" should "return None for None Yield" in {
+    Yield.None[Instant, LocalDateTime, Long](Status.Success, mock[Evolution[Instant, LocalDateTime, Long]]("evolution"))
+      .outOption shouldBe None
+  }
+
+  it should "return Some(out) for Some Yield" in {
+    val out = mock[AnyRef]
+    Yield.Some(out, Status.Success, mock[Evolution[Instant, LocalDateTime, Long]]("evolution")).outOption shouldBe
+      Some(out)
+  }
 }
