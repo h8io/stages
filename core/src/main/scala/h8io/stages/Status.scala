@@ -132,6 +132,8 @@ object Status {
     override def isEmpty: Boolean = false
 
     override def map[_E](f: E => _E): Error[_E] = Error(f(head), tail.map(f))
+
+    override def toString: String = mkString(getClass.getSimpleName + "(", ", ", ")")
   }
 
   /** Factory methods for [[Error]]. */
