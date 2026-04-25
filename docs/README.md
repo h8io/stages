@@ -1,6 +1,6 @@
 # Stages
 
-`stages` is an experimental Scala library for building pipelines out of steps that can evolve as they run.
+`stages` is a Scala library for building pipelines out of composable, reusable steps.
 
 To install the package:
 
@@ -8,66 +8,59 @@ To install the package:
 libraryDependencies += "io.h8" % "stages" % "@VERSION@"
 ```
 
-## Why
+## Background
 
-In many real computations, producing the next value is not enough. You also need to express:
+The library grew out of experience with Apache Spark. Spark applications tend to start clean and grow messy:
+logic spreads across functions, configuration leaks into transformations, and reuse becomes difficult.
 
-- that processing succeeded;
-- that the work completed normally, without failure;
-- that something went wrong;
-- that the next step should now behave differently.
+What was missing was a way to express a pipeline as a readable, declarative structure — something a domain expert
+could follow and adjust without needing to understand the underlying Scala.
 
-This is especially useful for stateful computations, iterative algorithms, streaming-like workflows, decorators, and
-other scenarios where not only the result matters, but also the future of the computation.
+`stages` is an attempt to provide exactly that.
 
-## How to think about it
+## What it looks like
 
-The easiest way to think about a `Stage` is as a computation step that can evolve in response to what happened.
+A pipeline built with `stages` can look like this:
 
-After each call, it returns not just a result, but a richer answer:
+```scala
+InitSpark ~>
+  From("users") ~>
+  Where("created_at > current_timestamp() - INTERVAL 1 DAY") ~>
+  Select("id", "name") ~>
+  Save("users", format = "csv")
+```
 
-- possibly a new value;
-- an execution status;
-- a description of how the pipeline should evolve next.
+This is not pseudocode. It is real Scala, and it is meant to read as naturally as a description of what the pipeline does.
 
-Because of that, `stages` is not only about transforming data, but also about composing behavior.
+## How it works
 
-## What this gives you
+The core abstraction is a `Stage`: a computation step that does not just transform a value, but also reports what
+happened and describes how the pipeline should evolve next.
 
-This approach lets you model things explicitly that are often scattered across surrounding code in ordinary pipelines:
+This is what makes composition possible: each step can continue, complete, or signal that the next step should
+behave differently — without any of that logic leaking into the surrounding code.
 
-- normal completion without failure;
-- continuing after partial success;
-- repeating a step while it still makes sense;
-- evolving after each call in response to what happened;
-- building stateful pipelines in a direct way.
+## Division of labor
 
-As a result, pipeline behavior becomes part of the model rather than an accidental side effect of external control flow.
+`stages` is designed with two audiences in mind.
 
-## The basic intuition
+**Developers** implement the building blocks: individual `Stage` components with full access to the language and
+libraries. They define what each step does, how it handles errors, and how it passes state forward.
 
-In the shortest possible form:
+**Domain experts** compose pipelines from those components. The DSL is designed to be readable and writable even
+for people who are not fluent in Scala — the structure speaks for itself.
 
-- an ordinary function answers "what should I do with this value?";
-- a `Stage` answers "what happened now, and how should the pipeline evolve next?".
+This separation keeps pipelines clean and makes them easier to review, adjust, and hand off.
 
-That idea sits at the center of `stages`.
+## Where it fits
 
-The `examples` module contains illustrative examples. They may be far from real-world usage, but they are meant to make
-the core ideas easier to grasp.
+`stages` is designed for applications where the orchestration overhead is negligible compared to the work being
+done — frameworks like Spark or Flink are a natural fit. For lightweight, performance-sensitive tasks, the
+Stage lifecycle may introduce unnecessary object allocation, and a simpler approach is likely more appropriate.
 
-## Who this may be for
-
-`stages` may be interesting if you like:
-
-- functional style;
-- declarative pipelines;
-- stateful computation;
-- explicit semantics for continuation, completion, and failure.
-
-If the idea of composable stateful pipelines in Scala appeals to you, `stages` may already be interesting at the level
-of the model itself.
+The priority is developer ergonomics: ease of composition, clarity of intent, and readability of the result.
 
 ## Project status
 
-The project is still in the design stage, and its core abstractions are being refined.
+The core abstractions are still being refined. The `examples` module contains illustrative examples meant to
+make the ideas easier to grasp.

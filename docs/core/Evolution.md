@@ -75,6 +75,51 @@ Two situations guarantee `dispose()` will be called:
 
 Implementations that hold no external resources may leave `dispose()` as a no-op.
 
+A stage that acquires a resource at construction time can release it in `dispose()`:
+
+```scala mdoc
+class ResourceStage(name: String) extends Stage[String, String, Nothing] {
+  private var open = true
+  println(s"[$name] acquired")
+
+  private val evolution = new Evolution[String, String, Nothing] {
+    override def onSuccess(): Stage[String, String, Nothing]  = ResourceStage.this
+    override def onComplete(): Stage[String, String, Nothing] = ResourceStage.this
+    override def onError(): Stage[String, String, Nothing]    = ResourceStage.this
+    override def dispose(): Unit = {
+      open = false
+      println(s"[$name] released")
+    }
+  }
+
+  override def apply(in: String): Yield[String, String, Nothing] = {
+    require(open, s"[$name] already disposed")
+    Yield.Some(s"[$name]($in)", Status.Success, evolution)
+  }
+
+  override def skip(): Evolution[String, String, Nothing] = evolution
+}
+```
+
+`Stage.execute()` triggers `dispose()` automatically after the stage runs:
+
+```scala mdoc
+new ResourceStage("conn").execute("hello")
+```
+
+When multiple stages are composed into a pipeline, all `Evolution` methods — `onSuccess()`, `onComplete()`,
+`onError()`, and `dispose()` — are called in the order opposite to the order in which stages are applied:
+downstream first, then upstream.
+This applies to `dispose()` for the obvious reason, but equally to the branch methods, since they too may
+release or transition resources.
+This ensures that a downstream stage can still access anything the upstream stage provides right up
+until the moment the upstream stage is torn down:
+
+```scala mdoc
+val pipeline = new ResourceStage("upstream") ~> new ResourceStage("downstream")
+pipeline.execute("hello")
+```
+
 ## Composing Evolutions
 
 When `Stage.AndThen` composes two stages via `~>`, it also composes their `Evolution` values using `compose`.
@@ -87,10 +132,10 @@ composed.onComplete() ==  self.onComplete() ~>  that.onComplete()
 composed.onError()    ==  self.onError()    ~>  that.onError()
 ```
 
-The disposal order in `Evolution.AndThen` is pipeline-downstream first, then pipeline-upstream — the reverse of the
-order in which stages are applied.  
-This ordering is important: a downstream stage may depend on state or resources set up by the upstream stage, so it
-must be finalized before the upstream stage is torn down.  
+All `Evolution` method calls in `Evolution.AndThen` follow the same order: pipeline-downstream first, then
+pipeline-upstream — the reverse of the order in which stages are applied.
+This applies equally to `onSuccess()`, `onComplete()`, `onError()`, and `dispose()`, since all of them may
+release or transition resources held by the producing stage.  
 The [Diagram](Diagram.md) section on finalization walks through a concrete example of why this matters.
 
 `compose` is an implementation detail of `Stage.AndThen` and is not part of the typical application-level API.
