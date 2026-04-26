@@ -87,6 +87,11 @@ class StatusTest
       }
     }
 
+  it should "render as 'Error(...)' with comma-separated values" in
+    forAll { (error: Status.Error[String]) =>
+      error.toString shouldBe error.mkString("Error(", ", ", ")")
+    }
+
   "Error.apply" should "create an Error status from a single error" in {
     val error = mock[AnyRef]
     Status.Error(error) shouldBe Status.Error(error, Nil)
