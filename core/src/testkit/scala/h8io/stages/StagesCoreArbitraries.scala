@@ -17,26 +17,28 @@ import org.scalacheck.{Arbitrary, Gen}
   */
 trait StagesCoreArbitraries {
 
-  /** Generates an arbitrary `Status.Error` value whose head and tail are drawn from the implicit `Arbitrary[E]`
+  /** Generates an arbitrary `Status.Complete` value with at least one error drawn from the implicit `Arbitrary[E]`
     * instance.
     *
     * @tparam E
     *   the error type; requires an implicit `Arbitrary[E]`
     */
-  implicit def arbStatusError[E: Arbitrary]: Arbitrary[Status.Error[E]] =
+  implicit def arbStatusComplete[E: Arbitrary]: Arbitrary[Status.Complete[E]] =
     Arbitrary(
-      Gen.zip(Arbitrary.arbitrary[E], Arbitrary.arbitrary[List[E]]).map { case (head, tail) =>
-        Status.Error(head, tail)
-      })
+      Gen.nonEmptyListOf(Arbitrary.arbitrary[E]).map(errors => Status.Complete(errors)))
 
-  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.Complete`, or a generated
-    * `Status.Error`.
+  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.complete`, or a generated
+    * `Status.Complete` with non-empty errors.
     *
     * @tparam E
     *   the error type; requires an implicit `Arbitrary[E]`
     */
   implicit def arbStatus[E: Arbitrary]: Arbitrary[Status[E]] =
-    Arbitrary(Gen.oneOf(Gen.const(Status.Success: Status[E]), Gen.const(Status.Complete), arbStatusError[E].arbitrary))
+    Arbitrary(
+      Gen.oneOf(
+        Gen.const(Status.Success: Status[E]),
+        Gen.const(Status.SuccessfulComplete: Status[E]),
+        arbStatusComplete[E].arbitrary))
 
   /** A function type that constructs a `Yield.Some` given a `Status` and an `Evolution`.
     *

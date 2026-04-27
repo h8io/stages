@@ -4,6 +4,8 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.TestSuite
 import org.scalatest.matchers.should.Matchers
 
+import scala.annotation.nowarn
+
 /** Test utilities for specs that exercise the core `stages` abstractions.
   *
   * Mix this trait into a ScalaTest suite (alongside `MockFactory` and `Matchers`, which are already extended here) to
@@ -11,11 +13,11 @@ import org.scalatest.matchers.should.Matchers
   *
   * {{{
   * class MySpec extends AnyFunSuite with StagesCoreTestUtil {
-  *   test("evolution selects onSuccess when status is Success") {
+  *   test("evolution selects stage by status") {
   *     val evo   = mock[Evolution[String, Int, String]]
   *     val stage = mock[Stage[String, Int, String]]
   *     evolutionMock(evo, Status.Success, stage)
-  *     // ... invoke code under test that calls evo.onSuccess() ...
+  *     // ... invoke code under test that calls evo(Status.Success) ...
   *   }
   * }
   * }}}
@@ -23,20 +25,15 @@ import org.scalatest.matchers.should.Matchers
 trait StagesCoreTestUtil extends MockFactory with Matchers {
   self: TestSuite =>
 
-  /** Sets up a ScalaMock expectation on `evolution` so that the branch corresponding to `status` is expected to be
-    * called exactly once and will return `stage`.
-    *
-    * The mapping between status and branch is:
-    *   - `Status.Success` → `evolution.onSuccess()`
-    *   - `Status.Complete` → `evolution.onComplete()`
-    *   - `Status.Error` → `evolution.onError()`
+  /** Sets up a ScalaMock expectation on `evolution` so that `apply(status)` is expected to be called exactly once and
+    * will return `stage`.
     *
     * @param evolution
     *   the mock `Evolution` on which the expectation is registered
     * @param status
-    *   the `Status` that determines which branch to expect
+    *   the `Status` that the expectation matches
     * @param stage
-    *   the `Stage` that the expected branch should return
+    *   the `Stage` that the expected call should return
     * @tparam I
     *   the stage input type
     * @tparam O
@@ -45,27 +42,21 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
     *   the error type
     */
   def evolutionMock[I, O, E](evolution: Evolution[I, O, E], status: Status[E], stage: Stage[I, O, E]): Unit =
-    status match {
-      case Status.Success => (evolution.onSuccess _).expects().returns(stage)
-      case Status.Complete => (evolution.onComplete _).expects().returns(stage)
-      case _: Status.Error[E] => (evolution.onError _).expects().returns(stage)
-    }
+    (evolution.apply(_: Status[E])).expects(status).returns(stage)
 
-  /** Asserts that `evolution` correctly composes `leftEvolution` and `rightEvolution` for all three status branches.
+  /** Asserts that `evolution` correctly composes `leftEvolution` and `rightEvolution` for all status values.
     *
-    * For each branch (`onSuccess`, `onComplete`, `onError`) the helper:
-    *   1. Registers ScalaMock expectations on both `leftEvolution` and `rightEvolution`.
-    *   1. Calls the corresponding branch on `evolution`.
-    *   1. Asserts the returned stage equals `compose(leftStage, rightStage)`.
+    * Tests `apply(Status.Success)` and `apply(Status.complete)`, verifying that each result equals
+    * `compose(leftStage, rightStage)` where each sub-evolution is called with the same status.
     *
-    * All six branch calls are ordered with `inSequence` to ensure deterministic expectation matching.
+    * All calls are ordered with `inSequence` to ensure deterministic expectation matching.
     *
     * @param composition
     *   the composed evolution under test
     * @param leftEvolution
-    *   the mock left evolution whose branches supply the left continuation stages
+    *   the mock left evolution whose continuations supply the left continuation stages
     * @param rightEvolution
-    *   the mock right evolution whose branches supply the right continuation stages
+    *   the mock right evolution whose continuations supply the right continuation stages
     * @param compose
     *   the function that reconstructs the expected composed stage from its two halves
     * @tparam LI
@@ -89,36 +80,28 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       rightEvolution: Evolution[RI, RO, E],
       compose: (Stage[LI, LO, E], Stage[RI, RO, E]) => Stage[I, O, E]): Unit =
     inSequence {
-      val onSuccessLeftStage = mock[Stage[LI, LO, E]]
-      val onSuccessRightStage = mock[Stage[RI, RO, E]]
-      (rightEvolution.onSuccess _).expects().returns(onSuccessRightStage)
-      (leftEvolution.onSuccess _).expects().returns(onSuccessLeftStage)
-      composition.onSuccess() shouldBe compose(onSuccessLeftStage, onSuccessRightStage)
+      val successLeftStage = mock[Stage[LI, LO, E]]
+      val successRightStage = mock[Stage[RI, RO, E]]
+      (rightEvolution.apply _).expects(Status.Success).returns(successRightStage)
+      (leftEvolution.apply _).expects(Status.Success).returns(successLeftStage)
+      composition(Status.Success) shouldBe compose(successLeftStage, successRightStage)
 
-      val onCompleteLeftStage = mock[Stage[LI, LO, E]]
-      val onCompleteRightStage = mock[Stage[RI, RO, E]]
-      (rightEvolution.onComplete _).expects().returns(onCompleteRightStage)
-      (leftEvolution.onComplete _).expects().returns(onCompleteLeftStage)
-      composition.onComplete() shouldBe compose(onCompleteLeftStage, onCompleteRightStage)
-
-      val onErrorLeftStage = mock[Stage[LI, LO, E]]
-      val onErrorRightStage = mock[Stage[RI, RO, E]]
-      (rightEvolution.onError _).expects().returns(onErrorRightStage)
-      (leftEvolution.onError _).expects().returns(onErrorLeftStage)
-      composition.onError() shouldBe compose(onErrorLeftStage, onErrorRightStage)
+      val completeLeftStage = mock[Stage[LI, LO, E]]
+      val completeRightStage = mock[Stage[RI, RO, E]]
+      val error = mockComplete()
+      (rightEvolution.apply _).expects(error).returns(completeRightStage)
+      (leftEvolution.apply _).expects(error).returns(completeLeftStage)
+      composition(error) shouldBe compose(completeLeftStage, completeRightStage)
 
       (rightEvolution.dispose _).expects()
       (leftEvolution.dispose _).expects()
       noException should be thrownBy composition.dispose()
     }
 
-  /** Asserts that `altered` correctly maps every branch of `evolution` through `f`, and that disposal delegates.
+  /** Asserts that `altered` correctly maps every continuation of `evolution` through `f`, and that disposal delegates.
     *
-    * For each branch (`onSuccess`, `onComplete`, `onError`) the helper:
-    *   1. Creates a mock `Stage` and registers an expectation that the corresponding method on `evolution` will be
-    *      called once and return it.
-    *   1. Calls the matching method on `altered`.
-    *   1. Asserts the result equals `f(mockStage)`.
+    * Tests `apply(Status.Success)` and `apply(Status.complete)`, verifying that each result equals `f(mockStage)` where
+    * `mockStage` is the stage returned by the inner `evolution`.
     *
     * Also verifies that `altered.dispose()` delegates to `evolution.dispose()`.
     *
@@ -127,7 +110,7 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
     * @param evolution
     *   the mock inner evolution
     * @param f
-    *   the transformation expected to be applied to each branch's stage
+    *   the transformation expected to be applied to each continuation's stage
     * @tparam AI
     *   input type of the inner stages
     * @tparam AO
@@ -146,19 +129,21 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       evolution: Evolution[AI, AO, AE],
       f: Stage[AI, AO, AE] => Stage[I, O, E]): Unit =
     inSequence {
-      val onSuccessStage = mock[Stage[AI, AO, AE]]
-      (evolution.onSuccess _).expects().returns(onSuccessStage)
-      altered.onSuccess() shouldBe f(onSuccessStage)
+      val successStage = mock[Stage[AI, AO, AE]]
+      (evolution.apply(_: Status[AE])).expects(Status.Success).returns(successStage)
+      altered(Status.Success) shouldBe f(successStage)
 
-      val onCompleteStage = mock[Stage[AI, AO, AE]]
-      (evolution.onComplete _).expects().returns(onCompleteStage)
-      altered.onComplete() shouldBe f(onCompleteStage)
-
-      val onErrorStage = mock[Stage[AI, AO, AE]]
-      (evolution.onError _).expects().returns(onErrorStage)
-      altered.onError() shouldBe f(onErrorStage)
+      val completeStage = mock[Stage[AI, AO, AE]]
+      val complete = mockComplete()
+      (evolution.apply _).expects(complete).returns(completeStage)
+      altered(complete) shouldBe f(completeStage)
 
       (evolution.dispose _).expects()
       noException should be thrownBy altered.dispose()
     }
+
+  // Intentionally mocked Seq: the test must fail if any Seq method is touched.
+  // ScalaMock emits a Scala 2.13 deprecation warning for Iterable.stringPrefix.
+  def mockComplete(): Status.Complete[?] =
+    Status.Complete(mock[Seq[AnyRef]]: @nowarn("cat=deprecation&msg=.*stringPrefix.*"))
 }

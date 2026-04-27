@@ -103,7 +103,7 @@ class StageTest
               evolutionMock(downstreamEvolution, status, updatedDownstreamStage)
               evolutionMock(upstreamEvolution, status, updatedUpstreamStage)
             }
-            status(evolution) shouldBe Stage.AndThen(updatedUpstreamStage, updatedDownstreamStage)
+            evolution(status) shouldBe Stage.AndThen(updatedUpstreamStage, updatedDownstreamStage)
         }
     }
 
@@ -125,7 +125,7 @@ class StageTest
           evolutionMock(downstreamEvolution, status, updatedDownstreamStage)
           evolutionMock(upstreamEvolution, status, updatedUpstreamStage)
         }
-        status(evolution) shouldBe Stage.AndThen(updatedUpstreamStage, updatedDownstreamStage)
+        evolution(status) shouldBe Stage.AndThen(updatedUpstreamStage, updatedDownstreamStage)
       }
     }
 
@@ -144,7 +144,7 @@ class StageTest
         evolutionMock(downstreamEvolution, upstreamStatus, evolvedDownstreamStage)
         val evolvedUpstreamStage = mock[Stage[Int, String, String]]
         evolutionMock(upstreamEvolution, upstreamStatus, evolvedUpstreamStage)
-        upstreamStatus(evolution) shouldBe evolvedUpstreamStage ~> evolvedDownstreamStage
+        evolution(upstreamStatus) shouldBe evolvedUpstreamStage ~> evolvedDownstreamStage
       }
     }
 

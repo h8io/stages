@@ -76,21 +76,16 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
 
     val onSuccessStage = mock[Stage[Long, Instant, UUID]]
     val onSuccessMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
-    (evolution.onSuccess _).expects().returns(onSuccessStage)
+    (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
     (f.apply _).expects(onSuccessStage).returns(onSuccessMappedStage)
-    mapped.onSuccess() shouldBe onSuccessMappedStage
+    mapped.apply(Status.Success) shouldBe onSuccessMappedStage
 
     val onCompleteStage = mock[Stage[Long, Instant, UUID]]
     val onCompleteMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
-    (evolution.onComplete _).expects().returns(onCompleteStage)
+    val complete = mockComplete()
+    (evolution.apply _).expects(complete).returns(onCompleteStage)
     (f.apply _).expects(onCompleteStage).returns(onCompleteMappedStage)
-    mapped.onComplete() shouldBe onCompleteMappedStage
-
-    val onErrorStage = mock[Stage[Long, Instant, UUID]]
-    val onErrorMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
-    (evolution.onError _).expects().returns(onErrorStage)
-    (f.apply _).expects(onErrorStage).returns(onErrorMappedStage)
-    mapped.onError() shouldBe onErrorMappedStage
+    mapped.apply(complete) shouldBe onCompleteMappedStage
 
     (evolution.dispose _).expects()
     noException should be thrownBy mapped.dispose()

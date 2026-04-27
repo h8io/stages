@@ -57,12 +57,12 @@ sealed trait Yield[-I, +O, +E] {
   /** Returns the next [[Stage]] to invoke when the pipeline is ready to re-process.
     *
     * The stage returned depends on the current [[status]]: [[Status.Success]] yields the continuation for the normal
-    * path, [[Status.Complete]] for the finished path, and [[Status.Error]] for the error path.
+    * path, [[Status.Complete]] for the finished path.
     *
     * @return
     *   the next `Stage` to use for re-processing
     */
-  def evolve(): Stage[I, O, E] = status(evolution)
+  def evolve(): Stage[I, O, E] = evolution(status)
 }
 
 /** Companion object containing the two concrete variants of [[Yield]]. */
