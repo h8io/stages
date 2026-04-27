@@ -5,8 +5,8 @@ package h8io.stages
   * Unlike [[Yield]], an `Outcome` does not carry an [[Evolution]]; it is the terminal value returned to the caller
   * after the pipeline has finished processing a single input. The [[Status]] indicates whether execution succeeded
   * ([[Status.Success]]) or completed ([[Status.Complete]]), with or without accumulated errors. If disposing the
-  * evolution fails, the exception is recorded in
-  * [[Outcome.disposeFailure]] without preventing the outcome from being returned.
+  * evolution fails, the exception is recorded in [[Outcome.disposeFailure]] without preventing the outcome from being
+  * returned.
   *
   * @tparam O
   *   the output type (covariant)
