@@ -46,8 +46,8 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
 
   /** Asserts that `evolution` correctly composes `leftEvolution` and `rightEvolution` for all status values.
     *
-    * Tests `apply(Status.Success)` and `apply(Status.complete)`, verifying that each result equals
-    * `compose(leftStage, rightStage)` where each sub-evolution is called with the same status.
+    * Tests `apply(Status.Success)` and `apply` with a `Status.Complete` value (via [[mockComplete]]), verifying
+    * that each result equals `compose(leftStage, rightStage)` where each sub-evolution is called with the same status.
     *
     * All calls are ordered with `inSequence` to ensure deterministic expectation matching.
     *
@@ -100,8 +100,8 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
 
   /** Asserts that `altered` correctly maps every continuation of `evolution` through `f`, and that disposal delegates.
     *
-    * Tests `apply(Status.Success)` and `apply(Status.complete)`, verifying that each result equals `f(mockStage)` where
-    * `mockStage` is the stage returned by the inner `evolution`.
+    * Tests `apply(Status.Success)` and `apply` with a `Status.Complete` value (via [[mockComplete]]), verifying
+    * that each result equals `f(mockStage)` where `mockStage` is the stage returned by the inner `evolution`.
     *
     * Also verifies that `altered.dispose()` delegates to `evolution.dispose()`.
     *
@@ -142,8 +142,11 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       noException should be thrownBy altered.dispose()
     }
 
-  // Intentionally mocked Seq: the test must fail if any Seq method is touched.
-  // ScalaMock emits a Scala 2.13 deprecation warning for Iterable.stringPrefix.
+  /** Creates a `Status.Complete` whose `errors` sequence is a ScalaMock mock.
+    *
+    * Used in tests to produce a `Complete` value that can be matched by exact reference in mock expectations, without
+    * constructing real error values.
+    */
   def mockComplete(): Status.Complete[?] =
     Status.Complete(mock[Seq[AnyRef]]: @nowarn("cat=deprecation&msg=.*stringPrefix.*"))
 }

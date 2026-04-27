@@ -8,7 +8,7 @@ import org.scalacheck.{Arbitrary, Gen}
   * property-based tests.
   *
   * The trait provides generators for:
-  *   - `Status` and `Status.Error`
+  *   - `Status` and `Status.Complete`
   *   - Functions that produce `Yield.Some`, `Yield.None`, or either `Yield` variant, parameterised by `Status` and/or
   *     `Evolution`.
   *
@@ -27,8 +27,8 @@ trait StagesCoreArbitraries {
     Arbitrary(
       Gen.nonEmptyListOf(Arbitrary.arbitrary[E]).map(errors => Status.Complete(errors)))
 
-  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.complete`, or a generated
-    * `Status.Complete` with non-empty errors.
+  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.complete`, or a
+    * generated `Status.Complete` with non-empty errors.
     *
     * @tparam E
     *   the error type; requires an implicit `Arbitrary[E]`
@@ -37,7 +37,7 @@ trait StagesCoreArbitraries {
     Arbitrary(
       Gen.oneOf(
         Gen.const(Status.Success: Status[E]),
-        Gen.const(Status.SuccessfulComplete: Status[E]),
+        Gen.const(Status.complete: Status[E]),
         arbStatusComplete[E].arbitrary))
 
   /** A function type that constructs a `Yield.Some` given a `Status` and an `Evolution`.

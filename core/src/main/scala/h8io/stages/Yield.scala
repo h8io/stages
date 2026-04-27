@@ -143,7 +143,7 @@ object Yield {
 
     override def outOption: Option[O] = scala.None
 
-    /** Composes this `None` with `downstream` by threading it through all branches of the evolution.
+    /** Composes this `None` with `downstream` by composing it into the evolution.
       *
       * Because no output was produced, `downstream` cannot be applied immediately; instead it becomes part of the
       * evolution so that the entire composed stage is invoked when the pipeline resumes.

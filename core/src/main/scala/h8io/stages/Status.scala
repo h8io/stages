@@ -86,7 +86,14 @@ object Status {
   }
 
   /** A [[Complete]] with no errors, representing clean pipeline termination. */
-  val SuccessfulComplete: Complete[Nothing] = Complete(Nil)
+  val complete: Complete[Nothing] = Complete(Nil)
 
-  def Error[E](head: E, tail: E*): Complete[E] = Complete(head +: tail)
+  /** Creates a [[Complete]] status from one or more error values.
+    *
+    * @param head
+    *   the first (required) error value
+    * @param tail
+    *   any additional error values
+    */
+  def error[E](head: E, tail: E*): Complete[E] = Complete(head +: tail)
 }

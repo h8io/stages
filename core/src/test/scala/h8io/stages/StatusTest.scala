@@ -13,12 +13,12 @@ class StatusTest
     extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with StagesCoreArbitraries {
   "Success" should "be idempotent" in { Status.Success.combine(Status.Success) shouldBe Status.Success }
 
-  "SucessfulComplete" should "be idempotent" in {
-    Status.SuccessfulComplete.combine(Status.SuccessfulComplete) shouldBe Status.SuccessfulComplete
+  "complete" should "be idempotent" in {
+    Status.complete.combine(Status.complete) shouldBe Status.complete
   }
 
   it should "be overridden by Complete with errors" in
-    forAll((c: Status.Complete[String]) => Status.SuccessfulComplete.combine(c) shouldBe c)
+    forAll((c: Status.Complete[String]) => Status.complete.combine(c) shouldBe c)
 
   "Complete with errors" should "keep the order of causes in composition" in
     forAll { (previous: Status.Complete[String], next: Status.Complete[String]) =>
@@ -26,7 +26,7 @@ class StatusTest
     }
 
   it should "override complete" in
-    forAll((c: Status.Complete[String]) => c.combine(Status.SuccessfulComplete) shouldBe c)
+    forAll((c: Status.Complete[String]) => c.combine(Status.complete) shouldBe c)
 
   it should "not be empty" in
     forAll { (c: Status.Complete[Exception]) =>
@@ -41,7 +41,7 @@ class StatusTest
   }
 
   it should "not change the complete status" in {
-    Status.SuccessfulComplete.map(mock[Throwable => String]) shouldBe Status.SuccessfulComplete
+    Status.complete.map(mock[Throwable => String]) shouldBe Status.complete
   }
 
   it should "transform error values in Complete" in
@@ -66,6 +66,6 @@ class StatusTest
 
   "Complete.apply" should "create a Complete status from a sequence of errors" in {
     val error = mock[AnyRef]
-    Status.Complete(Seq(error)) shouldBe Status.Complete(Seq(error))
+    Status.Complete(Seq(error)).errors shouldBe Seq(error)
   }
 }
