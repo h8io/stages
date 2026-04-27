@@ -4,9 +4,9 @@
 
 Unlike a [`Yield`](Yield.md), an `Outcome` carries no [`Evolution`](Evolution.md). It is the value given to the
 caller once the pipeline has finished processing a single input and all resources have been released. The
-[`Status`](Status.md) inside tells whether execution succeeded, completed, or produced errors. If the `Evolution`
-disposal threw an exception, that is recorded in `disposeFailure` without preventing the outcome from being
-returned.
+[`Status`](Status.md) inside indicates whether execution succeeded (`Status.Success`) or completed
+(`Status.Complete`), with or without accumulated errors. If the `Evolution` disposal threw an exception, that is
+recorded in `disposeFailure` without preventing the outcome from being returned.
 
 ## Outcome.Some and Outcome.None
 
@@ -19,9 +19,7 @@ import h8io.stages.*
 
 object Double extends Stage[Int, Int, Nothing] {
   private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def onSuccess(): Stage[Int, Int, Nothing] = ???
-    override def onComplete(): Stage[Int, Int, Nothing] = ???
-    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 
@@ -40,14 +38,12 @@ output for the given input:
 ```scala mdoc
 object Drop extends Stage[Int, String, String] {
   private def stub: Evolution[Int, String, String] = new Evolution[Int, String, String] {
-    override def onSuccess(): Stage[Int, String, String] = ???
-    override def onComplete(): Stage[Int, String, String] = ???
-    override def onError(): Stage[Int, String, String] = ???
+    override def apply(status: Status[?]): Stage[Int, String, String] = ???
     override def dispose(): Unit = ()
   }
 
   override def apply(in: Int): Yield[Int, String, String] =
-    Yield.None(Status.Error(s"dropped $in"), stub)
+    Yield.None(Status.error(s"dropped $in"), stub)
 
   override def skip(): Evolution[Int, String, String] = stub
 }
@@ -71,16 +67,12 @@ object LeakyDispose extends Stage[Int, Int, Nothing] {
       in * 2,
       Status.Success,
       new Evolution[Int, Int, Nothing] {
-        override def onSuccess(): Stage[Int, Int, Nothing] = ???
-        override def onComplete(): Stage[Int, Int, Nothing] = ???
-        override def onError(): Stage[Int, Int, Nothing] = ???
+        override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
         override def dispose(): Unit = throw new RuntimeException("cleanup failed")
       })
 
   override def skip(): Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def onSuccess(): Stage[Int, Int, Nothing] = ???
-    override def onComplete(): Stage[Int, Int, Nothing] = ???
-    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 }

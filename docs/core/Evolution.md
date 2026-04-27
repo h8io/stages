@@ -3,8 +3,7 @@
 `Evolution` is the strategy that decides which [`Stage`](Stage.md) to use when the pipeline is ready to process the
 next input.  
 Every [`Yield`](Yield.md) carries an `Evolution`, and when the pipeline has finished with one input it calls
-`evolve()` on that `Yield`, which in turn selects the appropriate branch from the `Evolution` based on the
-[`Status`](Status.md).
+`evolve()` on that `Yield`, which in turn calls the `Evolution` with the current [`Status`](Status.md).
 
 Three ideas make `Evolution` work:
 
@@ -16,28 +15,24 @@ Three ideas make `Evolution` work:
 import h8io.stages.*
 ```
 
-## The Three Status Branches
+## Selecting the Next Stage
 
-`onSuccess()`, `onComplete()`, and `onError()` each return the next `Stage` for the corresponding
-[`Status`](Status.md) value.  
-They are not called by application code directly; `Yield.evolve()` dispatches to the right branch based on the
-status carried by the `Yield`.
+`apply(status)` returns the next `Stage` based on the given status.  
+It is not called by application code directly; `Yield.evolve()` passes the `Yield`'s own status to it automatically.
 
-A stage that does not change between generations can return itself from every branch:
+A stage that does not change between generations can return itself regardless of the status:
 
 ```scala mdoc
 object ParseInt extends Stage[String, Int, String] {
   private val alwaysSelf = new Evolution[String, Int, String] {
-    override def onSuccess(): Stage[String, Int, String] = ParseInt
-    override def onComplete(): Stage[String, Int, String] = ParseInt
-    override def onError(): Stage[String, Int, String] = ParseInt
+    override def apply(status: Status[?]): Stage[String, Int, String] = ParseInt
     override def dispose(): Unit = ()
   }
 
   override def apply(in: String): Yield[String, Int, String] =
     in.toIntOption match {
       case Some(n) => Yield.Some(n, Status.Success, alwaysSelf)
-      case None    => Yield.None(Status.Error(s"not a number: $in"), alwaysSelf)
+      case None    => Yield.None(Status.error(s"not a number: $in"), alwaysSelf)
     }
 
   override def skip(): Evolution[String, Int, String] = alwaysSelf
@@ -47,16 +42,11 @@ val okResult  = ParseInt("42")
 val errResult = ParseInt("hi")
 ```
 
-Because `okResult` has status `Success`, `evolve()` calls `onSuccess()` and returns `ParseInt` again:
+Calling `evolve()` on either result returns `ParseInt` again, since this stage always supplies itself as the
+continuation:
 
 ```scala mdoc
 okResult.evolve()
-```
-
-Because `errResult` has status `Error`, `evolve()` calls `onError()` — also `ParseInt` here, since this stage
-always returns the same next stage regardless of what happened:
-
-```scala mdoc
 errResult.evolve()
 ```
 
@@ -70,8 +60,8 @@ Two situations guarantee `dispose()` will be called:
 
 - `Stage.execute()` calls it immediately after the stage runs, since `execute` is a terminal operation and the
   continuation will never be needed.
-- If a status branch method throws a `Throwable`, the caller is still required to call `dispose()` so that nothing
-  is leaked even when evolution itself fails.
+- If `apply` throws a `Throwable`, the caller is still required to call `dispose()` so that nothing is leaked even
+  when evolution itself fails.
 
 Implementations that hold no external resources may leave `dispose()` as a no-op.
 
@@ -83,9 +73,7 @@ class ResourceStage(name: String) extends Stage[String, String, Nothing] {
   println(s"[$name] acquired")
 
   private val evolution = new Evolution[String, String, Nothing] {
-    override def onSuccess(): Stage[String, String, Nothing]  = ResourceStage.this
-    override def onComplete(): Stage[String, String, Nothing] = ResourceStage.this
-    override def onError(): Stage[String, String, Nothing]    = ResourceStage.this
+    override def apply(status: Status[?]): Stage[String, String, Nothing] = ResourceStage.this
     override def dispose(): Unit = {
       open = false
       println(s"[$name] released")
@@ -107,13 +95,10 @@ class ResourceStage(name: String) extends Stage[String, String, Nothing] {
 new ResourceStage("conn").execute("hello")
 ```
 
-When multiple stages are composed into a pipeline, all `Evolution` methods — `onSuccess()`, `onComplete()`,
-`onError()`, and `dispose()` — are called in the order opposite to the order in which stages are applied:
-downstream first, then upstream.
-This applies to `dispose()` for the obvious reason, but equally to the branch methods, since they too may
-release or transition resources.
-This ensures that a downstream stage can still access anything the upstream stage provides right up
-until the moment the upstream stage is torn down:
+When multiple stages are composed into a pipeline, both `Evolution` methods — `apply` and `dispose()` — are called
+in the order opposite to the order in which stages are applied: downstream first, then upstream.
+This ensures that a downstream stage can still access anything the upstream stage provides right up until the moment
+the upstream stage is torn down:
 
 ```scala mdoc
 val pipeline = new ResourceStage("upstream") ~> new ResourceStage("downstream")
@@ -123,27 +108,25 @@ pipeline.execute("hello")
 ## Composing Evolutions
 
 When `Stage.AndThen` composes two stages via `~>`, it also composes their `Evolution` values using `compose`.
-The result is an `Evolution.AndThen` whose branches are the sequential compositions of the corresponding branches
-from both evolutions:
+The result is an `Evolution.AndThen` whose continuation for any status `s` is the sequential composition of the
+corresponding continuations of both evolutions:
 
 ```
-composed.onSuccess()  ==  self.onSuccess()  ~>  that.onSuccess()
-composed.onComplete() ==  self.onComplete() ~>  that.onComplete()
-composed.onError()    ==  self.onError()    ~>  that.onError()
+composed(s) == self(s) ~> that(s)
 ```
 
 All `Evolution` method calls in `Evolution.AndThen` follow the same order: pipeline-downstream first, then
 pipeline-upstream — the reverse of the order in which stages are applied.
-This applies equally to `onSuccess()`, `onComplete()`, `onError()`, and `dispose()`, since all of them may
-release or transition resources held by the producing stage.  
+This applies equally to `apply` and `dispose()`, since both may release or transition resources held by the
+producing stage.  
 The [Diagram](Diagram.md) section on finalization walks through a concrete example of why this matters.
 
 `compose` is an implementation detail of `Stage.AndThen` and is not part of the typical application-level API.
 
 ## Adapting Stages with map
 
-`map` produces a new `Evolution` whose branches are each transformed by a function applied to the stage the original
-branch would have returned.  
+`map` produces a new `Evolution` whose continuation is the result of applying a function to the stage the original
+evolution would have returned.  
 Disposal is delegated unchanged to the wrapped evolution.
 
 This is used internally when a `Yield.None` propagates through `Stage.AndThen`: because no output was produced,
