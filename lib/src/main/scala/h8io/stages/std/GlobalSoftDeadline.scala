@@ -1,7 +1,7 @@
 package h8io.stages.std
 
 import h8io.stages.*
-import h8io.stages.base.{BaseStage, Fruitful}
+import h8io.stages.base.{BaseStage, Fruitful, StageOps}
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
@@ -27,7 +27,7 @@ final class GlobalSoftDeadline[T] private (val now: () => Long, val duration: Lo
   private val ts: Long = now()
 
   override def apply(in: T): Yield.Some[T, T, Nothing] =
-    Yield.Some(in, if (now() - ts < duration) Status.Success else Status.Complete, this)
+    Yield.Some(in, if (now() - ts < duration) Status.Success else Status.complete, this.toEvolution)
 }
 
 /** Factory for [[GlobalSoftDeadline]] stages. */

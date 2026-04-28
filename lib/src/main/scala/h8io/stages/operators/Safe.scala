@@ -32,7 +32,7 @@ final case class Safe[-I, +O, +E](alterand: Stage[I, O, E])
     alterand(in).map(identity, _.map(Right(_)), _.map(Safe(_)))
 
   override def recover(in: I, e: Throwable): Yield[I, O, Either[Throwable, E]] =
-    Yield.None(Status.Error(Left(e)), this.toEvolution)
+    Yield.None(Status.error(Left(e)), this.toEvolution)
 
   override def skip(): Evolution[I, O, Either[Throwable, E]] = alterand.skip().map(Safe(_))
 }

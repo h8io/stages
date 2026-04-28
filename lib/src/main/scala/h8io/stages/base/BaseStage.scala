@@ -20,9 +20,8 @@ import h8io.stages.{Evolution, Stage}
   * @tparam E
   *   the error type (covariant)
   */
-trait BaseStage[-I, +O, +E] extends Stage[I, O, E] with BaseEvolution[I, O, E] {
-  override def skip(): Evolution[I, O, E] = this
-  override def dispose(): Unit = ()
+trait BaseStage[-I, +O, +E] extends Stage[I, O, E] {
+  override def skip(): Evolution[I, O, E] = ConstEvolution(this)
 }
 
 /** Companion object for [[BaseStage]]. */

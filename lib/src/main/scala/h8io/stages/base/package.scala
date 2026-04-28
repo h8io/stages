@@ -48,7 +48,9 @@ package object base {
       * Useful inside [[h8io.stages.operators.Loop]] and [[h8io.stages.operators.Repeat]] to produce the evolution
       * embedded in a `Yield` without mixing in [[BaseEvolution]].
       */
-    def toEvolution: Evolution[I, O, E] = ConstEvolution(stage)
+    @inline def toEvolution: Evolution[I, O, E] = ConstEvolution(stage)
+
+    @inline def toEvolution(dispose: () => Unit): ConstEvolution[I, O, E] = ConstEvolution(stage, dispose)
   }
 
   type BaseBinaryOperator[-I, +LO, +RO, +O, +E] = BinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, O, E]
@@ -61,21 +63,9 @@ package object base {
       protected def apply[_I <: I, _E >: E](leftStage: Stage[_I, LO, _E], rightStage: Stage[_I, RO, _E])
           : Stage[_I, O, _E]
 
-      override def onSuccess(): Stage[I, O, E] = {
-        val rightStage = right.onSuccess()
-        val leftStage = left.onSuccess()
-        apply(leftStage, rightStage)
-      }
-
-      override def onComplete(): Stage[I, O, E] = {
-        val rightStage = right.onComplete()
-        val leftStage = left.onComplete()
-        apply(leftStage, rightStage)
-      }
-
-      override def onError(): Stage[I, O, E] = {
-        val rightStage = right.onError()
-        val leftStage = left.onError()
+      override def apply(status: Status[?]): Stage[I, O, E] = {
+        val rightStage = right(status)
+        val leftStage = left(status)
         apply(leftStage, rightStage)
       }
 

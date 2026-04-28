@@ -31,7 +31,7 @@ trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with BaseStage[I, O, Nothing] {
     */
   def f(in: I): O
 
-  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this)
+  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this.toEvolution)
 }
 
 /** Companion object for [[Fn]]. */
