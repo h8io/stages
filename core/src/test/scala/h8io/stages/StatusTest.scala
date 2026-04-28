@@ -68,4 +68,14 @@ class StatusTest
     val error = mock[AnyRef]
     Status.Complete(Seq(error)).errors shouldBe Seq(error)
   }
+
+  "error" should "create a Complete from a single error" in {
+    val e = mock[AnyRef]
+    Status.error(e) shouldBe Status.Complete(Seq(e))
+  }
+
+  it should "preserve the order of all error values" in
+    forAll(Gen.nonEmptyListOf(Gen.uuid)) { errors =>
+      Status.error(errors.head, errors.tail*) shouldBe Status.Complete(errors)
+    }
 }
