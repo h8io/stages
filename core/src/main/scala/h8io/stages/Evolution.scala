@@ -94,7 +94,7 @@ object Evolution {
 
   type Any = Evolution[?, ?, ?]
 
-  /** An [[Evolution]] composed of two sequential evolutions, produced by [[Evolution#compose]].
+  /** An [[Evolution]] composed of two sequential evolutions.
     *
     * ==Parameter naming==
     *
@@ -103,7 +103,9 @@ object Evolution {
     *   - `downstream: Evolution[I, OI, E]` — holds the evolution of the pipeline's upstream stage (`I → OI`).
     *   - `upstream: Evolution[OI, O, E]` — holds the evolution of the pipeline's downstream stage (`OI → O`).
     *
-    * This inversion is a direct consequence of how [[Evolution.compose]] constructs the value:
+    * The inversion follows from how `<~` routes data: `upstream(s) <~ downstream(s)` feeds `downstream`'s stage first,
+    * so the `I → OI` evolution occupies `downstream` and `OI → O` occupies `upstream`. `compose` stores its receiver as
+    * `downstream` and its argument as `upstream`:
     * {{{
     *   pipelineUpstream.skip().compose(pipelineDownstream.skip())
     *   // == Evolution.AndThen(upstream = pipelineDownstream.skip(),
