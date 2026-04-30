@@ -67,7 +67,7 @@ val examples = (project in file("examples"))
     Compile / packageSrc / mappings := Nil,
     Compile / doc / skip := true
   )
-  .dependsOn(core, core % "test->testkit", lib, lib % "test->testkit")
+  .dependsOn(core, core % "test->testkit", lib)
 
 val root = (project in file("."))
   .settings(name := ProjectName)

@@ -1,7 +1,7 @@
 package h8io.stages.std
 
-import h8io.stages.Yield
-import h8io.stages.Status.Complete
+import h8io.stages.base.StageOps
+import h8io.stages.{Status, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -11,9 +11,6 @@ class DeadEndTest extends AnyFlatSpec with Matchers with MockFactory with ScalaC
   "DeadEnd" should "return None for any argument" in {
     val dispose = mock[() => Unit]
     val stage = DeadEnd(dispose)
-    stage.Yield shouldBe Yield.None(Complete, stage)
-    stage(mock[AnyRef]) shouldBe stage.Yield
-    (dispose.apply _).expects()
-    stage.dispose()
+    stage(mock[AnyRef]) shouldBe Yield.None(Status.complete, stage.toEvolution(dispose))
   }
 }

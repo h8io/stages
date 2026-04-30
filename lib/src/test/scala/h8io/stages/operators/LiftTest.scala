@@ -1,6 +1,5 @@
 package h8io.stages.operators
 
-import h8io.stages.base.StagesBaseTestUtil
 import h8io.stages.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -18,8 +17,7 @@ class LiftTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil
-    with StagesBaseTestUtil {
+    with StagesCoreTestUtil {
   "Lift" should "transform output of Yield.Some to Some" in
     forAll { (in: Int, yieldSupplier: EvolutionToYieldSome[Int, String, UUID]) =>
       val stage = mock[Stage[Int, String, UUID]]
@@ -27,7 +25,7 @@ class LiftTest
       val yld = yieldSupplier(evolution)
       (stage.apply _).expects(in).returns(yld)
       inside(Lift(stage)(in)) { case Yield.Some(Some(yld.out), yld.`status`, wrappedEvolution) =>
-        testWrappedEvolution(wrappedEvolution, evolution, Lift[Int, String, UUID])
+        testMappedEvolution(wrappedEvolution, evolution, Lift[Int, String, UUID])
       }
     }
 
@@ -38,7 +36,7 @@ class LiftTest
       val yld = yieldSupplier(evolution)
       (stage.apply _).expects(in).returns(yld)
       inside(Lift(stage)(in)) { case Yield.Some(None, yld.`status`, wrappedEvolution) =>
-        testWrappedEvolution(wrappedEvolution, evolution, Lift[Long, Instant, String])
+        testMappedEvolution(wrappedEvolution, evolution, Lift[Long, Instant, String])
       }
     }
 
@@ -46,6 +44,6 @@ class LiftTest
     val stage = mock[Stage[UUID, Long, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, Long, Exception]]("evolution")
     (stage.skip _).expects().returns(evolution)
-    testAlteredEvolution(Lift(stage).skip(), evolution, Lift[UUID, Long, Exception])
+    testMappedEvolution(Lift(stage).skip(), evolution, Lift[UUID, Long, Exception])
   }
 }

@@ -30,7 +30,7 @@ final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[
     @tailrec def repeat(stage: Stage[I, O, E]): Yield[I, O, E] = {
       val yld = stage(in)
       yld.status match {
-        case Status.Success => repeat(yld.evolution.apply(Status.Success))
+        case Status.Success => repeat(yld.evolution(Status.Success))
         case status: Status.Complete[?] =>
           yld.map(
             identity,

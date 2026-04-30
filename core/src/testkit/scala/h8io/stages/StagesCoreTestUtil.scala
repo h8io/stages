@@ -46,8 +46,8 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
 
   /** Asserts that `evolution` correctly composes `leftEvolution` and `rightEvolution` for all status values.
     *
-    * Tests `apply(Status.Success)` and `apply` with a `Status.Complete` value (via [[mockComplete]]), verifying
-    * that each result equals `compose(leftStage, rightStage)` where each sub-evolution is called with the same status.
+    * Tests `apply(Status.Success)` and `apply` with a `Status.Complete` value (via [[mockComplete]]), verifying that
+    * each result equals `compose(leftStage, rightStage)` where each sub-evolution is called with the same status.
     *
     * All calls are ordered with `inSequence` to ensure deterministic expectation matching.
     *
@@ -100,8 +100,8 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
 
   /** Asserts that `altered` correctly maps every continuation of `evolution` through `f`, and that disposal delegates.
     *
-    * Tests `apply(Status.Success)` and `apply` with a `Status.Complete` value (via [[mockComplete]]), verifying
-    * that each result equals `f(mockStage)` where `mockStage` is the stage returned by the inner `evolution`.
+    * Tests `apply(Status.Success)` and `apply` with a `Status.Complete` value (via [[mockComplete]]), verifying that
+    * each result equals `f(mockStage)` where `mockStage` is the stage returned by the inner `evolution`.
     *
     * Also verifies that `altered.dispose()` delegates to `evolution.dispose()`.
     *
@@ -111,11 +111,11 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
     *   the mock inner evolution
     * @param f
     *   the transformation expected to be applied to each continuation's stage
-    * @tparam AI
+    * @tparam MI
     *   input type of the inner stages
-    * @tparam AO
+    * @tparam MO
     *   output type of the inner stages
-    * @tparam AE
+    * @tparam ME
     *   error type of the inner stages
     * @tparam I
     *   input type of the altered stages
@@ -124,16 +124,16 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
     * @tparam E
     *   error type of the altered stages
     */
-  def testAlteredEvolution[AI, AO, AE, I, O, E](
+  def testMappedEvolution[MI, MO, ME, I, O, E](
       altered: Evolution[I, O, E],
-      evolution: Evolution[AI, AO, AE],
-      f: Stage[AI, AO, AE] => Stage[I, O, E]): Unit =
+      evolution: Evolution[MI, MO, ME],
+      f: Stage[MI, MO, ME] => Stage[I, O, E]): Unit =
     inSequence {
-      val successStage = mock[Stage[AI, AO, AE]]
-      (evolution.apply(_: Status[AE])).expects(Status.Success).returns(successStage)
+      val successStage = mock[Stage[MI, MO, ME]]
+      (evolution.apply(_: Status[ME])).expects(Status.Success).returns(successStage)
       altered(Status.Success) shouldBe f(successStage)
 
-      val completeStage = mock[Stage[AI, AO, AE]]
+      val completeStage = mock[Stage[MI, MO, ME]]
       val complete = mockComplete()
       (evolution.apply _).expects(complete).returns(completeStage)
       altered(complete) shouldBe f(completeStage)
@@ -142,11 +142,16 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       noException should be thrownBy altered.dispose()
     }
 
+  def testConstEvolution[I, O, E](evolution: Evolution[I, O, E], stage: Stage[I, O, E]): Unit = {
+    evolution(Status.Success) shouldBe stage
+    evolution(mockComplete()) shouldBe stage
+  }
+
   /** Creates a `Status.Complete` whose `errors` sequence is a ScalaMock mock.
     *
     * Used in tests to produce a `Complete` value that can be matched by exact reference in mock expectations, without
     * constructing real error values.
     */
   def mockComplete(): Status.Complete[?] =
-    Status.Complete(mock[Seq[AnyRef]]: @nowarn("cat=deprecation&msg=.*stringPrefix.*"))
+    Status.Complete(mock[Seq[Any]]: @nowarn("cat=deprecation&msg=.*stringPrefix.*"))
 }

@@ -36,7 +36,7 @@ class CacheTest
         case (Yield.Some(out, status, _), Yield.Some(cacheOut, cacheStatus, cacheEvolution)) =>
           cacheOut shouldBe out
           cacheStatus shouldBe status
-          testWrappedEvolution(
+          testMappedEvolution(
             cacheEvolution,
             evolution,
             if (status == Status.Success) Cache.Cached[UUID, String, Exception](out, _)
@@ -46,7 +46,7 @@ class CacheTest
           )
         case (Yield.None(status, _), Yield.None(cacheStatus, cacheEvolution)) =>
           cacheStatus shouldBe status
-          testWrappedEvolution(cacheEvolution, evolution, Cache[UUID, String, Exception])
+          testMappedEvolution(cacheEvolution, evolution, Cache[UUID, String, Exception])
       }
     }
     forAll(
@@ -64,7 +64,7 @@ class CacheTest
     val stage = mock[Stage[UUID, String, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, String, Exception]]("evolution")
     (stage.skip _).expects().returns(evolution)
-    testAlteredEvolution(Cache(stage).skip(), evolution, Cache[UUID, String, Exception])
+    testMappedEvolution(Cache(stage).skip(), evolution, Cache[UUID, String, Exception])
   }
 
   "Cached" should "keep output while the status is Success" in

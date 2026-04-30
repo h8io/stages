@@ -74,7 +74,7 @@ object LocalSoftDeadline {
         },
         now,
         duration,
-        evolution.apply(status))
+        evolution(status))
 
     override def dispose(): Unit = evolution.dispose()
   }
