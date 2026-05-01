@@ -1,7 +1,6 @@
 package h8io.stages.examples
 
-import h8io.stages.{Status, Yield}
-import org.scalacheck.Gen
+import h8io.stages.{Outcome, Status}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -12,10 +11,9 @@ import scala.concurrent.duration.DurationInt
 
 class WallisTest extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks {
   "Wallis product" should "be calculated" in {
-    val stage = Wallis.stage(300.milliseconds)
-    inside(stage(mock[AnyRef])) { case Yield.Some(pi, Status.Success, _) => pi shouldEqual (math.Pi +- 0.01) }
+    val stage = Wallis.pipeline(300.milliseconds)
+    inside(stage.execute(mock[AnyRef])) { case Outcome.Some(pi, Status.Success, None) =>
+      pi shouldEqual (math.Pi +- 0.01)
+    }
   }
-
-  "Main stage" should "return the initial stage on error" in
-    forAll(Gen.long)(n => Wallis.Pi(n).onError() shouldBe Wallis.InitialStage)
 }

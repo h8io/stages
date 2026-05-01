@@ -1,7 +1,6 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.base.StagesBaseTestUtil
 import h8io.stages.examples.Cache.Cached
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
@@ -19,8 +18,7 @@ class CacheTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil
-    with StagesBaseTestUtil {
+    with StagesCoreTestUtil {
   "Cache" should "cache output only if the yield is Some and the status is Success" in {
     def test(
         yieldSupplier: StatusAndEvolutionToYield[UUID, String, Exception],
