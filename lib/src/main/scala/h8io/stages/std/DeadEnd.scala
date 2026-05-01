@@ -17,7 +17,7 @@ import h8io.stages.{Status, Yield}
   * companion object [[DeadEnd]] uses a no-op hook.
   *
   * @param _dispose
-  *   a thunk invoked by [[dispose]]; defaults to a no-op in the companion object
+  *   a thunk invoked by `h8io.stages.Evolution.dispose`; defaults to a no-op in the companion object
   */
 sealed case class DeadEnd(_dispose: () => Unit) extends BaseStage[Any, Nothing, Nothing] {
   override final def apply(in: Any): stages.Yield.None[Any, Nothing, Nothing] =

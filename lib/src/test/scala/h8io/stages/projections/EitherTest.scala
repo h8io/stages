@@ -16,7 +16,7 @@ class EitherTest extends AnyFlatSpec with Matchers with MockFactory {
     Either.Left[AnyRef].apply(Right(mock[AnyRef])) shouldBe Yield.None(Status.Success, Either.Left.toEvolution)
   }
 
-  "Right" should "return Yield.None if the input is scala.util.Right" in {
+  "Right" should "return Yield.None if the input is scala.util.Left" in {
     Either.Right[AnyRef].apply(Left(mock[AnyRef])) shouldBe Yield.None(Status.Success, Either.Right.toEvolution)
   }
 

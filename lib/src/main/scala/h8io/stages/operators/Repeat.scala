@@ -9,9 +9,8 @@ import scala.annotation.tailrec
   * until the stage signals completion or an error.
   *
   * The loop is implemented with `@tailrec` so it does not grow the stack. The loop continues as long as the inner stage
-  * yields `h8io.stages.Status.Success`; it stops on `h8io.stages.Status.Complete` (converting the status to `Success`
-  * and selecting the `onComplete` continuation) or on `h8io.stages.Status.Error` (preserving the error and selecting
-  * `onError`).
+  * yields `h8io.stages.Status.Success`. It stops on `h8io.stages.Status.Complete`: if there are no errors the status is
+  * converted back to `Success`; if there are errors, the `Complete` status is preserved.
   *
   * `Repeat` is useful for driving stages like [[h8io.stages.std.Countdown]] that signal "batch complete" via
   * `Status.Complete` and should be repeated as a whole unit.

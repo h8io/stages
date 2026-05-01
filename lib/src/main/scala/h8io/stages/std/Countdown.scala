@@ -6,8 +6,8 @@ import h8io.stages.{Evolution, Stage, Status, Yield}
 /** An endomorphic stage that passes its input through for exactly `n` invocations and then signals pipeline completion.
   *
   * On each of the first `n − 1` calls the stage yields `h8io.stages.Status.Success` and decrements its counter. On the
-  * `n`-th call it yields `h8io.stages.Status.Complete` and resets to `n`. After a `h8io.stages.Status.Complete` or
-  * `h8io.stages.Status.Error` the stage also resets to `n`, ready for reuse.
+  * `n`-th call it yields `h8io.stages.Status.Complete` and resets to `n`. After any `h8io.stages.Status.Complete` the
+  * stage also resets to `n`, ready for reuse.
   *
   * `Countdown` is fully immutable: each state transition creates a new instance rather than mutating the current one.
   *

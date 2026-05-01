@@ -14,9 +14,10 @@ import scala.annotation.tailrec
   *     with the `onSuccess` continuation.
   *   - `h8io.stages.Status.Success` + `h8io.stages.Yield.None`: no output was produced; the loop stops and emits
   *     `Yield.None(Success, Loop(onComplete))`.
-  *   - `h8io.stages.Status.Complete`: the loop stops, converts the status back to `Success`, and selects the
-  *     `onComplete` continuation for the next outer invocation.
-  *   - `h8io.stages.Status.Error`: the loop stops, preserves the error, and selects the `onError` continuation.
+  *   - `h8io.stages.Status.Complete` with no errors: the loop stops, converts the status back to `Success`, and selects
+  *     the `Complete` continuation for the next outer invocation.
+  *   - `h8io.stages.Status.Complete` with errors: the loop stops, preserves the errors, and selects the `Complete`
+  *     continuation for the next outer invocation.
   *
   * This makes `Loop` suitable for in-process iterative computations (e.g., fixed-point iterations) where the result of
   * one step seeds the next.

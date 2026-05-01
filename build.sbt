@@ -71,8 +71,8 @@ val examples = (project in file("examples"))
 
 val root = (project in file("."))
   .settings(name := ProjectName)
-  .dependsOn(core, lib /*, cats*/ )
-  .aggregate(core, lib /*, cats, examples*/ )
+  .dependsOn(core, lib, cats)
+  .aggregate(core, lib, cats /*, examples*/ )
   .enablePlugins(ScoverageSummaryPlugin)
 
 val pages = (project in file("pages"))

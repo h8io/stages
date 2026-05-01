@@ -18,7 +18,7 @@ class YieldTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
-  "compose method" should "compose Some and Some correctly" in
+  "compose" should "compose Some and Some correctly" in
     forAll {
       (upstreamYieldSupplier: EvolutionToYieldSome[Long, Instant, String],
           downstreamYieldSupplier: EvolutionToYieldSome[Instant, String, String]) =>
@@ -93,7 +93,7 @@ class YieldTest
           Yield.None(mappedStatus, mappedEvolution)
     }
 
-  "evolve method" should "call evolution according to status" in
+  "evolve" should "call evolution according to status" in
     forAll { (yldSupplier: EvolutionToYield[Instant, LocalDateTime, Long]) =>
       val evolution = mock[Evolution[Instant, LocalDateTime, Long]]("evolution")
       val yld = yldSupplier(evolution)
@@ -102,7 +102,7 @@ class YieldTest
       yld.evolve() shouldBe stage
     }
 
-  "outOption method" should "return None for None Yield" in {
+  "outOption" should "return None for None Yield" in {
     Yield.None[Instant, LocalDateTime, Long](Status.Success, mock[Evolution[Instant, LocalDateTime, Long]]("evolution"))
       .outOption shouldBe None
   }

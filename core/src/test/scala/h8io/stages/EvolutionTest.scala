@@ -9,7 +9,7 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with StagesCoreTestUtil {
-  "compose method" should "compose Evolution objects with Evolution.AndThen" in {
+  "compose" should "compose Evolution objects with Evolution.AndThen" in {
     val upstreamEvolution = mock[Evolution[Instant, Long, Exception]]
     val downstreamEvolution = mock[Evolution[String, Instant, Exception]]
     downstreamEvolution.compose(upstreamEvolution) shouldBe Evolution.AndThen(upstreamEvolution, downstreamEvolution)

@@ -58,7 +58,7 @@ class LocalSoftDeadlineTest
       case (ts, duration, overdue, in, yieldSupplier) =>
         val tsSupplier = mock[() => Long]("timestamp supplier")
         val now = mock[() => Long]("now")
-        val stage = mock[Stage[UUID, Instant, Long]]("underlying stage")
+        val stage = mock[Stage[UUID, Instant, Long]]("alterand")
         val evolution = mock[Evolution[UUID, Instant, Long]]("evolution")
         val yld = yieldSupplier(evolution)
         val lsd = LocalSoftDeadline(tsSupplier, now, duration, stage)
@@ -84,7 +84,7 @@ class LocalSoftDeadlineTest
     }
 
   it should
-    "return a yield with unchanged status and preserved timestamp on success, reset clock on complete/error when not overdue" in
+    "return a yield with unchanged status and preserved timestamp on success, reset clock on Complete when not overdue" in
     forAll(
       Gen.zip(
         Gen.long,
@@ -97,7 +97,7 @@ class LocalSoftDeadlineTest
         val duration = spent + rest
         val tsSupplier = mock[() => Long]("timestamp supplier")
         val now = mock[() => Long]("now")
-        val stage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("underlying stage")
+        val stage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("alterand")
         val evolution = mock[Evolution[ZoneId, ZonedDateTime, Exception]]("evolution")
         val yld = yieldSupplier(evolution)
         val lsd = LocalSoftDeadline(tsSupplier, now, duration, stage)
@@ -157,7 +157,7 @@ class LocalSoftDeadlineTest
     }
   }
 
-  "Evolution" should "call the according method of the nested evolution" in
+  "Evolution" should "call the corresponding method on the inner evolution" in
     forAll(Gen.posNum[Long]) { duration =>
       val now = mock[() => Long]("now")
       val tsSupplier = mock[() => Long]("timestamp supplier")

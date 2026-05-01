@@ -2,10 +2,9 @@ package h8io.stages.base
 
 import h8io.stages.{Evolution, Stage, Status}
 
-/** An `Evolution` that returns the same constant `Stage` for all three status branches.
+/** An `Evolution` that returns the same constant `Stage` regardless of the status.
   *
-  * Used by [[StageOps.toEvolution]] to lift a stateless stage into an evolution without a [[BaseEvolution]] mixin.
-  * Equivalent to the old `BaseEvolution` mixin, but as a standalone value rather than an inherited trait.
+  * Used by `StageOps.toEvolution` to lift a stateless stage into an evolution.
   *
   * @param stage
   *   the stage returned by every branch
