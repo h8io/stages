@@ -18,4 +18,8 @@ class CoalesceTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChec
     forAll { (value: Instant) =>
       Coalesce(Right(value)) shouldBe Yield.Some(value, Status.Success, Coalesce.toEvolution)
     }
+
+  it should "be a polymorphic singleton" in {
+    Coalesce[Long] should be theSameInstanceAs Coalesce
+  }
 }

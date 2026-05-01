@@ -29,6 +29,7 @@ class CountdownTest
         inside(Countdown(i, n)(in)) { case Yield.Some(`in`, Status.Success, evolution) =>
           evolution(Status.Success) shouldBe Countdown(i - 1, n)
           evolution(mockComplete()) shouldBe Countdown(n, n)
+          noException should be thrownBy evolution.dispose()
         }
       test(2)
       test(n)
