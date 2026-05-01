@@ -24,21 +24,16 @@ trait StagesCoreArbitraries {
     *   the error type; requires an implicit `Arbitrary[E]`
     */
   implicit def arbStatusComplete[E: Arbitrary]: Arbitrary[Status.Complete[E]] =
-    Arbitrary(
-      Gen.nonEmptyListOf(Arbitrary.arbitrary[E]).map(errors => Status.Complete(errors)))
+    Arbitrary(Gen.listOf(Arbitrary.arbitrary[E]).map(errors => Status.Complete(errors)))
 
-  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.complete`, or a
-    * generated `Status.Complete` with non-empty errors.
+  /** Generates an arbitrary `Status` by randomly selecting one of `Status.Success`, `Status.complete`, or a generated
+    * `Status.Complete` with non-empty errors.
     *
     * @tparam E
     *   the error type; requires an implicit `Arbitrary[E]`
     */
   implicit def arbStatus[E: Arbitrary]: Arbitrary[Status[E]] =
-    Arbitrary(
-      Gen.oneOf(
-        Gen.const(Status.Success: Status[E]),
-        Gen.const(Status.complete: Status[E]),
-        arbStatusComplete[E].arbitrary))
+    Arbitrary(Gen.oneOf(Gen.const(Status.Success: Status[E]), arbStatusComplete[E].arbitrary))
 
   /** A function type that constructs a `Yield.Some` given a `Status` and an `Evolution`.
     *

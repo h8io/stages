@@ -28,9 +28,9 @@ class StatusTest
   it should "override complete" in
     forAll((c: Status.Complete[String]) => c.combine(Status.complete) shouldBe c)
 
-  it should "not be empty" in
+  "Complete" should "contain the same elements as the error list" in
     forAll { (c: Status.Complete[Exception]) =>
-      c.isEmpty shouldBe false
+      c.isEmpty shouldBe c.errors.isEmpty
       c.toList should contain theSameElementsInOrderAs c.errors
       val i = c.iterator
       i.toList should contain theSameElementsInOrderAs c.errors
