@@ -34,14 +34,24 @@ class CacheTest
         case (Yield.Some(out, status, _), Yield.Some(cacheOut, cacheStatus, cacheEvolution)) =>
           cacheOut shouldBe out
           cacheStatus shouldBe status
-          testMappedEvolution(
-            cacheEvolution,
-            evolution,
-            if (status == Status.Success) Cache.Cached[UUID, String, Exception](out, _)
-            else Cache[UUID, String, Exception],
-            Cache[UUID, String, Exception],
-            Cache[UUID, String, Exception]
-          )
+
+          inSequence {
+            val onSuccessStage = mock[Stage[UUID, String, Exception]]("onSuccess stage")
+            val expectedStage =
+              if (status == Status.Success) Cache.Cached[UUID, String, Exception](out, onSuccessStage)
+              else Cache[UUID, String, Exception](onSuccessStage)
+            (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
+            cacheEvolution(Status.Success) shouldBe expectedStage
+
+            val onCompleteStage = mock[Stage[UUID, String, Exception]]("onComplete stage")
+            val complete = mockComplete()
+            (evolution.apply _).expects(complete).returns(onCompleteStage)
+            cacheEvolution(complete) shouldBe Cache[UUID, String, Exception](onCompleteStage)
+
+            (evolution.dispose _).expects()
+            noException should be thrownBy cacheEvolution.dispose()
+          }
+
         case (Yield.None(status, _), Yield.None(cacheStatus, cacheEvolution)) =>
           cacheStatus shouldBe status
           testMappedEvolution(cacheEvolution, evolution, Cache[UUID, String, Exception])
@@ -50,11 +60,10 @@ class CacheTest
     forAll(
       Gen.zip(
         Arbitrary.arbitrary[StatusAndEvolutionToYield[UUID, String, Exception]],
-        Arbitrary.arbitrary[Status.Error[Exception]],
-        Gen.uuid)) { case (yieldSupplier, error, in) =>
+        Arbitrary.arbitrary[Status.Complete[Exception]],
+        Gen.uuid)) { case (yieldSupplier, complete, in) =>
       test(yieldSupplier, Status.Success, in)
-      test(yieldSupplier, Status.Complete, in)
-      test(yieldSupplier, error, in)
+      test(yieldSupplier, complete, in)
     }
   }
 
@@ -72,17 +81,14 @@ class CacheTest
       (stage.skip _).expects().returns(evolution)
       inside(Cache.Cached(out, stage)(in)) { case Yield.Some(`out`, Status.Success, cachedEvolution) =>
         inSequence {
-          val onSuccessStage = mock[Stage[Long, UUID, Exception]]
-          (evolution.onSuccess _).expects().returns(onSuccessStage)
-          cachedEvolution.onSuccess() shouldBe Cached(out, onSuccessStage)
+          val onSuccessStage = mock[Stage[Long, UUID, Exception]]("onSuccess stage")
+          (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
+          cachedEvolution(Status.Success) shouldBe Cached(out, onSuccessStage)
 
-          val onCompleteStage = mock[Stage[Long, UUID, Exception]]
-          (evolution.onComplete _).expects().returns(onCompleteStage)
-          cachedEvolution.onComplete() shouldBe Cache(onCompleteStage)
-
-          val onErrorStage = mock[Stage[Long, UUID, Exception]]
-          (evolution.onError _).expects().returns(onErrorStage)
-          cachedEvolution.onError() shouldBe Cache(onErrorStage)
+          val onCompleteStage = mock[Stage[Long, UUID, Exception]]("onComplete stage")
+          val complete = mockComplete()
+          (evolution.apply _).expects(complete).returns(onCompleteStage)
+          cachedEvolution(complete) shouldBe Cache(onCompleteStage)
 
           (evolution.dispose _).expects()
           noException should be thrownBy cachedEvolution.dispose()
@@ -100,17 +106,14 @@ class CacheTest
 
       val cachedEvolution = cached.skip()
 
-      val onSuccessStage = mock[Stage[UUID, AnyRef, Exception]]
-      (evolution.onSuccess _).expects().returns(onSuccessStage)
-      cachedEvolution.onSuccess() shouldBe Cached(out, onSuccessStage)
+      val onSuccessStage = mock[Stage[UUID, AnyRef, Exception]]("onSuccess stage")
+      (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
+      cachedEvolution(Status.Success) shouldBe Cached(out, onSuccessStage)
 
-      val onCompleteStage = mock[Stage[UUID, AnyRef, Exception]]
-      (evolution.onComplete _).expects().returns(onCompleteStage)
-      cachedEvolution.onComplete() shouldBe Cache(onCompleteStage)
-
-      val onErrorStage = mock[Stage[UUID, AnyRef, Exception]]
-      (evolution.onError _).expects().returns(onErrorStage)
-      cachedEvolution.onError() shouldBe Cache(onErrorStage)
+      val onCompleteStage = mock[Stage[UUID, AnyRef, Exception]]("onComplete stage")
+      val complete = mockComplete()
+      (evolution.apply _).expects(complete).returns(onCompleteStage)
+      cachedEvolution.apply(complete) shouldBe Cache(onCompleteStage)
 
       (evolution.dispose _).expects()
       noException should be thrownBy cachedEvolution.dispose()
