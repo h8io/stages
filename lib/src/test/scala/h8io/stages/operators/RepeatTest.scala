@@ -1,7 +1,6 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.StageOps
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -31,17 +30,22 @@ class RepeatTest
         val evolved = createStage(yieldSuppliers.tail, initial, in)
         val lastYield = genYield[Long, String, Throwable]("last", yieldSuppliers.head, complete)
         val resultStage = mock[Stage[Long, String, Throwable]]("result stage")
-        (evolved.apply _).expects(in).returns(lastYield)
-        (lastYield.evolution.apply _).expects(complete).returns(resultStage)
-        val yld = Repeat(initial)(in)
-        val expectedStatus = if (complete.isEmpty) Status.Success else complete
-        val evolution = inside((lastYield, yld)) {
-          case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `expectedStatus`, evolution)) =>
-            resultOut shouldBe lastOut
-            evolution
-          case (Yield.None(_, _), Yield.None(`expectedStatus`, evolution)) => evolution
+        inSequence {
+          (evolved.apply _).expects(in).returns(lastYield)
+          (lastYield.evolution.apply _).expects(complete).returns(resultStage)
+          val yld = Repeat(initial)(in)
+          val expectedStatus = if (complete.isEmpty) Status.Success else complete
+          val evolution = inside((lastYield, yld)) {
+            case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `expectedStatus`, evolution)) =>
+              resultOut shouldBe lastOut
+              evolution
+            case (Yield.None(_, _), Yield.None(`expectedStatus`, evolution)) => evolution
+          }
+          evolution(Status.Success) shouldBe Repeat(resultStage)
+          evolution(mockComplete()) shouldBe Repeat(resultStage)
+          (lastYield.evolution.dispose _).expects()
+          noException should be thrownBy evolution.dispose()
         }
-        evolution shouldBe Repeat(resultStage).toEvolution
     }
 
   @tailrec private def createStage[I, O, E](

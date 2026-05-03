@@ -1,7 +1,6 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.StageOps
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -32,17 +31,22 @@ class LoopTest
       val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastEvolution = mock[Evolution[String, String, String]]("last evolution")
       val lastYield = lastYieldSupplier(complete, lastEvolution)
-      (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[String, String]]("result stage")
-      (lastEvolution.apply _).expects(complete).returns(resultStage)
-      val expectedStatus = if (complete.isEmpty) Status.Success else complete
-      val evolution = inside((lastYield, Loop(initial)(in))) {
-        case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `expectedStatus`, evolution)) =>
-          resultOut shouldBe lastOut
-          evolution
-        case (Yield.None(_, _), Yield.None(`expectedStatus`, evolution)) => evolution
+      inSequence {
+        (evolved.apply _).expects(lastIn).returns(lastYield)
+        (lastEvolution.apply _).expects(complete).returns(resultStage)
+        val expectedStatus = if (complete.isEmpty) Status.Success else complete
+        val evolution = inside((lastYield, Loop(initial)(in))) {
+          case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `expectedStatus`, evolution)) =>
+            resultOut shouldBe lastOut
+            evolution
+          case (Yield.None(_, _), Yield.None(`expectedStatus`, evolution)) => evolution
+        }
+        evolution(Status.Success) shouldBe Loop(resultStage)
+        evolution(mockComplete()) shouldBe Loop(resultStage)
+        (lastEvolution.dispose _).expects()
+        noException should be thrownBy evolution.dispose()
       }
-      evolution shouldBe Loop(resultStage).toEvolution
     }
 
   it should "be executed until the result is None" in
@@ -55,13 +59,20 @@ class LoopTest
       val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastEvolution = mock[Evolution[BigInt, BigInt, Exception]]("last evolution")
       val lastYield = Yield.None(Status.Success, lastEvolution)
-      (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[BigInt, Exception]]("result stage")
-      (lastEvolution.apply _).expects(Status.complete).returns(resultStage)
-      val evolution = inside((lastYield, Loop(initial)(in))) {
-        case (Yield.None(_, _), Yield.None(Status.Success, evolution)) => evolution
+
+      inSequence {
+        (evolved.apply _).expects(lastIn).returns(lastYield)
+        (lastEvolution.apply _).expects(Status.complete).returns(resultStage)
+        val evolution = inside((lastYield, Loop(initial)(in))) {
+          case (Yield.None(_, _), Yield.None(Status.Success, evolution)) => evolution
+        }
+
+        evolution(Status.Success) shouldBe Loop(resultStage)
+        evolution(mockComplete()) shouldBe Loop(resultStage)
+        (lastEvolution.dispose _).expects()
+        noException should be thrownBy evolution.dispose()
       }
-      evolution shouldBe Loop(resultStage).toEvolution
     }
 
   @tailrec private def genStage[T: Arbitrary, E](

@@ -34,7 +34,7 @@ final case class Repeat[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[
           yld.map(
             identity,
             _ => if (status.isEmpty) Status.Success else status,
-            evolution => Repeat(evolution(status)).toEvolution)
+            evolution => Repeat(evolution(status)).toEvolution(evolution.dispose _))
       }
     }
     repeat(alterand)
