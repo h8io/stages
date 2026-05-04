@@ -6,12 +6,8 @@ import scala.util.control.NonFatal
   * carried by the [[Yield]] returned from the most recent stage application. In a composed pipeline, this refers to the
   * combined `Yield` produced for the current input.
   *
-  * Every [[Yield]] carries an `Evolution` that has three branches:
-  *   - [[onSuccess]] — invoked when the previous stage succeeded ([[Status.Success]]).
-  *   - [[onComplete]] — invoked when the pipeline signalled normal completion ([[Status.Complete]]).
-  *   - [[onError]] — invoked when one or more errors were accumulated ([[Status.Error]]).
-  *
-  * The appropriate branch is selected based on the [[Yield.status]] — callers use `[[Yield.evolve]]` rather than
+  * Every [[Yield]] carries an `Evolution` whose `apply` method selects the next stage based on the current [[Status]].
+  * The appropriate stage is selected based on the [[Yield.status]] — callers use `[[Yield.evolve]]` rather than
   * dispatching on the status directly.
   *
   * `Evolution` is contravariant in `I` and covariant in `O` and `E`, mirroring the variance of the [[Stage]] values it
@@ -24,28 +20,17 @@ import scala.util.control.NonFatal
   * @tparam E
   *   the error type (covariant)
   */
-trait Evolution[-I, +O, +E] {
+trait Evolution[-I, +O, +E] extends (Status[?] => Stage[I, O, E]) {
 
-  /** Returns the next [[Stage]] when the previous yield had [[Status.Success]].
+  /** Returns the next [[Stage]] based on the given `status`.
     *
-    * May release resources that are specific to this branch and will not be reused by subsequent generations of the
-    * evolution (i.e. resources not needed by the returned stage or its own evolution).
-    */
-  def onSuccess(): Stage[I, O, E]
-
-  /** Returns the next [[Stage]] when the previous yield had [[Status.Complete]].
+    * May release resources that are specific to this evolution instance and will not be reused by subsequent
+    * generations (i.e. resources not needed by the returned stage or its own evolution).
     *
-    * May release resources that are specific to this branch and will not be reused by subsequent generations of the
-    * evolution (i.e. resources not needed by the returned stage or its own evolution).
+    * @param status
+    *   the status that determines the continuation stage
     */
-  def onComplete(): Stage[I, O, E]
-
-  /** Returns the next [[Stage]] when the previous yield had [[Status.Error]].
-    *
-    * May release resources that are specific to this branch and will not be reused by subsequent generations of the
-    * evolution (i.e. resources not needed by the returned stage or its own evolution).
-    */
-  def onError(): Stage[I, O, E]
+  def apply(status: Status[?]): Stage[I, O, E]
 
   /** Releases all resources held by the [[Stage]] that produced this evolution.
     *
@@ -55,19 +40,19 @@ trait Evolution[-I, +O, +E] {
     * Called when the producing stage is permanently shut down:
     *   - by [[Stage.execute]] after the pipeline has produced its terminal [[Outcome]], so the continuation is released
     *     immediately rather than carried forward;
-    *   - when a status method ([[onSuccess]], [[onComplete]], [[onError]]) throws a `Throwable`, since the stage can no
-    *     longer be used and all its resources must still be released.
+    *   - when `apply` throws a `Throwable`, since the stage can no longer be used and all its resources must still be
+    *     released.
     *
     * Implementations that hold no external resources may leave this as a no-op.
     */
   def dispose(): Unit
 
-  /** Composes this evolution with another, creating a new evolution whose branches are the sequential composition of
-    * the corresponding branches of both evolutions.
+  /** Composes this evolution with another, creating a new evolution whose continuation for any status is the sequential
+    * composition of the corresponding continuations of both evolutions.
     *
-    * Specifically, for each status branch `b`:
+    * Specifically:
     * {{{
-    *   composed.b() == self.b() ~> that.b()
+    *   composed(s) == self(s) ~> that(s)
     * }}}
     *
     * Used internally when merging evolutions during [[Yield]] composition inside [[Stage.AndThen]].
@@ -84,13 +69,13 @@ trait Evolution[-I, +O, +E] {
   @inline final def compose[_O, _E >: E](that: Evolution[O, _O, _E]): Evolution[I, _O, _E] =
     Evolution.AndThen(that, this)
 
-  /** Transforms every branch of this evolution by applying `f` to the stage it returns.
+  /** Transforms every continuation of this evolution by applying `f` to the stage it returns.
     *
     * This is the public API for adapting an `Evolution` to a different stage type without exposing internal composition
     * details.
     *
     * @param f
-    *   a function that transforms each branch stage
+    *   a function that transforms each continuation stage
     * @tparam _I
     *   the input type of the resulting stages
     * @tparam _O
@@ -98,7 +83,7 @@ trait Evolution[-I, +O, +E] {
     * @tparam _E
     *   the error type of the resulting stages
     * @return
-    *   a new evolution with all branches mapped by `f`
+    *   a new evolution with all continuations mapped by `f`
     */
   @inline final def map[_I, _O, _E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Evolution[_I, _O, _E] =
     Evolution.Mapped(this, f)
@@ -109,7 +94,7 @@ object Evolution {
 
   type Any = Evolution[?, ?, ?]
 
-  /** An [[Evolution]] composed of two sequential evolutions, produced by [[Evolution#compose]].
+  /** An [[Evolution]] composed of two sequential evolutions.
     *
     * ==Parameter naming==
     *
@@ -118,19 +103,20 @@ object Evolution {
     *   - `downstream: Evolution[I, OI, E]` — holds the evolution of the pipeline's upstream stage (`I → OI`).
     *   - `upstream: Evolution[OI, O, E]` — holds the evolution of the pipeline's downstream stage (`OI → O`).
     *
-    * This inversion is a direct consequence of how [[Evolution.compose]] constructs the value:
+    * The inversion follows from how `<~` routes data: `upstream(s) <~ downstream(s)` feeds `downstream`'s stage first,
+    * so the `I → OI` evolution occupies `downstream` and `OI → O` occupies `upstream`. `compose` stores its receiver as
+    * `downstream` and its argument as `upstream`:
     * {{{
     *   pipelineUpstream.skip().compose(pipelineDownstream.skip())
     *   // == Evolution.AndThen(upstream = pipelineDownstream.skip(),
     *   //                      downstream = pipelineUpstream.skip())
     * }}}
     *
-    * ==Branch composition==
+    * ==Continuation composition==
     *
-    * Each branch combines the corresponding stages using `<~`:
+    * For any status `s`:
     * {{{
-    *   upstream.onSuccess() <~ downstream.onSuccess()
-    *   // == downstream.onSuccess() ~> upstream.onSuccess()
+    *   composed(s) == upstream(s) <~ downstream(s)
     *   // data flow: I → downstream's stage → OI → upstream's stage → O
     * }}}
     *
@@ -156,14 +142,7 @@ object Evolution {
   final case class AndThen[-I, OI, +O, +E](upstream: Evolution[OI, O, E], downstream: Evolution[I, OI, E])
       extends Evolution[I, O, E] {
 
-    /** Returns the stage to use when the pipeline status is [[Status.Success]]. */
-    override def onSuccess(): Stage[I, O, E] = upstream.onSuccess() <~ downstream.onSuccess()
-
-    /** Returns the stage to use when the pipeline status is [[Status.Complete]]. */
-    override def onComplete(): Stage[I, O, E] = upstream.onComplete() <~ downstream.onComplete()
-
-    /** Returns the stage to use when the pipeline status is [[Status.Error]]. */
-    override def onError(): Stage[I, O, E] = upstream.onError() <~ downstream.onError()
+    override def apply(status: Status[?]): Stage[I, O, E] = upstream(status) <~ downstream(status)
 
     /** Releases resources held by both composed evolutions, disposing `upstream` first, then `downstream`.
       *
@@ -182,14 +161,15 @@ object Evolution {
     }
   }
 
-  /** An [[Evolution]] whose branches are produced by applying `f` to the corresponding branches of `evolution`.
+  /** An [[Evolution]] whose continuations are produced by applying `f` to the corresponding continuations of
+    * `evolution`.
     *
     * Created by [[Evolution#map]]. Disposal is delegated to the wrapped `evolution`.
     *
     * @param evolution
-    *   the inner evolution whose branches are transformed
+    *   the inner evolution whose continuations are transformed
     * @param f
-    *   the function applied to each branch stage
+    *   the function applied to each continuation stage
     * @tparam II
     *   input type of the inner stages
     * @tparam IO
@@ -207,9 +187,7 @@ object Evolution {
       evolution: Evolution[II, IO, IE],
       f: Stage[II, IO, IE] => Stage[OI, OO, OE])
       extends Evolution[OI, OO, OE] {
-    override def onSuccess(): Stage[OI, OO, OE] = f(evolution.onSuccess())
-    override def onComplete(): Stage[OI, OO, OE] = f(evolution.onComplete())
-    override def onError(): Stage[OI, OO, OE] = f(evolution.onError())
+    override def apply(status: Status[?]): Stage[OI, OO, OE] = f(evolution(status))
     override def dispose(): Unit = evolution.dispose()
   }
 }

@@ -14,21 +14,26 @@ object Leibniz {
    * keeps stepping until completion.
    */
   final case class Pi(n: Long, t: Double, s: Double) extends BaseStage[Unit, Double, Nothing] {
-    override def apply(in: Unit): Yield.Some[Unit, Double, Nothing] = Yield.Some(4 * s, Status.Success, this)
+    override def apply(in: Unit): Yield.Some[Unit, Double, Nothing] =
+      Yield.Some(
+        4 * s,
+        Status.Success,
+        new Evolution[Unit, Double, Nothing] {
+          override def apply(status: Status[?]): Stage[Unit, Double, Nothing] =
+            status match {
+              case Status.Success =>
+                val _t = -t * (2 * n + 1) / (2 * n + 3)
+                Pi(n + 1, _t, s + _t)
+              case Status.Complete(_) => InitialStage
+            }
 
-    override def onSuccess(): Stage[Unit, Double, Nothing] = {
-      val _t = -t * (2 * n + 1) / (2 * n + 3)
-      Pi(n + 1, _t, s + _t)
-    }
-    override def onComplete(): Stage[Unit, Double, Nothing] = InitialStage
-    override def onError(): Stage[Unit, Double, Nothing] = InitialStage
+          override def dispose(): Unit = ()
+        }
+      )
   }
 
   val InitialStage: Pi = Pi(0, 1, 1)
 
-  def stage1(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
-    Repeat[Unit, Double, Nothing](LocalSoftDeadline[Unit, Double, Nothing](duration)(InitialStage))
-
-  def stage2(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
+  def pipeline(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
     Repeat[Unit, Double, Nothing](LocalSoftDeadline[Unit, Double, Nothing](duration)(InitialStage))
 }

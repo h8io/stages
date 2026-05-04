@@ -14,9 +14,10 @@ import scala.annotation.tailrec
   *     with the `onSuccess` continuation.
   *   - `h8io.stages.Status.Success` + `h8io.stages.Yield.None`: no output was produced; the loop stops and emits
   *     `Yield.None(Success, Loop(onComplete))`.
-  *   - `h8io.stages.Status.Complete`: the loop stops, converts the status back to `Success`, and selects the
-  *     `onComplete` continuation for the next outer invocation.
-  *   - `h8io.stages.Status.Error`: the loop stops, preserves the error, and selects the `onError` continuation.
+  *   - `h8io.stages.Status.Complete` with no errors: the loop stops, converts the status back to `Success`, and selects
+  *     the `Complete` continuation for the next outer invocation.
+  *   - `h8io.stages.Status.Complete` with errors: the loop stops, preserves the errors, and selects the `Complete`
+  *     continuation for the next outer invocation.
   *
   * This makes `Loop` suitable for in-process iterative computations (e.g., fixed-point iterations) where the result of
   * one step seeds the next.
@@ -35,12 +36,15 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends Decorator[T, T,
       yld.status match {
         case Status.Success =>
           yld match {
-            case Yield.Some(out, _, _) => loop(yld.evolution.onSuccess(), out)
-            case Yield.None(_, _) => Yield.None(Status.Success, Loop(yld.evolution.onComplete()).toEvolution)
+            case Yield.Some(out, _, _) => loop(yld.evolution(Status.Success), out)
+            case Yield.None(_, _) =>
+              Yield.None(Status.Success, Loop(yld.evolution(Status.complete)).toEvolution(yld.evolution.dispose _))
           }
-        case Status.Complete =>
-          yld.map(identity, _ => Status.Success, evolution => Loop(evolution.onComplete()).toEvolution)
-        case _: Status.Error[E] => yld.map(identity, identity, evolution => Loop(evolution.onError()).toEvolution)
+        case status: Status.Complete[?] =>
+          yld.map(
+            identity,
+            _ => if (status.isEmpty) Status.Success else status,
+            evolution => Loop(evolution(status)).toEvolution(evolution.dispose _))
       }
     }
     loop(alterand, in)

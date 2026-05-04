@@ -1,13 +1,15 @@
 package h8io.stages.std
 
 import h8io.stages.*
+import h8io.stages.base.StageOps
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class CountdownTest extends AnyFlatSpec with Matchers with Inside with ScalaCheckPropertyChecks {
+class CountdownTest
+    extends AnyFlatSpec with Matchers with Inside with ScalaCheckPropertyChecks with StagesCoreTestUtil {
   "apply" should "create a Countdown object where i == n if n > 0" in
     forAll(Gen.posNum[Long])(n => Countdown(n) shouldBe Countdown(n, n))
 
@@ -18,16 +20,16 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
 
   it should "return a yield with status Complete when i == 1" in
     forAll(Gen.zip(Gen.choose(1, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
-      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Status.Complete, Countdown[Short](n, n))
+      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Status.complete, Countdown[Short](n, n).toEvolution)
     }
 
   it should "return a yield with status Success if i > 1" in
     forAll(Gen.zip(Gen.choose(2, Long.MaxValue), Arbitrary.arbitrary[String])) { case (n, in) =>
       def test(i: Long): Assertion =
         inside(Countdown(i, n)(in)) { case Yield.Some(`in`, Status.Success, evolution) =>
-          evolution.onSuccess() shouldBe Countdown(i - 1, n)
-          evolution.onComplete() shouldBe Countdown(n, n)
-          evolution.onError() shouldBe Countdown(n, n)
+          evolution(Status.Success) shouldBe Countdown(i - 1, n)
+          evolution(mockComplete()) shouldBe Countdown(n, n)
+          noException should be thrownBy evolution.dispose()
         }
       test(2)
       test(n)

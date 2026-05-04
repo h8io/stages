@@ -23,9 +23,7 @@ status and the evolution:
 
 ```scala mdoc
 val some = Yield.Some(42, Status.Success, new Evolution[Int, Int, Nothing] {
-  override def onSuccess(): Stage[Int, Int, Nothing] = ???
-  override def onComplete(): Stage[Int, Int, Nothing] = ???
-  override def onError(): Stage[Int, Int, Nothing] = ???
+  override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
   override def dispose(): Unit = ()
 })
 some.out
@@ -37,10 +35,8 @@ input. There is no output value, but the status and the evolution are still pres
 correctly:
 
 ```scala mdoc
-val none = Yield.None[Int, String, String](Status.Error("filtered out"), new Evolution[Int, String, String] {
-  override def onSuccess(): Stage[Int, String, String] = ???
-  override def onComplete(): Stage[Int, String, String] = ???
-  override def onError(): Stage[Int, String, String] = ???
+val none = Yield.None[Int, String, String](Status.error("filtered out"), new Evolution[Int, String, String] {
+  override def apply(status: Status[?]): Stage[Int, String, String] = ???
   override def dispose(): Unit = ()
 })
 none.status
@@ -66,20 +62,12 @@ Use `outOption` when you only need to know whether a value was produced. When yo
 
 Once the pipeline has processed an input and is ready for the next one, it calls `evolve()` on the `Yield` returned
 by the last stage.  
-`evolve()` looks at the `status` and dispatches to the corresponding branch of the `evolution`:
-
-- `Status.Success` → `evolution.onSuccess()`
-- `Status.Complete` → `evolution.onComplete()`
-- `Status.Error` → `evolution.onError()`
-
-The returned `Stage` becomes the pipeline for the next run.
+`evolve()` calls `evolution(status)` — the `Evolution` receives the current status and returns the next stage.
 
 ```scala mdoc
 object DoubleStage extends Stage[Int, Int, Nothing] {
   private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def onSuccess(): Stage[Int, Int, Nothing] = ???
-    override def onComplete(): Stage[Int, Int, Nothing] = ???
-    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 
@@ -91,14 +79,12 @@ object DoubleStage extends Stage[Int, Int, Nothing] {
 
 object ErrorRecovery extends Stage[Int, Int, Nothing] {
   private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def onSuccess(): Stage[Int, Int, Nothing] = ???
-    override def onComplete(): Stage[Int, Int, Nothing] = ???
-    override def onError(): Stage[Int, Int, Nothing] = ???
+    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 
   override def apply(in: Int): Yield[Int, Int, Nothing] =
-    Yield.Some(0, Status.Complete, stub)
+    Yield.Some(0, Status.complete, stub)
 
   override def skip(): Evolution[Int, Int, Nothing] = stub
 }
@@ -107,16 +93,17 @@ val yldSuccess = Yield.Some(
   21,
   Status.Success,
   new Evolution[Int, Int, Nothing] {
-    override def onSuccess(): Stage[Int, Int, Nothing] = DoubleStage
-    override def onComplete(): Stage[Int, Int, Nothing] = ???
-    override def onError(): Stage[Int, Int, Nothing] = ErrorRecovery
+    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = status match {
+      case Status.Success => DoubleStage
+      case _              => ErrorRecovery
+    }
     override def dispose(): Unit = ()
   })
 
 val nextStage = yldSuccess.evolve()
 ```
 
-Because the status is `Success`, the next stage is the one returned by `onSuccess()`, which is `DoubleStage`.  
+Because the status is `Success`, the evolution returns `DoubleStage`.  
 Applying it to a new input produces the expected result:
 
 ```scala mdoc
@@ -135,9 +122,7 @@ with `Evolution.map` so that future stages also go through the same conversion:
 ```scala mdoc
 object ThermStage extends Stage[Int, Int, Nothing] {
   private val evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def onSuccess(): Stage[Int, Int, Nothing] = ThermStage
-    override def onComplete(): Stage[Int, Int, Nothing] = ThermStage
-    override def onError(): Stage[Int, Int, Nothing] = ThermStage
+    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ThermStage
     override def dispose(): Unit = ()
   }
   override def apply(in: Int): Yield[Int, Int, Nothing] = Yield.Some(25, Status.Success, evo)
@@ -146,9 +131,7 @@ object ThermStage extends Stage[Int, Int, Nothing] {
 
 object ToFahrenheit extends Stage[Int, Int, Nothing] {
   private val evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def onSuccess(): Stage[Int, Int, Nothing] = ToFahrenheit
-    override def onComplete(): Stage[Int, Int, Nothing] = ToFahrenheit
-    override def onError(): Stage[Int, Int, Nothing] = ToFahrenheit
+    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ToFahrenheit
     override def dispose(): Unit = ()
   }
   override def apply(in: Int): Yield[Int, Int, Nothing] = Yield.Some(in * 9 / 5 + 32, Status.Success, evo)
@@ -159,7 +142,7 @@ val celsius = ThermStage(0)
 
 val fahrenheit = celsius.map(
   mapOut    = c => c * 9 / 5 + 32,
-  mapStatus = _ => Status.Complete,
+  mapStatus = _ => Status.complete,
   mapEvolution = evo => evo.map(_ ~> ToFahrenheit))
 
 fahrenheit.outOption
@@ -171,10 +154,10 @@ type-consistency but is never invoked because there is no value to transform. He
 offline before any reading was taken:
 
 ```scala mdoc
-val noReading = Yield.None[Int, Int, String](Status.Error("sensor offline"), ThermStage.skip())
+val noReading = Yield.None[Int, Int, String](Status.error("sensor offline"), ThermStage.skip())
   .map(
     mapOut    = c => c * 9 / 5 + 32,   // not called — no value
-    mapStatus = _ => Status.Error("no data"),
+    mapStatus = _ => Status.error("no data"),
     mapEvolution = evo => evo.map(_ ~> ToFahrenheit))
 
 noReading.outOption

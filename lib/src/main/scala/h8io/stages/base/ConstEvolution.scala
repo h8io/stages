@@ -1,11 +1,10 @@
 package h8io.stages.base
 
-import h8io.stages.{Evolution, Stage}
+import h8io.stages.{Evolution, Stage, Status}
 
-/** An `Evolution` that returns the same constant `Stage` for all three status branches.
+/** An `Evolution` that returns the same constant `Stage` regardless of the status.
   *
-  * Used by [[StageOps.toEvolution]] to lift a stateless stage into an evolution without a [[BaseEvolution]] mixin.
-  * Equivalent to the old `BaseEvolution` mixin, but as a standalone value rather than an inherited trait.
+  * Used by `StageOps.toEvolution` to lift a stateless stage into an evolution.
   *
   * @param stage
   *   the stage returned by every branch
@@ -16,9 +15,11 @@ import h8io.stages.{Evolution, Stage}
   * @tparam E
   *   the error type (covariant)
   */
-final case class ConstEvolution[-I, +O, +E](stage: Stage[I, O, E]) extends Evolution[I, O, E] {
-  override def onSuccess(): Stage[I, O, E] = stage
-  override def onComplete(): Stage[I, O, E] = stage
-  override def onError(): Stage[I, O, E] = stage
-  override def dispose(): Unit = ()
+final case class ConstEvolution[-I, +O, +E](stage: Stage[I, O, E], _dispose: () => Unit) extends Evolution[I, O, E] {
+  override def apply(status: Status[?]): Stage[I, O, E] = stage
+  override def dispose(): Unit = _dispose()
+}
+
+object ConstEvolution {
+  def apply[I, O, E](stage: Stage[I, O, E]): ConstEvolution[I, O, E] = new ConstEvolution(stage, () => ())
 }

@@ -5,25 +5,31 @@ import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
 import h8io.stages.Stage.Endo
 import org.scalacheck.{Arbitrary, Prop, Shrink, Test}
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
 import scala.annotation.tailrec
 
-class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with StagesCoreArbitraries {
+class EndoStageMonoidTest
+    extends AnyFunSuite
+    with MockFactory
+    with FunSuiteDiscipline
+    with Checkers
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   private val parameters = Test.Parameters.default
 
-  private object Identity extends Stage[Any, Any, Nothing] with Evolution[Any, Any, Nothing] {
-    override def apply(in: Any): Yield.Some[Any, Any, Nothing] = Yield.Some(in, Status.Success, this)
+  private object Identity extends Stage[Any, Any, Nothing] {
+    override def apply(in: Any): Yield.Some[Any, Any, Nothing] = Yield.Some(in, Status.Success, evolution)
 
-    override def skip(): Evolution[Any, Any, Nothing] = this
+    override def skip(): Evolution[Any, Any, Nothing] = evolution
 
-    override def dispose(): Unit = {}
-
-    override def onSuccess(): Stage[Any, Any, Nothing] = this
-    override def onComplete(): Stage[Any, Any, Nothing] = this
-    override def onError(): Stage[Any, Any, Nothing] = this
+    private val evolution = new Evolution[Any, Any, Nothing] {
+      override def apply(status: Status[?]): Stage[Any, Any, Nothing] = Identity
+      def dispose(): Unit = ()
+    }
 
     def apply[T]: Endo[T, Nothing] = this.asInstanceOf[Stage.Endo[T, Nothing]]
   }
@@ -40,20 +46,18 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
         prefix <- Arbitrary.arbitrary[T]
         suffix <- Arbitrary.arbitrary[T]
         status <- Arbitrary.arbitrary[Status[E]]
-      } yield new Stage.Endo[T, E] with Evolution[T, T, E] {
-        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, status, this)
+      } yield new Stage.Endo[T, E] {
+        self =>
+        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, status, evolution)
 
-        override def skip(): Evolution[T, T, E] = this
+        override def skip(): Evolution[T, T, E] = evolution
 
-        override def dispose(): Unit = {}
+        private val evolution = new Evolution[T, T, E] {
+          override def apply(status: Status[?]): Stage[T, T, E] = self
+          override def dispose(): Unit = {}
+        }
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
-
-        override def onSuccess(): Stage[T, T, E] = this
-
-        override def onComplete(): Stage[T, T, E] = this
-
-        override def onError(): Stage[T, T, E] = this
       }
     }
 
@@ -68,8 +72,8 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
     loop(stage :: Nil, Nil)
   }
 
-  private def toTuple[T, E](evolution: Evolution[T, T, E]): (List[Stage.Any], List[Stage.Any], List[Stage.Any]) =
-    (toList(evolution.onSuccess()), toList(evolution.onError()), toList(evolution.onComplete()))
+  private def toTuple[IO, E](evolution: Evolution[IO, IO, E]): (List[Stage.Any], List[Stage.Any]) =
+    (toList(evolution(Status.Success)), toList(evolution(mockComplete())))
 
   private def toTuple[T, E](yld: Yield[T, T, E]): Product =
     yld match {

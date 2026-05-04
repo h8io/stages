@@ -1,6 +1,5 @@
 package h8io.stages.operators
 
-import h8io.stages.base.StagesBaseTestUtil
 import h8io.stages.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -18,16 +17,15 @@ class BreakIfNoneTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil
-    with StagesBaseTestUtil {
+    with StagesCoreTestUtil {
   "BreakIfNone" should "return Yield.Some if the alterand result is Yield.Some" in
     forAll { (in: Long, yieldSupplier: EvolutionToYieldSome[Long, Instant, String]) =>
       val alterand = mock[Stage[Long, Instant, String]]
       val evolution = mock[Evolution[Long, Instant, String]]
       val yld = yieldSupplier(evolution)
       (alterand.apply _).expects(in).returns(yld)
-      inside(BreakIfNone(alterand)(in)) { case Yield.Some(yld.out, yld.`status`, binEvolution) =>
-        testWrappedEvolution(binEvolution, evolution, BreakIfNone[Long, Instant, String])
+      inside(BreakIfNone(alterand)(in)) { case Yield.Some(yld.out, yld.status, binEvolution) =>
+        testMappedEvolution(binEvolution, evolution, BreakIfNone[Long, Instant, String])
       }
     }
 
@@ -37,9 +35,9 @@ class BreakIfNoneTest
       val evolution = mock[Evolution[String, LocalDate, Long]]
       val yld = yieldSupplier(evolution)
       (alterand.apply _).expects(in).returns(yld)
-      inside(BreakIfNone(alterand)(in)) { case Yield.None(status, binEvolution) =>
-        status shouldBe yld.status.break
-        testWrappedEvolution(binEvolution, evolution, BreakIfNone[String, LocalDate, Long])
+      val expectedStatus = if (yld.status == Status.Success) Status.complete else yld.status
+      inside(BreakIfNone(alterand)(in)) { case Yield.None(`expectedStatus`, binEvolution) =>
+        testMappedEvolution(binEvolution, evolution, BreakIfNone[String, LocalDate, Long])
       }
     }
 
@@ -47,6 +45,6 @@ class BreakIfNoneTest
     val stage = mock[Stage[Long, UUID, Exception]]("alterand")
     val evolution = mock[Evolution[Long, UUID, Exception]]("evolution")
     (stage.skip _).expects().returns(evolution)
-    testAlteredEvolution(BreakIfNone(stage).skip(), evolution, BreakIfNone[Long, UUID, Exception])
+    testMappedEvolution(BreakIfNone(stage).skip(), evolution, BreakIfNone[Long, UUID, Exception])
   }
 }

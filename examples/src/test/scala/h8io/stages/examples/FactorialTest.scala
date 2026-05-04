@@ -1,6 +1,6 @@
 package h8io.stages.examples
 
-import h8io.stages.{Status, Yield}
+import h8io.stages.{Outcome, Status, Yield}
 import org.scalacheck.Gen
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -12,71 +12,76 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
 
   "Factorial1" should "calculate factorial for positive arguments" in
     forAll(Gen.choose(1, 1000)) { n =>
-      inside(Factorial1.stage(n)(())) { case Yield.Some(out, Status.Success, _) => out shouldBe factorial(n) }
+      inside(Factorial1.pipeline(n).execute(())) { case Outcome.Some(out, Status.Success, None) =>
+        out shouldBe factorial(n)
+      }
     }
 
   it should "calculate factorial for one" in {
-    Factorial1.stage(1)(()) should matchPattern { case Yield.Some(One, Status.Success, _) => }
+    Factorial1.pipeline(1).execute(()) should matchPattern { case Outcome.Some(One, Status.Success, None) => }
   }
 
   it should "not calculate factorial for zero" in {
-    Factorial1.stage(0)(()) should matchPattern { case Yield.None(Status.Success, _) => }
+    Factorial1.pipeline(0).execute(()) should matchPattern { case Outcome.None(Status.Success, None) => }
   }
 
   it should "not calculate factorial for negative arguments" in
     forAll(Gen.choose(Int.MinValue, -1)) { n =>
-      Factorial1.stage(n)(()) should matchPattern { case Yield.None(Status.Success, _) => }
+      Factorial1.pipeline(n).execute(()) should matchPattern { case Outcome.None(Status.Success, None) => }
     }
-
-  "Factorial1.Agg" should "return Agg object for onError method" in {
-    Factorial1.Agg(42).onError() shouldBe Factorial1.Agg
-  }
 
   "Factorial2" should "calculate factorial for positive arguments" in
     forAll(Gen.choose(1, 1000)) { n =>
-      inside(Factorial2.stage(n)) { case Yield.Some(out, Status.Success, _) => out shouldBe factorial(n) }
+      inside(Factorial2.pipeline.execute(n)) { case Outcome.Some(out, Status.Success, None) =>
+        out shouldBe factorial(n)
+      }
     }
 
   it should "calculate factorial for one" in {
-    Factorial2.stage(1) should matchPattern { case Yield.Some(One, Status.Success, _) => }
+    Factorial2.pipeline.execute(1) should matchPattern { case Outcome.Some(One, Status.Success, None) => }
   }
 
   it should "calculate factorial for zero" in {
-    Factorial2.stage(0) should matchPattern { case Yield.Some(One, Status.Success, _) => }
+    Factorial2.pipeline.execute(0) should matchPattern { case Outcome.Some(One, Status.Success, None) => }
   }
 
   it should "not calculate factorial for negative arguments" in {
-    val expectedError = Status.Error("negative number")
+    val expectedError = Status.error("negative number")
     forAll(Gen.choose(Int.MinValue, -1)) { n =>
-      Factorial2.stage(n) should matchPattern { case Yield.None(`expectedError`, _) => }
+      Factorial2.pipeline.execute(n) should matchPattern { case Outcome.None(`expectedError`, None) => }
     }
   }
 
-  "Factorial3" should "calculate factorial for positive arguments" in {
-    inside(Factorial3.stage(5)) { case Yield.Some(out, Status.Success, _) => out shouldBe factorial(5) }
+  "Factorial3" should "calculate factorial for positive arguments" in
     forAll(Gen.choose(1, 1000)) { n =>
-      inside(Factorial3.stage(n)) { case Yield.Some(out, Status.Success, _) => out shouldBe factorial(n) }
+      inside(Factorial3.pipeline.execute(n)) { case Outcome.Some(out, Status.Success, None) =>
+        out shouldBe factorial(n)
+      }
     }
-  }
 
   it should "calculate factorial for one" in {
-    Factorial3.stage(1) should matchPattern { case Yield.Some(One, Status.Success, _) => }
+    Factorial3.pipeline.execute(1) should matchPattern { case Outcome.Some(One, Status.Success, None) => }
   }
 
   it should "calculate factorial for zero" in {
-    Factorial3.stage(0) should matchPattern { case Yield.Some(One, Status.Success, _) => }
+    Factorial3.pipeline.execute(0) should matchPattern { case Outcome.Some(One, Status.Success, None) => }
   }
 
   it should "not calculate factorial for negative arguments" in {
-    val expectedError = Status.Error(Factorial3.NegativeNumberError)
+    val expectedError = Status.error(Factorial3.NegativeNumberError)
     forAll(Gen.choose(Int.MinValue, -1)) { n =>
-      Factorial3.stage(n) should matchPattern { case Yield.None(`expectedError`, _) => }
+      Factorial3.pipeline.execute(n) should matchPattern { case Outcome.None(`expectedError`, None) => }
     }
   }
 
-  it should "return the initial stage on complete" in
-    forAll((i: Int, f: BigInt) => Factorial3.Factorial(i, f).onComplete() shouldBe Factorial3.InitialStage)
-
-  it should "return the initial stage on error" in
-    forAll((i: Int, f: BigInt) => Factorial3.Factorial(i, f).onError() shouldBe Factorial3.InitialStage)
+  // To cover some unused branches in Factorial3.Factorial
+  "Factorial3 evolution" should "return the correct stage" in
+    forAll(Gen.choose(1, 1000), Gen.choose(1, 1000)) { (n, m) =>
+      val stage = Factorial3.Factorial(n, One)
+      inside(stage(n + m)) { case Yield.Some(One, Status.Success, evolution) =>
+        evolution(Status.Success) shouldBe Factorial3.Factorial(n + 1, BigInt(n))
+        evolution(Status.complete) shouldBe Factorial3.InitialStage
+        noException should be thrownBy evolution.dispose()
+      }
+    }
 }

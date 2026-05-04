@@ -3,14 +3,14 @@ package h8io.stages
 /** The execution status produced by a [[Stage]].
   *
   * A `Status` travels alongside the output (or absence of output) in a [[Yield]] and is accumulated as stages are
-  * composed. There are three possible states:
+  * composed. There are two possible states:
   *
   *   - [[Status.Success]] — the stage completed normally and processing may continue.
-  *   - [[Status.Complete]] — the pipeline has finished successfully; no further input should be processed.
-  *   - [[Status.Error]] — one or more errors occurred; the pipeline should stop and report them.
+  *   - [[Status.Complete]] — the pipeline has finished; no further input should be processed. When `errors` is empty
+  *     this represents clean completion; when `errors` is non-empty it represents one or more accumulated errors.
   *
   * Statuses form a semigroup under `combine`, used when merging the results of composed stages: `Success` is the
-  * identity element, `Complete` dominates `Success` but yields to `Error`, and `Error` dominates all.
+  * identity element and `Complete` accumulates errors on combination.
   *
   * @tparam E
   *   the error type (covariant)
@@ -19,19 +19,10 @@ sealed trait Status[+E] {
 
   /** Combines this status with `next`, returning the more severe of the two.
     *
-    * Precedence (lowest to highest): `Success` < `Complete` < `Error`. When two `Error` statuses are combined their
-    * error lists are concatenated.
+    * `Success` is the identity element; `Complete` dominates `Success` and two `Complete` values are merged by
+    * concatenating their error sequences.
     */
   def combine[_E >: E](next: Status[_E]): Status[_E]
-
-  /** Selects the appropriate continuation stage from `evolution` based on this status. */
-  private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E]
-
-  /** Returns the "break" variant of this status, used to signal pipeline termination.
-    *
-    * For [[Status.Success]] this returns [[Status.Complete]]; for all break statuses it returns `this` unchanged.
-    */
-  private[stages] def break: Status[E]
 
   /** Transforms the error values contained in this status.
     *
@@ -45,7 +36,7 @@ sealed trait Status[+E] {
   def map[_E](f: E => _E): Status[_E]
 }
 
-/** Companion object containing the three concrete status variants. */
+/** Companion object containing the concrete status variants. */
 object Status {
 
   /** Indicates that a [[Stage]] completed successfully and the pipeline may continue.
@@ -59,95 +50,50 @@ object Status {
         case that => that
       }
 
-    private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onSuccess()
-
-    private[stages] def break: Status[Nothing] = Complete
-
     override def map[_E](f: Nothing => _E): this.type = this
   }
 
-  /** Marker trait for statuses that signal the pipeline should stop processing.
+  /** Indicates that the pipeline has finished processing.
     *
-    * Both [[Complete]] and [[Error]] extend `Break`. Once a break status is produced, the pipeline will not request
-    * further input even if more is available.
+    * When `errors` is empty (i.e., `this == complete`) the pipeline completed normally without errors. When `errors` is
+    * non-empty the pipeline encountered one or more accumulated errors.
     *
-    * @tparam E
-    *   the error type (covariant)
-    */
-  sealed trait Break[+E] extends Status[E] {
-    private[stages] def break: Status[E] = this
-  }
-
-  /** Indicates that the pipeline has finished processing normally, without errors.
+    * `Complete` dominates [[Success]] in composition. Two `Complete` statuses are merged by concatenating their error
+    * sequences.
     *
-    * `Complete` dominates [[Success]] but yields to [[Error]] in composition: `Complete.combine(Success) == Complete`
-    * and `Complete.combine(e: Error) == e`.
-    */
-  case object Complete extends Break[Nothing] {
-    def combine[E](next: Status[E]): Status[E] =
-      next match {
-        case Success | Complete => this
-        case that => that
-      }
-
-    private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onComplete()
-
-    override def map[_E](f: Nothing => _E): this.type = this
-  }
-
-  /** Indicates that one or more errors occurred during stage execution.
-    *
-    * Errors are stored as a non-empty list with `head` holding the first (or primary) error and `tail` holding any
-    * additional errors accumulated through composition.
-    *
-    * `Error` is the most severe status: it dominates both [[Success]] and [[Complete]]. Composing two `Error` values
-    * concatenates their error lists, preserving left-to-right order with the left `Error`'s `head` remaining the first
-    * element.
-    *
-    * Because `Error` extends `Iterable[E]`, individual errors can be iterated with a standard `for`-comprehension or
+    * Because `Complete` extends `Iterable[E]`, individual errors can be iterated directly with a `for`-comprehension or
     * `foreach`.
     *
-    * @param head
-    *   the primary error value
-    * @param tail
-    *   additional error values accumulated through pipeline composition
+    * @param errors
+    *   the accumulated error values; empty for a clean completion
     * @tparam E
     *   the error type (covariant)
     */
-  final case class Error[+E](override val head: E, override val tail: List[E]) extends Break[E] with Iterable[E] {
+  final case class Complete[+E](errors: Seq[E]) extends Status[E] with Iterable[E] {
     def combine[_E >: E](next: Status[_E]): Status[_E] =
       next match {
-        case Success | Complete => this
-        case Error(head, tail) => Error(this.head, this.tail ::: head :: tail)
+        case Status.Success => this
+        case Complete(errors) => Complete(this.errors ++ errors)
       }
 
-    private[stages] def apply[I, O, _E](evolution: Evolution[I, O, _E]): Stage[I, O, _E] = evolution.onError()
+    override def map[_E](f: E => _E): Complete[_E] = Complete(errors.map(f))
 
-    /** Returns all error values as a `List`, with `head` at the front. */
-    @inline override def toList: List[E] = head :: tail
+    override def iterator: Iterator[E] = errors.iterator
 
-    override def iterator: Iterator[E] = toList.iterator
-
-    /** Always `false`; an `Error` always contains at least one error value. */
-    override def isEmpty: Boolean = false
-
-    override def map[_E](f: E => _E): Error[_E] = Error(f(head), tail.map(f))
+    override def isEmpty: Boolean = errors.isEmpty
 
     override def toString: String = mkString(getClass.getSimpleName + "(", ", ", ")")
   }
 
-  /** Factory methods for [[Error]]. */
-  object Error {
+  /** A [[Complete]] with no errors, representing clean pipeline termination. */
+  val complete: Complete[Nothing] = Complete(Nil)
 
-    /** Creates an [[Error]] with a single error value and an empty tail.
-      *
-      * @param head
-      *   the single error value
-      * @tparam E
-      *   the error type
-      * @return
-      *   an `Error` containing only `head`
-      */
-    def apply[E](head: E): Error[E] = new Error(head, Nil)
-  }
+  /** Creates a [[Complete]] status from one or more error values.
+    *
+    * @param head
+    *   the first (required) error value
+    * @param tail
+    *   any additional error values
+    */
+  def error[E](head: E, tail: E*): Complete[E] = Complete(head +: tail)
 }

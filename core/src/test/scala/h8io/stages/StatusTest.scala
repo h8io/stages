@@ -6,7 +6,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import java.time.Instant
 import java.util.UUID
 import scala.concurrent.duration.Duration
 
@@ -14,86 +13,69 @@ class StatusTest
     extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with StagesCoreArbitraries {
   "Success" should "be idempotent" in { Status.Success.combine(Status.Success) shouldBe Status.Success }
 
-  it should "call onSuccess() on the Evolution object" in {
-    val evolution = mock[Evolution[Long, Instant, Exception]]
-    val stage = mock[Stage[Long, Instant, Exception]]
-    (evolution.onSuccess _).expects().returns(stage)
-    Status.Success(evolution) shouldBe stage
+  "complete" should "be idempotent" in {
+    Status.complete.combine(Status.complete) shouldBe Status.complete
   }
 
-  it should "become Complete when break is called" in { Status.Success.break shouldBe Status.Complete }
+  it should "be overridden by Complete with errors" in
+    forAll((c: Status.Complete[String]) => Status.complete.combine(c) shouldBe c)
 
-  "Complete" should "be idempotent" in { Status.Complete.combine(Status.Complete) shouldBe Status.Complete }
-
-  it should "be overridden by Error" in
-    forAll((error: Status.Error[String]) => Status.Complete.combine(error) shouldBe error)
-
-  it should "call onComplete() on the Evolution object" in {
-    val evolution = mock[Evolution[Long, Instant, Exception]]
-    val stage = mock[Stage[Long, Instant, Exception]]
-    (evolution.onComplete _).expects().returns(stage)
-    Status.Complete(evolution) shouldBe stage
-  }
-
-  it should "not change when break is called" in { Status.Complete.break shouldBe Status.Complete }
-
-  "Error" should "keep the order of causes in composition" in
-    forAll { (previous: Status.Error[String], next: Status.Error[String]) =>
-      previous.combine(next) shouldBe Status.Error(previous.head, previous.tail ::: next.head :: next.tail)
+  "Complete with errors" should "keep the order of causes in composition" in
+    forAll { (previous: Status.Complete[String], next: Status.Complete[String]) =>
+      previous.combine(next) shouldBe Status.Complete(previous.errors ++ next.errors)
     }
 
-  it should "override Complete" in
-    forAll((error: Status.Error[String]) => error.combine(Status.Complete) shouldBe error)
+  it should "override complete" in
+    forAll((c: Status.Complete[String]) => c.combine(Status.complete) shouldBe c)
 
-  it should "call onError() on the Evolution object" in
-    forAll { (error: Status.Error[String]) =>
-      val evolution = mock[Evolution[Long, Instant, Exception]]
-      val stage = mock[Stage[Long, Instant, Exception]]
-      (evolution.onError _).expects().returns(stage)
-      error(evolution) shouldBe stage
-    }
-
-  it should "not change when break is called" in forAll((error: Status.Error[String]) => error.break shouldBe error)
-
-  it should "not be empty" in
-    forAll { (error: Status.Error[Exception]) =>
-      error.isEmpty shouldBe false
-      error.toList should matchPattern { case error.head :: error.tail => }
-      val i = error.iterator
-      i.next() shouldBe error.head
-      i.toList should contain theSameElementsInOrderAs error.tail
+  "Complete" should "contain the same elements as the error list" in
+    forAll { (c: Status.Complete[Exception]) =>
+      c.isEmpty shouldBe c.errors.isEmpty
+      c.toList should contain theSameElementsInOrderAs c.errors
+      val i = c.iterator
+      i.toList should contain theSameElementsInOrderAs c.errors
     }
 
   "map" should "not change the Success status" in {
     Status.Success.map(mock[String => Long]) shouldBe Status.Success
   }
 
-  it should "not change the Complete status" in {
-    Status.Complete.map(mock[Throwable => String]) shouldBe Status.Complete
+  it should "not change the complete status" in {
+    Status.complete.map(mock[Throwable => String]) shouldBe Status.complete
   }
 
-  it should "not change the Error status" in
+  it should "transform error values in Complete" in
     forAll(Gen.choose(1, 16)) { size =>
       forAll(Gen.zip(Gen.listOfN(size, Gen.uuid), Gen.listOfN(size, Gen.duration))) { case (initial, mapped) =>
-        val initalError = Status.Error(initial.head, initial.tail)
-        val mappedError = Status.Error(mapped.head, mapped.tail)
+        val initialComplete = Status.Complete(initial)
+        val mappedComplete = Status.Complete(mapped)
         val f = mock[UUID => Duration]
         inSequence(
           for {
             (i, m) <- initial.zip(mapped)
           } (f.apply _).expects(i).returns(m)
         )
-        initalError.map(f) shouldBe mappedError
+        initialComplete.map(f) shouldBe mappedComplete
       }
     }
 
-  it should "render as 'Error(...)' with comma-separated values" in
-    forAll { (error: Status.Error[String]) =>
-      error.toString shouldBe error.mkString("Error(", ", ", ")")
+  it should "render as 'Complete(...)' with comma-separated values" in
+    forAll { (c: Status.Complete[String]) =>
+      c.toString shouldBe c.mkString("Complete(", ", ", ")")
     }
 
-  "Error.apply" should "create an Error status from a single error" in {
+  "Complete.apply" should "create a Complete status from a sequence of errors" in {
     val error = mock[AnyRef]
-    Status.Error(error) shouldBe Status.Error(error, Nil)
+    Status.Complete(Seq(error)).errors shouldBe Seq(error)
   }
+
+  "error" should "create a Complete from a single error" in {
+    val e = mock[AnyRef]
+    Status.error(e) shouldBe Status.Complete(Seq(e))
+  }
+
+  it should "preserve the order of all error values" in
+    forAll(Gen.nonEmptyListOf(Gen.uuid)) { errors =>
+      Status.error(errors.head, errors.tail*) shouldBe Status.Complete(errors)
+    }
 }

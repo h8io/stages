@@ -1,6 +1,6 @@
 # A Diagram of a Simple Pipeline
 
-In this example, I will show not a “real-world” pipeline, but a simplified model of one.  
+In this example, I will show not a "real-world" pipeline, but a simplified model of one.  
 The goal is not to demonstrate every feature of the library, but to use one small scenario to highlight three core
 ideas:
 
@@ -24,11 +24,7 @@ actually matter in this example.
 import h8io.stages.*
 
 trait MockEvolution[-I, +O, +E] extends Evolution[I, O, E] {
-  override def onSuccess(): Stage[I, O, E] = ???
-
-  override def onComplete(): Stage[I, O, E] = ???
-
-  override def onError(): Stage[I, O, E] = ???
+  override def apply(status: Status[?]): Stage[I, O, E] = ???
 
   override def dispose(): Unit = ???
 }
@@ -39,7 +35,7 @@ trait MockEvolution[-I, +O, +E] extends Evolution[I, O, E] {
 The first stage works with integers.
 
 `Stage 1-1` takes the input value, subtracts `3` from it, and returns the result with status `Success`.  
-If the overall pipeline run later has to evolve along the `Error` branch, this stage becomes `Stage 1-2`.
+When the pipeline later finishes with a `Complete` status and it is time to evolve, this stage becomes `Stage 1-2`.
 
 ```scala mdoc
 object Stage11 extends Stage[Int, Int, Nothing] {
@@ -49,7 +45,7 @@ object Stage11 extends Stage[Int, Int, Nothing] {
       in - 3,
       Status.Success,
       new MockEvolution[Int, Int, Nothing] {
-        override def onError(): Stage[Int, Int, Nothing] = {
+        override def apply(status: Status[?]): Stage[Int, Int, Nothing] = {
           println("Evolve Stage 1-1")
           Stage12
         }
@@ -69,7 +65,7 @@ object Stage12 extends Stage[Int, Int, Nothing] {
     println(s"Apply Stage 1-2 to $in (${in.getClass.getSimpleName})")
     Yield.Some(
       5 - in,
-      Status.Complete,
+      Status.complete,
       new MockEvolution[Int, Int, Nothing] {
         override def dispose(): Unit = println("Dispose Stage 1-2")
       })
@@ -84,11 +80,11 @@ object Stage12 extends Stage[Int, Int, Nothing] {
 The second stage turns a number into a string, but in the first generation it also performs an extra check.
 
 `Stage 2-1` checks whether its input is zero.  
-If the input is `0`, it returns `Yield.None` with status `Error("Zero")`. This means no value will be passed any further
-down the pipeline.  
+If the input is `0`, it returns `Yield.None` with `Status.error("Zero")`. This means no value will be passed any
+further down the pipeline.  
 If the input is not zero, the stage simply turns the number into a string and returns `Success`.
 
-In case of an error, `Stage 2-1` evolves into `Stage 2-2`.
+When the pipeline finishes with a `Complete` status, `Stage 2-1` evolves into `Stage 2-2`.
 
 ```scala mdoc
 object Stage21 extends Stage[Int, String, String] {
@@ -96,9 +92,9 @@ object Stage21 extends Stage[Int, String, String] {
     println(s"Apply Stage 2-1 to $in (${in.getClass.getSimpleName})")
     if (in == 0)
       Yield.None(
-        Status.Error("Zero"),
+        Status.error("Zero"),
         new MockEvolution[Int, String, String] {
-          override def onError(): Stage[Int, String, String] = {
+          override def apply(status: Status[?]): Stage[Int, String, String] = {
             println("Evolve Stage 2-1")
             Stage22
           }
@@ -139,7 +135,7 @@ The third stage already works with strings and, in the first generation, is not 
 If the previous stage produces no value and pipeline execution stops early, the downstream stage must still get a chance
 to evolve correctly. That is exactly what `skip()` is for.
 
-In this example, `Stage 3-1` evolves into `Stage 3-2` along the `Error` branch.
+In this example, `Stage 3-1` evolves into `Stage 3-2`.
 
 ```scala mdoc
 object Stage31 extends Stage[String, Boolean, Nothing] {
@@ -148,7 +144,7 @@ object Stage31 extends Stage[String, Boolean, Nothing] {
   override def skip(): Evolution[String, Boolean, Nothing] = {
     println("Skip Stage 3-1")
     new MockEvolution[String, Boolean, Nothing] {
-      override def onError(): Stage[String, Boolean, Nothing] = {
+      override def apply(status: Status[?]): Stage[String, Boolean, Nothing] = {
         println("Evolve Stage 3-1")
         Stage32
       }
@@ -194,7 +190,7 @@ Let us run the first generation of the pipeline:
 val yld = pipeline1(3)
 ```
 
-The final status of the first generation is `Status.Error`:
+The final status of the first generation is `Status.Complete` with errors:
 
 ```scala mdoc
 yld.status.getClass
@@ -234,20 +230,20 @@ In the first generation, the input value `3` is sent to `Stage 1-1` ①.
 That value is then passed on to `Stage 2-1` ③.
 
 At `Stage 2-1`, the pipeline reaches a branch that determines what happens next.  
-Since the input is `0`, this stage returns `Yield.None` with status `Error("Zero")` ④.  
+Since the input is `0`, this stage returns `Yield.None` with `Status.error("Zero")` ④.  
 At that point there is no longer any value to pass downstream, so `Stage 3-1` is not invoked via `apply()`. Instead,
 `skip()` is called for it, producing an `Evolution` object ⑤.
 
 Once the active part of the first generation has finished, the pipeline folds the `Status` values it has already
 obtained into a single overall status ⑥.  
-In this case, the overall status of the first generation is `Error("Zero")`.
+In this case, the overall status of the first generation is `Complete` with error `"Zero"`.
 
 Now that this status is known, the pipeline can evolve into the next generation.  
 All `Evolution` methods are called in the order opposite to the order in which stages are applied. This matters because
 a downstream stage may depend on state or resources created by an upstream stage. If upstream stages were finalized or
 reconfigured too early, downstream stages could lose what they still rely on.
 
-First, the object obtained from `Stage 3-1.skip()` is used: along the `onError()` branch it creates `Stage 3-2` ⑦ ⑧.  
+First, the object obtained from `Stage 3-1.skip()` is used: its `apply` call produces `Stage 3-2` ⑦ ⑧.  
 Then `Stage 2-1` evolves for the same reason: its `Evolution` moves the pipeline to `Stage 2-2` ⑨ ⑩.  
 After that, `Stage 1-1` evolves into `Stage 1-2` ⑪ ⑫.
 

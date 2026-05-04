@@ -1,6 +1,6 @@
 package h8io.stages.std
 
-import h8io.stages.base.{BaseStage, Fruitful}
+import h8io.stages.base.{BaseStage, Fruitful, StageOps}
 import h8io.stages.{Status, Yield}
 
 /** A stage that immediately signals pipeline completion without dropping the input value.
@@ -20,5 +20,5 @@ object Break extends Fruitful.Endo[Any, Nothing] with BaseStage.Endo[Any, Nothin
     */
   def apply[T]: Fruitful.Endo[T, Nothing] = asInstanceOf[Fruitful.Endo[T, Nothing]]
 
-  override def apply(in: Any): Yield.Some[Any, Any, Nothing] = Yield.Some(in, Status.Complete, this)
+  override def apply(in: Any): Yield.Some[Any, Any, Nothing] = Yield.Some(in, Status.complete, this.toEvolution)
 }

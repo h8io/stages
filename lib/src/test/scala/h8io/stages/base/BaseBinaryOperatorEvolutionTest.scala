@@ -50,8 +50,8 @@ class BaseBinaryOperatorEvolutionTest extends AnyFlatSpec with Matchers with Moc
   }
 
   private def mkMocks() = {
-    val left = mock[Evolution[Any, Nothing, Nothing]]("left")
-    val right = mock[Evolution[Any, Nothing, Nothing]]("right")
+    val left = mock[Evolution[Any, Nothing, Nothing]]("left evolution")
+    val right = mock[Evolution[Any, Nothing, Nothing]]("right evolution")
     val evolution = TestBaseBinaryOperatorEvolution(left, right)
     (evolution, left, right)
   }

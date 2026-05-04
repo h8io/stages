@@ -13,6 +13,6 @@ class FnTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckP
     forAll { (in: ZoneId, out: Long) =>
       val f = mock[Fn[ZoneId, Long]]
       (f.f _).expects(in).returns(out)
-      f(in) shouldBe Yield.Some(`out`, Status.Success, f)
+      f(in) shouldBe Yield.Some(`out`, Status.Success, ConstEvolution(f))
     }
 }

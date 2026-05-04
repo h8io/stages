@@ -1,7 +1,6 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.StagesBaseTestUtil
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -18,8 +17,7 @@ class KeepLastOutputTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil
-    with StagesBaseTestUtil {
+    with StagesCoreTestUtil {
   "Initial stage" should "be None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     KeepLastOutput(stage) shouldBe KeepLastOutput.None(stage)
@@ -31,7 +29,7 @@ class KeepLastOutputTest
       val evolution = mock[Evolution[UUID, Instant, Exception]]
       (stage.apply _).expects(in).returns(Yield.None(status, evolution))
       inside(KeepLastOutput.None(stage)(in)) { case Yield.None(`status`, kloEvolution) =>
-        testWrappedEvolution(kloEvolution, evolution, KeepLastOutput.None[UUID, Instant, Exception])
+        testMappedEvolution(kloEvolution, evolution, KeepLastOutput.None[UUID, Instant, Exception])
       }
     }
 
@@ -41,7 +39,7 @@ class KeepLastOutputTest
       val evolution = mock[Evolution[Long, String, Exception]]
       (stage.apply _).expects(in).returns(Yield.Some(out, status, evolution))
       inside(KeepLastOutput.None(stage)(in)) { case Yield.Some(`out`, `status`, kloEvolution) =>
-        testWrappedEvolution(kloEvolution, evolution, KeepLastOutput.Some[Long, String, Exception](out, _))
+        testMappedEvolution(kloEvolution, evolution, KeepLastOutput.Some[Long, String, Exception](out, _))
       }
     }
 
@@ -49,7 +47,7 @@ class KeepLastOutputTest
     val stage = mock[Stage[UUID, String, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, String, Exception]]("evolution")
     (stage.skip _).expects().returns(evolution)
-    testAlteredEvolution(KeepLastOutput.None(stage).skip(), evolution, KeepLastOutput.None[UUID, String, Exception])
+    testMappedEvolution(KeepLastOutput.None(stage).skip(), evolution, KeepLastOutput.None[UUID, String, Exception])
   }
 
   "Some" should "keep the old output if alterand returns Yield.None" in
@@ -58,7 +56,7 @@ class KeepLastOutputTest
       val evolution = mock[Evolution[ZonedDateTime, ZoneId, Exception]]
       (stage.apply _).expects(in).returns(Yield.None(status, evolution))
       inside(KeepLastOutput.Some(out, stage)(in)) { case Yield.Some(`out`, `status`, kloEvolution) =>
-        testWrappedEvolution(kloEvolution, evolution, KeepLastOutput.Some[ZonedDateTime, ZoneId, Exception](out, _))
+        testMappedEvolution(kloEvolution, evolution, KeepLastOutput.Some[ZonedDateTime, ZoneId, Exception](out, _))
       }
     }
 
@@ -68,7 +66,7 @@ class KeepLastOutputTest
       val evolution = mock[Evolution[Array[Int], BigInt, Exception]]
       (stage.apply _).expects(in).returns(Yield.Some(newOut, status, evolution))
       inside(KeepLastOutput.Some(out, stage)(in)) { case Yield.Some(`newOut`, `status`, kloEvolution) =>
-        testWrappedEvolution(kloEvolution, evolution, KeepLastOutput.Some[Array[Int], BigInt, Exception](newOut, _))
+        testMappedEvolution(kloEvolution, evolution, KeepLastOutput.Some[Array[Int], BigInt, Exception](newOut, _))
       }
     }
 
@@ -77,7 +75,7 @@ class KeepLastOutputTest
     val stage = mock[Stage[UUID, AnyRef, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, AnyRef, Exception]]("evolution")
     (stage.skip _).expects().returns(evolution)
-    testAlteredEvolution(
+    testMappedEvolution(
       KeepLastOutput.Some(out, stage).skip(), evolution, KeepLastOutput.Some[UUID, AnyRef, Exception](out, _))
   }
 }

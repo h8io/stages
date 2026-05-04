@@ -4,25 +4,26 @@
 As stages are composed into a pipeline via `~>`, their individual statuses are merged into a single overall status
 for the run.
 
-Three things can be signalled:
+Two things can be signalled:
 
 - that the stage completed normally and the pipeline may continue;
-- that the pipeline has finished and should not request further input;
-- that one or more errors occurred.
+- that the pipeline has finished — either cleanly or with one or more accumulated errors.
 
 ```scala mdoc
 import h8io.stages.*
 ```
 
-## The Three Variants
+## The Two Variants
 
 `Status.Success` is the ordinary outcome. The stage did its work and the pipeline is free to move on.
 
-`Status.Complete` signals that the pipeline has deliberately finished — it has produced everything it needs and does not
-want more input. It is not an error: it is a stage's way of saying the work is done.
+`Status.Complete` signals that the pipeline has finished. When its `errors` sequence is empty this represents clean
+termination; when `errors` is non-empty one or more errors were accumulated during the run.
 
-`Status.Error` means something went wrong. It holds at least one error value and can accumulate additional errors as
-each stage in a composed pipeline reports its own failure independently.
+Two convenience values cover the common cases:
+
+- `Status.complete` — a `Complete` with no errors, for signalling clean termination.
+- `Status.error(head, tail*)` — a `Complete` with one or more error values.
 
 ## Combining Statuses
 
@@ -33,66 +34,56 @@ The rule is simple: the result is whichever of the two is more severe.
 
 ```scala mdoc
 Status.Success.combine(Status.Success)
-Status.Success.combine(Status.Complete)
-Status.Success.combine(Status.Error("something went wrong"))
+Status.Success.combine(Status.complete)
+Status.Success.combine(Status.error("something went wrong"))
 ```
 
-`Complete` dominates `Success` but yields to `Error`:
+`Complete` dominates `Success`. Two `Complete` values are merged by concatenating their error sequences,
+preserving the left-to-right order of the stages in the pipeline:
 
 ```scala mdoc
-Status.Complete.combine(Status.Success)
-Status.Complete.combine(Status.Complete)
-Status.Complete.combine(Status.Error("something went wrong"))
-```
-
-`Error` is the most severe status and dominates everything else. When two `Error` values are combined, their error lists
-are concatenated, preserving the left-to-right order of the stages in the pipeline:
-
-```scala mdoc
-Status.Error("first").combine(Status.Success)
-Status.Error("first").combine(Status.Complete)
-Status.Error("first").combine(Status.Error("second"))
+Status.complete.combine(Status.Success)
+Status.complete.combine(Status.complete)
+Status.error("first").combine(Status.error("second"))
 ```
 
 Together, `combine` and `Success` make `Status[E]` a monoid for any fixed `E`: `combine` is associative, and
-`Success` is its identity element. The monoid is not commutative in general — when two `Error` values are combined,
-the left-to-right order of their error lists is significant.
+`Success` is its identity element. The monoid is not commutative in general — when two `Complete` values with errors
+are combined, the order of their error sequences is significant.
 
-## Accumulating Errors
+## Accessing Errors
 
-`Status.Error` extends `Iterable[E]`, so it can be iterated directly with `foreach` or a `for`-comprehension.
-The primary error is available as `head`; any additional errors accumulated through composition are in `tail`.
-`toList` returns them all in order:
+`Status.Complete` extends `Iterable[E]`, so errors can be iterated directly with `foreach` or a `for`-comprehension.
+`errors` holds the full sequence; `toList` returns them all in order:
 
 ```scala mdoc
-val err = Status.Error("disk full", List("timeout", "connection reset"))
-err.head
-err.tail
+val err = Status.error("disk full", "timeout", "connection reset")
+err.errors
 err.toList
 for (message <- err) println(message)
 ```
 
-A single-argument factory is also provided for the common case of one error:
+`Status.complete` has no errors and is therefore empty:
 
 ```scala mdoc
-val single = Status.Error("not found")
-single.head
-single.tail
+Status.complete.isEmpty
+Status.complete.toList
 ```
 
 ## Transforming Error Values
 
-`map` applies a function to every error value contained in a `Status.Error`, leaving `Success` and `Complete`
-unchanged. This is useful when a pipeline boundary needs to change the error representation:
+`map` applies a function to every error value contained in a `Status.Complete`, leaving `Status.Success` and
+error-free `Complete` values unchanged. This is useful when a pipeline boundary needs to change the error
+representation:
 
 ```scala mdoc
-val numeric = Status.Error("42", List("7", "100")).map(_.toInt)
+val numeric = Status.error("42", "7", "100").map(_.toInt)
 numeric.toList
 ```
 
-Because `Success` and `Complete` have no error values, `map` returns them as-is:
+Because `Status.Success` and `Status.complete` carry no error values, `map` returns them unchanged:
 
 ```scala mdoc
 (Status.Success: Status[String]).map(identity)
-(Status.Complete: Status[String]).map(identity)
+(Status.complete: Status[String]).map(identity)
 ```

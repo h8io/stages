@@ -16,16 +16,23 @@ object Wallis {
   final case class Pi(n: Long) extends BaseStage.Endo[Double, Nothing] {
     override def apply(in: Double): Yield.Some[Double, Double, Nothing] = {
       val k = 4d * n * n
-      Yield.Some(in * k / (k - 1), Status.Success, this)
+      Yield.Some(
+        in * k / (k - 1),
+        Status.Success,
+        new Evolution.Endo[Double, Nothing] {
+          override def apply(status: Status[?]): Stage[Double, Double, Nothing] =
+            status match {
+              case Status.Success => Pi(n + 1)
+              case Status.Complete(_) => InitialStage
+            }
+          override def dispose(): Unit = ()
+        }
+      )
     }
-
-    override def onSuccess(): Stage[Double, Double, Nothing] = Pi(n + 1)
-    override def onComplete(): Stage[Double, Double, Nothing] = InitialStage
-    override def onError(): Stage[Double, Double, Nothing] = InitialStage
   }
 
   val InitialStage = Pi(1)
 
-  def stage(duration: FiniteDuration): Stage[Any, Double, Nothing] =
+  def pipeline(duration: FiniteDuration): Stage[Any, Double, Nothing] =
     Const(2d) ~> Loop[Double, Nothing](InitialStage ~> GlobalSoftDeadline(duration))
 }

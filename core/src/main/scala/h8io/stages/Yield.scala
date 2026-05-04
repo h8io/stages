@@ -57,12 +57,12 @@ sealed trait Yield[-I, +O, +E] {
   /** Returns the next [[Stage]] to invoke when the pipeline is ready to re-process.
     *
     * The stage returned depends on the current [[status]]: [[Status.Success]] yields the continuation for the normal
-    * path, [[Status.Complete]] for the finished path, and [[Status.Error]] for the error path.
+    * path, [[Status.Complete]] for the finished path.
     *
     * @return
     *   the next `Stage` to use for re-processing
     */
-  def evolve(): Stage[I, O, E] = status(evolution)
+  def evolve(): Stage[I, O, E] = evolution(status)
 }
 
 /** Companion object containing the two concrete variants of [[Yield]]. */
@@ -143,7 +143,7 @@ object Yield {
 
     override def outOption: Option[O] = scala.None
 
-    /** Composes this `None` with `downstream` by threading it through all branches of the evolution.
+    /** Composes this `None` with `downstream` by composing it into the evolution.
       *
       * Because no output was produced, `downstream` cannot be applied immediately; instead it becomes part of the
       * evolution so that the entire composed stage is invoked when the pipeline resumes.

@@ -18,7 +18,7 @@ class YieldTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
-  "compose method" should "compose Some and Some correctly" in
+  "compose" should "compose Some and Some correctly" in
     forAll {
       (upstreamYieldSupplier: EvolutionToYieldSome[Long, Instant, String],
           downstreamYieldSupplier: EvolutionToYieldSome[Instant, String, String]) =>
@@ -29,27 +29,8 @@ class YieldTest
         inside(upstreamYield.compose(downstreamYield)) {
           case Yield.Some(downstreamYield.out, status, evolution) =>
             status shouldBe upstreamYield.status.combine(downstreamYield.status)
-            val upstreamStage = mock[Stage[Long, Instant, String]]
-            val downstreamStage = mock[Stage[Instant, String, String]]
-            val stage = upstreamStage ~> downstreamStage
-
-            inSequence {
-              (downstreamEvolution.onSuccess _).expects().returns(downstreamStage)
-              (upstreamEvolution.onSuccess _).expects().returns(upstreamStage)
-            }
-            evolution.onSuccess() shouldBe stage
-
-            inSequence {
-              (downstreamEvolution.onComplete _).expects().returns(downstreamStage)
-              (upstreamEvolution.onComplete _).expects().returns(upstreamStage)
-            }
-            evolution.onComplete() shouldBe stage
-
-            inSequence {
-              (downstreamEvolution.onError _).expects().returns(downstreamStage)
-              (upstreamEvolution.onError _).expects().returns(upstreamStage)
-            }
-            evolution.onError() shouldBe stage
+            testEvolutionComposition[Long, Instant, Instant, String, Long, String, String](
+              evolution, upstreamEvolution, downstreamEvolution, _ ~> _)
         }
     }
 
@@ -64,27 +45,8 @@ class YieldTest
         inside(upstreamYield.compose(downstreamYield)) {
           case Yield.None(status, evolution) =>
             status shouldBe upstreamYield.status.combine(downstreamYield.status)
-            val upstreamStage = mock[Stage[Long, Instant, String]]
-            val downstreamStage = mock[Stage[Instant, String, String]]
-            val stage = upstreamStage ~> downstreamStage
-
-            inSequence {
-              (downstreamEvolution.onSuccess _).expects().returns(downstreamStage)
-              (upstreamEvolution.onSuccess _).expects().returns(upstreamStage)
-            }
-            evolution.onSuccess() shouldBe stage
-
-            inSequence {
-              (downstreamEvolution.onComplete _).expects().returns(downstreamStage)
-              (upstreamEvolution.onComplete _).expects().returns(upstreamStage)
-            }
-            evolution.onComplete() shouldBe stage
-
-            inSequence {
-              (downstreamEvolution.onError _).expects().returns(downstreamStage)
-              (upstreamEvolution.onError _).expects().returns(upstreamStage)
-            }
-            evolution.onError() shouldBe stage
+            testEvolutionComposition[Long, Instant, Instant, String, Long, String, String](
+              evolution, upstreamEvolution, downstreamEvolution, _ ~> _)
         }
     }
 
@@ -95,23 +57,8 @@ class YieldTest
       val upstreamYield = upstreamYieldSupplier(upstreamEvolution)
       inside(upstreamYield.compose(downstreamEvolution)) {
         case Yield.None(upstreamYield.`status`, evolution) =>
-          val onSuccessDownstreamStage = mock[Stage[Instant, String, String]]("onSuccess downstream stage")
-          (downstreamEvolution.onSuccess _).expects().returns(onSuccessDownstreamStage)
-          val onSuccessUpstreamStage = mock[Stage[Long, Instant, String]]("onSuccess upstream stage")
-          (upstreamEvolution.onSuccess _).expects().returns(onSuccessUpstreamStage)
-          evolution.onSuccess() shouldBe onSuccessUpstreamStage ~> onSuccessDownstreamStage
-
-          val onCompleteDownstreamStage = mock[Stage[Instant, String, String]]("onComplete downstream stage")
-          (downstreamEvolution.onComplete _).expects().returns(onCompleteDownstreamStage)
-          val onCompleteUpstreamStage = mock[Stage[Long, Instant, String]]("onComplete upstream stage")
-          (upstreamEvolution.onComplete _).expects().returns(onCompleteUpstreamStage)
-          evolution.onComplete() shouldBe onCompleteUpstreamStage ~> onCompleteDownstreamStage
-
-          val onErrorDownstreamStage = mock[Stage[Instant, String, String]]("onError downstream stage")
-          (downstreamEvolution.onError _).expects().returns(onErrorDownstreamStage)
-          val onErrorUpstreamStage = mock[Stage[Long, Instant, String]]("onError upstream stage")
-          (upstreamEvolution.onError _).expects().returns(onErrorUpstreamStage)
-          evolution.onError() shouldBe onErrorUpstreamStage ~> onErrorDownstreamStage
+          testEvolutionComposition[Long, Instant, Instant, String, Long, String, String](
+            evolution, upstreamEvolution, downstreamEvolution, _ ~> _)
       }
     }
 
@@ -146,25 +93,16 @@ class YieldTest
           Yield.None(mappedStatus, mappedEvolution)
     }
 
-  "evolve method" should "call evolution according to status" in
+  "evolve" should "call evolution according to status" in
     forAll { (yldSupplier: EvolutionToYield[Instant, LocalDateTime, Long]) =>
       val evolution = mock[Evolution[Instant, LocalDateTime, Long]]("evolution")
       val yld = yldSupplier(evolution)
       val stage = mock[Stage[Instant, LocalDateTime, Long]]
-      yld.status match {
-        case Status.Success =>
-          (evolution.onSuccess _).expects().returns(stage)
-          yld.evolve() should be theSameInstanceAs stage
-        case Status.Complete =>
-          (evolution.onComplete _).expects().returns(stage)
-          yld.evolve() should be theSameInstanceAs stage
-        case _: Status.Error[?] =>
-          (evolution.onError _).expects().returns(stage)
-          yld.evolve() should be theSameInstanceAs stage
-      }
+      (evolution.apply _).expects(yld.status).returns(stage)
+      yld.evolve() shouldBe stage
     }
 
-  "outOption method" should "return None for None Yield" in {
+  "outOption" should "return None for None Yield" in {
     Yield.None[Instant, LocalDateTime, Long](Status.Success, mock[Evolution[Instant, LocalDateTime, Long]]("evolution"))
       .outOption shouldBe None
   }

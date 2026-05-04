@@ -13,14 +13,23 @@ object Factorial1 {
    * Input is Unit, output is the computed factorial.
    */
   sealed case class Agg(n: Long) extends BaseStage.Endo[BigInt, Nothing] {
-    override def apply(in: BigInt): Yield.Some[BigInt, BigInt, Nothing] = Yield.Some(in * n, Status.Success, this)
-
-    override def onSuccess(): Stage.Endo[BigInt, Nothing] = Agg(n + 1)
-    override def onComplete(): Stage.Endo[BigInt, Nothing] = Agg
-    override def onError(): Stage.Endo[BigInt, Nothing] = Agg
+    override def apply(in: BigInt): Yield.Some[BigInt, BigInt, Nothing] =
+      Yield.Some(
+        in * n,
+        Status.Success,
+        new Evolution.Endo[BigInt, Nothing] {
+          override def apply(status: Status[?]): Stage[BigInt, BigInt, Nothing] =
+            status match {
+              case Status.Success => Agg(n + 1)
+              case Status.Complete(_) => Agg
+            }
+          override def dispose(): Unit = ()
+        }
+      )
   }
 
   object Agg extends Agg(1)
 
-  def stage(n: Int): Stage[Unit, BigInt, Nothing] = Const(One) ~> Loop[BigInt, Nothing](Agg ~> Countdown[BigInt](n))
+  def pipeline(n: Int): Stage[Unit, BigInt, Nothing] =
+    Const(One) ~> Loop[BigInt, Nothing](Agg ~> Countdown[BigInt](n))
 }

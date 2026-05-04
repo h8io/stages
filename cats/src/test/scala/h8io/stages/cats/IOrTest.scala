@@ -2,6 +2,7 @@ package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages.*
+import h8io.stages.base.StageOps
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -113,7 +114,7 @@ class IOrTest
         }
     }
 
-  it should "skip the left and the right stages in sequence" in {
+  it should "skip the left and right stages in sequence" in {
     val leftStage = mock[Stage[String, OffsetDateTime, Long]]("left stage")
     val leftEvolution = mock[Evolution[String, OffsetDateTime, Long]]("left evolution")
     val rightStage = mock[Stage[String, ZonedDateTime, Long]]("right stage")
@@ -129,29 +130,29 @@ class IOrTest
 
   "Left" should "return Yield.Some if the input is cats.data.Ior.Left" in {
     val value = mock[AnyRef]
-    IOr.Left(Ior.Left(value)) shouldBe Yield.Some(value, Status.Success, IOr.Left)
+    IOr.Left(Ior.Left(value)) shouldBe Yield.Some(value, Status.Success, IOr.Left.toEvolution)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Both" in {
     val value = mock[AnyRef]
-    IOr.Left(Ior.Both(value, mock[AnyRef])) shouldBe Yield.Some(value, Status.Success, IOr.Left)
+    IOr.Left(Ior.Both(value, mock[AnyRef])) shouldBe Yield.Some(value, Status.Success, IOr.Left.toEvolution)
   }
 
   it should "return Yield.None if the input is cats.data.Ior.Right" in {
-    IOr.Left[AnyRef].apply(Ior.Right(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Left)
+    IOr.Left[AnyRef].apply(Ior.Right(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Left.toEvolution)
   }
 
   "Right" should "return Yield.None if the input is cats.data.Ior.Left" in {
-    IOr.Right[AnyRef].apply(Ior.Left(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Right)
+    IOr.Right[AnyRef].apply(Ior.Left(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Right.toEvolution)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Both" in {
     val value = mock[AnyRef]
-    IOr.Right(Ior.Both(mock[AnyRef], value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
+    IOr.Right(Ior.Both(mock[AnyRef], value)) shouldBe Yield.Some(value, Status.Success, IOr.Right.toEvolution)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Right" in {
     val value = mock[AnyRef]
-    IOr.Right(Ior.Right(value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
+    IOr.Right(Ior.Right(value)) shouldBe Yield.Some(value, Status.Success, IOr.Right.toEvolution)
   }
 }

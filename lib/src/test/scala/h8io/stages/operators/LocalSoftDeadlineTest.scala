@@ -1,7 +1,6 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.base.StagesBaseTestUtil
 import h8io.stages.std.DeadEnd
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
@@ -22,8 +21,7 @@ class LocalSoftDeadlineTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
-    with StagesCoreTestUtil
-    with StagesBaseTestUtil {
+    with StagesCoreTestUtil {
   "LocalSoftDeadline" should "return DeadEnd if Scala duration is not positive" in
     forAll(Gen.choose(Long.MinValue, 0L)) { nanos =>
       val stage = mock[Stage[Any, Nothing, Nothing]]
@@ -60,7 +58,7 @@ class LocalSoftDeadlineTest
       case (ts, duration, overdue, in, yieldSupplier) =>
         val tsSupplier = mock[() => Long]("timestamp supplier")
         val now = mock[() => Long]("now")
-        val stage = mock[Stage[UUID, Instant, Long]]("underlying stage")
+        val stage = mock[Stage[UUID, Instant, Long]]("alterand")
         val evolution = mock[Evolution[UUID, Instant, Long]]("evolution")
         val yld = yieldSupplier(evolution)
         val lsd = LocalSoftDeadline(tsSupplier, now, duration, stage)
@@ -71,13 +69,13 @@ class LocalSoftDeadlineTest
             (stage.apply _).expects(in).returns(yld)
             (now.apply _).expects().returns(currentTS)
           }
-          val expectedStatus = yld.status.break
+          val expectedStatus = if (yld.status == Status.Success) Status.complete else yld.status
           val lsdYield = lsd(in)
           inside((yld, lsdYield)) {
             case (Yield.Some(expectedOut, _, _), Yield.Some(out, `expectedStatus`, _)) => out shouldEqual expectedOut
             case (Yield.None(_, _), Yield.None(`expectedStatus`, _)) => succeed
           }
-          testWrappedEvolution(
+          testMappedEvolution(
             lsdYield.evolution, evolution, LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long]))
         }
 
@@ -86,7 +84,7 @@ class LocalSoftDeadlineTest
     }
 
   it should
-    "return a yield with unchanged status and preserved timestamp on success, reset clock on complete/error when not overdue" in
+    "return a yield with unchanged status and preserved timestamp on success, reset clock on Complete when not overdue" in
     forAll(
       Gen.zip(
         Gen.long,
@@ -99,7 +97,7 @@ class LocalSoftDeadlineTest
         val duration = spent + rest
         val tsSupplier = mock[() => Long]("timestamp supplier")
         val now = mock[() => Long]("now")
-        val stage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("underlying stage")
+        val stage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("alterand")
         val evolution = mock[Evolution[ZoneId, ZonedDateTime, Exception]]("evolution")
         val yld = yieldSupplier(evolution)
         val lsd = LocalSoftDeadline(tsSupplier, now, duration, stage)
@@ -117,18 +115,15 @@ class LocalSoftDeadlineTest
           }
 
           val onSuccessStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onSuccess stage")
-          (evolution.onSuccess _).expects().returns(onSuccessStage)
-          inside(lsdYield.evolution.onSuccess()) {
+          (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
+          inside(lsdYield.evolution(Status.Success)) {
             case LocalSoftDeadline(tsSupplier, `now`, `duration`, `onSuccessStage`) => tsSupplier() shouldBe ts
           }
 
           val onCompleteStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onComplete stage")
-          (evolution.onComplete _).expects().returns(onCompleteStage)
-          lsdYield.evolution.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
-
-          val onErrorStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onError stage")
-          (evolution.onError _).expects().returns(onErrorStage)
-          lsdYield.evolution.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+          val complete = mockComplete()
+          (evolution.apply _).expects(complete).returns(onCompleteStage)
+          lsdYield.evolution(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 
           (evolution.dispose _).expects()
           noException should be thrownBy lsdYield.evolution.dispose()
@@ -148,34 +143,39 @@ class LocalSoftDeadlineTest
       (stage.skip _).expects().returns(evolution)
       val lsdEvolution = LocalSoftDeadline[Long, UUID, Exception](tsSupplier, now, duration, stage).skip()
 
-      val onSuccessStage = mock[Stage[Long, UUID, Exception]]
-      (evolution.onSuccess _).expects().returns(onSuccessStage)
-      lsdEvolution.onSuccess() shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
+      val onSuccessStage = mock[Stage[Long, UUID, Exception]]("onSuccess stage")
+      (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
+      lsdEvolution(Status.Success) shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
 
-      val onCompleteStage = mock[Stage[Long, UUID, Exception]]
-      (evolution.onComplete _).expects().returns(onCompleteStage)
-      lsdEvolution.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
-
-      val onErrorStage = mock[Stage[Long, UUID, Exception]]
-      (evolution.onError _).expects().returns(onErrorStage)
-      lsdEvolution.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+      val onCompleteStage = mock[Stage[Long, UUID, Exception]]("onComplete stage")
+      val complete = mockComplete()
+      (evolution.apply _).expects(complete).returns(onCompleteStage)
+      lsdEvolution(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 
       (evolution.dispose _).expects()
       noException should be thrownBy lsdEvolution.dispose()
     }
   }
 
-  "Evolution" should "call the according method of the nested evolution" in
-    forAll(Gen.zip(Gen.function0(Gen.long), Gen.posNum[Long])) { case (tsSupplier, duration) =>
+  "Evolution" should "call the corresponding method on the inner evolution" in
+    forAll(Gen.posNum[Long]) { duration =>
       val now = mock[() => Long]("now")
+      val tsSupplier = mock[() => Long]("timestamp supplier")
       val evolution = mock[Evolution[Any, Nothing, Nothing]]("evolution")
-      val _evolution = LocalSoftDeadline.Evolution(tsSupplier, now, duration, evolution)
-      testWrappedEvolution(
-        _evolution,
-        evolution,
-        LocalSoftDeadline(tsSupplier, now, duration, _: Stage[Any, Nothing, Nothing]),
-        LocalSoftDeadline(now, now, duration, _: Stage[Any, Nothing, Nothing]),
-        LocalSoftDeadline(now, now, duration, _: Stage[Any, Nothing, Nothing])
-      )
+      val lsdEvolution = LocalSoftDeadline.Evolution(tsSupplier, now, duration, evolution)
+
+      inSequence {
+        val onSuccessStage = mock[Stage[Any, Nothing, Nothing]]("onSuccess stage")
+        (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
+        lsdEvolution(Status.Success) shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
+
+        val onCompleteStage = mock[Stage[Any, Nothing, Nothing]]("onComplete stage")
+        val complete = mockComplete()
+        (evolution.apply _).expects(complete).returns(onCompleteStage)
+        lsdEvolution(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
+
+        (evolution.dispose _).expects()
+        noException should be thrownBy lsdEvolution.dispose()
+      }
     }
 }

@@ -1,13 +1,13 @@
 package h8io.stages.std
 
-import h8io.stages.base.{BaseStage, Fruitful}
-import h8io.stages.{Stage, Status, Yield}
+import h8io.stages.base.{BaseStage, Fruitful, StageOps}
+import h8io.stages.{Evolution, Stage, Status, Yield}
 
 /** An endomorphic stage that passes its input through for exactly `n` invocations and then signals pipeline completion.
   *
   * On each of the first `n − 1` calls the stage yields `h8io.stages.Status.Success` and decrements its counter. On the
-  * `n`-th call it yields `h8io.stages.Status.Complete` and resets to `n`. After a `h8io.stages.Status.Complete` or
-  * `h8io.stages.Status.Error` the stage also resets to `n`, ready for reuse.
+  * `n`-th call it yields `h8io.stages.Status.Complete` and resets to `n`. After any `h8io.stages.Status.Complete` the
+  * stage also resets to `n`, ready for reuse.
   *
   * `Countdown` is fully immutable: each state transition creates a new instance rather than mutating the current one.
   *
@@ -27,12 +27,20 @@ final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing
   assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 
   override def apply(in: T): Yield.Some[T, T, Nothing] =
-    if (i == 1) Yield.Some(in, Status.Complete, Countdown(n, n))
-    else Yield.Some(in, Status.Success, this)
+    if (i == 1) Yield.Some(in, Status.complete, Countdown(n, n).toEvolution)
+    else Yield.Some(
+      in,
+      Status.Success,
+      new Evolution.Endo[T, Nothing] {
+        override def apply(status: Status[?]): Stage[T, T, Nothing] =
+          status match {
+            case Status.Success => Countdown(i - 1, n)
+            case _ => Countdown(n, n)
+          }
 
-  override def onSuccess(): Stage[T, T, Nothing] = Countdown(i - 1, n)
-  override def onComplete(): Stage[T, T, Nothing] = Countdown(n, n)
-  override def onError(): Stage[T, T, Nothing] = Countdown(n, n)
+        override def dispose(): Unit = ()
+      }
+    )
 }
 
 /** Factory for [[Countdown]] stages. */
