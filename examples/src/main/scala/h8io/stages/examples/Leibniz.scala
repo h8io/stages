@@ -34,9 +34,6 @@ object Leibniz {
 
   val InitialStage: Pi = Pi(0, 1, 1)
 
-  def pipeline1(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
-    Repeat[Unit, Double, Nothing](LocalSoftDeadline[Unit, Double, Nothing](duration)(InitialStage))
-
-  def pipeline2(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
+  def pipeline(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
     Repeat[Unit, Double, Nothing](LocalSoftDeadline[Unit, Double, Nothing](duration)(InitialStage))
 }

@@ -19,7 +19,7 @@ object Factorial3 {
     override def apply(in: Int): Yield[Int, BigInt, FactorialError] =
       if (in < 0) Yield.None(Status.error(NegativeNumberError), InitialStage.toEvolution)
       else if (in < 2) Yield.Some(One, Status.complete, InitialStage.toEvolution)
-      else if (in > i) Yield.Some(
+      else if (in >= i) Yield.Some(
         factorial,
         Status.Success,
         new Evolution[Int, BigInt, FactorialError] {
@@ -32,7 +32,7 @@ object Factorial3 {
           override def dispose(): Unit = ()
         }
       )
-      else Yield.Some(factorial * i, Status.complete, InitialStage.toEvolution)
+      else Yield.Some(factorial, Status.complete, InitialStage.toEvolution)
   }
 
   val InitialStage: Factorial = Factorial(2, One)

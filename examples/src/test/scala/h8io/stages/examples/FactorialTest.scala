@@ -1,6 +1,6 @@
 package h8io.stages.examples
 
-import h8io.stages.{Outcome, Status}
+import h8io.stages.{Outcome, Status, Yield}
 import org.scalacheck.Gen
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -73,4 +73,15 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
       Factorial3.pipeline.execute(n) should matchPattern { case Outcome.None(`expectedError`, None) => }
     }
   }
+
+  // To cover some unused branches in Factorial3.Factorial
+  "Factorial3 evolution" should "return the correct stage" in
+    forAll(Gen.choose(1, 1000), Gen.choose(1, 1000)) { (n, m) =>
+      val stage = Factorial3.Factorial(n, One)
+      inside(stage(n + m)) { case Yield.Some(One, Status.Success, evolution) =>
+        evolution(Status.Success) shouldBe Factorial3.Factorial(n + 1, BigInt(n))
+        evolution(Status.complete) shouldBe Factorial3.InitialStage
+        noException should be thrownBy evolution.dispose()
+      }
+    }
 }
