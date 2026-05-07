@@ -17,7 +17,7 @@ class FnTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckP
     }
 }
 
-// Test seam: widens protected f to public so ScalaMock can set expectations on it.
+// Test seam: widens protected `f` to public so ScalaMock can set expectations on it.
 private trait FnPublicMorozov[-I, +O] extends Fn[I, O] {
   override def f(in: I): O
 }
