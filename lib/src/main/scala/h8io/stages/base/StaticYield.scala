@@ -4,9 +4,9 @@ import h8io.stages.Status
 
 /** The result type returned by [[StaticStage.process]].
   *
-  * `StaticYield` mirrors [[h8io.stages.Yield]] but omits the [[h8io.stages.Evolution]] field, since [[StaticStage]]
-  * always uses `this` as the continuation. `apply` in [[StaticStage]] wraps a `StaticYield` into a full
-  * [[h8io.stages.Yield]] by supplying the evolution automatically.
+  * `StaticYield` mirrors `h8io.stages.Yield` but omits the `Evolution` field, since [[StaticStage]] always uses `this`
+  * as the continuation. `apply` in [[StaticStage]] wraps a `StaticYield` into a full `h8io.stages.Yield` by supplying
+  * the evolution automatically.
   *
   * @tparam O
   *   the output type (covariant)

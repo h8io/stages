@@ -2,9 +2,9 @@ package h8io.stages.base
 
 import h8io.stages.{Evolution, Stage, Status}
 
-/** An [[h8io.stages.Evolution]] that always returns itself as the next stage.
+/** An `h8io.stages.Evolution` that always returns itself as the next stage.
   *
-  * Mixing in `Stagnation` fixes `evolve` to unconditionally return `this`, regardless of the [[h8io.stages.Status]]
+  * Mixing in `Stagnation` fixes `evolve` to unconditionally return `this`, regardless of the `h8io.stages.Status`
   * passed in, and makes `dispose` a no-op. The stage is therefore stateless with respect to evolution: every pipeline
   * run produces the same continuation.
   *

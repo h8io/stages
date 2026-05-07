@@ -2,14 +2,14 @@ package h8io.stages.base
 
 import h8io.stages.Yield
 
-/** A [[h8io.stages.Stage]] that is its own [[h8io.stages.Evolution]].
+/** A `h8io.stages.Stage` that is its own `Evolution`.
   *
   * `StaticStage` seals `apply` and `skip`, delegating the actual processing logic to [[process]]. `apply` wraps the
-  * [[StaticYield]] returned by `process` into a full [[h8io.stages.Yield]] with `this` as the evolution; `skip` returns
+  * [[StaticYield]] returned by `process` into a full `h8io.stages.Yield` with `this` as the evolution; `skip` returns
   * `this` directly.
   *
   * Mixing in `StaticStage` is appropriate when the stage does not change between runs and holds no external resources.
-  * See [[Fn]] for the further-constrained variant that always produces an output with [[h8io.stages.Status.Success]].
+  * See [[Fn]] for the further-constrained variant that always produces an output with `h8io.stages.Status.Success`.
   *
   * @tparam I
   *   the input type (contravariant)
@@ -30,7 +30,8 @@ trait StaticStage[-I, +O, +E] extends SAMStage[I, O, E] {
     * @param in
     *   the input value
     * @return
-    *   a [[StaticYield]] describing whether an output was produced and the resulting [[h8io.stages.Status]]
+    *   a [[h8io.stages.base.StaticYield]] describing whether an output was produced and the resulting
+    *   `h8io.stages.Status`
     */
   protected def process(in: I): StaticYield[O, E]
 }
