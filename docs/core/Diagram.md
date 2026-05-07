@@ -24,7 +24,7 @@ actually matter in this example.
 import h8io.stages.*
 
 trait MockEvolution[-I, +O, +E] extends Evolution[I, O, E] {
-  override def apply(status: Status[?]): Stage[I, O, E] = ???
+  override def evolve(status: Status[?]): Stage[I, O, E] = ???
 
   override def dispose(): Unit = ???
 }
@@ -45,7 +45,7 @@ object Stage11 extends Stage[Int, Int, Nothing] {
       in - 3,
       Status.Success,
       new MockEvolution[Int, Int, Nothing] {
-        override def apply(status: Status[?]): Stage[Int, Int, Nothing] = {
+        override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = {
           println("Evolve Stage 1-1")
           Stage12
         }
@@ -94,7 +94,7 @@ object Stage21 extends Stage[Int, String, String] {
       Yield.None(
         Status.error("Zero"),
         new MockEvolution[Int, String, String] {
-          override def apply(status: Status[?]): Stage[Int, String, String] = {
+          override def evolve(status: Status[?]): Stage[Int, String, String] = {
             println("Evolve Stage 2-1")
             Stage22
           }
@@ -144,7 +144,7 @@ object Stage31 extends Stage[String, Boolean, Nothing] {
   override def skip(): Evolution[String, Boolean, Nothing] = {
     println("Skip Stage 3-1")
     new MockEvolution[String, Boolean, Nothing] {
-      override def apply(status: Status[?]): Stage[String, Boolean, Nothing] = {
+      override def evolve(status: Status[?]): Stage[String, Boolean, Nothing] = {
         println("Evolve Stage 3-1")
         Stage32
       }
@@ -243,7 +243,7 @@ All `Evolution` methods are called in the order opposite to the order in which s
 a downstream stage may depend on state or resources created by an upstream stage. If upstream stages were finalized or
 reconfigured too early, downstream stages could lose what they still rely on.
 
-First, the object obtained from `Stage 3-1.skip()` is used: its `apply` call produces `Stage 3-2` ⑦ ⑧.  
+First, the object obtained from `Stage 3-1.skip()` is used: its `evolve` call produces `Stage 3-2` ⑦ ⑧.  
 Then `Stage 2-1` evolves for the same reason: its `Evolution` moves the pipeline to `Stage 2-2` ⑨ ⑩.  
 After that, `Stage 1-1` evolves into `Stage 1-2` ⑪ ⑫.
 

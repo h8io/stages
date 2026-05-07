@@ -23,7 +23,7 @@ object Factorial3 {
         factorial,
         Status.Success,
         new Evolution[Int, BigInt, FactorialError] {
-          override def apply(status: Status[?]): Stage[Int, BigInt, FactorialError] =
+          override def evolve(status: Status[?]): Stage[Int, BigInt, FactorialError] =
             status match {
               case Status.Success => Factorial(i + 1, factorial * i)
               case Status.Complete(_) => InitialStage

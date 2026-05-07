@@ -115,15 +115,15 @@ class LocalSoftDeadlineTest
           }
 
           val onSuccessStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onSuccess stage")
-          (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
-          inside(lsdYield.evolution(Status.Success)) {
+          (evolution.evolve _).expects(Status.Success).returns(onSuccessStage)
+          inside(lsdYield.evolution.evolve(Status.Success)) {
             case LocalSoftDeadline(tsSupplier, `now`, `duration`, `onSuccessStage`) => tsSupplier() shouldBe ts
           }
 
           val onCompleteStage = mock[Stage[ZoneId, ZonedDateTime, Exception]]("onComplete stage")
           val complete = mockComplete()
-          (evolution.apply _).expects(complete).returns(onCompleteStage)
-          lsdYield.evolution(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
+          (evolution.evolve _).expects(complete).returns(onCompleteStage)
+          lsdYield.evolution.evolve(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 
           (evolution.dispose _).expects()
           noException should be thrownBy lsdYield.evolution.dispose()
@@ -144,13 +144,13 @@ class LocalSoftDeadlineTest
       val lsdEvolution = LocalSoftDeadline[Long, UUID, Exception](tsSupplier, now, duration, stage).skip()
 
       val onSuccessStage = mock[Stage[Long, UUID, Exception]]("onSuccess stage")
-      (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
-      lsdEvolution(Status.Success) shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
+      (evolution.evolve _).expects(Status.Success).returns(onSuccessStage)
+      lsdEvolution.evolve(Status.Success) shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
 
       val onCompleteStage = mock[Stage[Long, UUID, Exception]]("onComplete stage")
       val complete = mockComplete()
-      (evolution.apply _).expects(complete).returns(onCompleteStage)
-      lsdEvolution(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
+      (evolution.evolve _).expects(complete).returns(onCompleteStage)
+      lsdEvolution.evolve(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 
       (evolution.dispose _).expects()
       noException should be thrownBy lsdEvolution.dispose()
@@ -166,13 +166,13 @@ class LocalSoftDeadlineTest
 
       inSequence {
         val onSuccessStage = mock[Stage[Any, Nothing, Nothing]]("onSuccess stage")
-        (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
-        lsdEvolution(Status.Success) shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
+        (evolution.evolve _).expects(Status.Success).returns(onSuccessStage)
+        lsdEvolution.evolve(Status.Success) shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
 
         val onCompleteStage = mock[Stage[Any, Nothing, Nothing]]("onComplete stage")
         val complete = mockComplete()
-        (evolution.apply _).expects(complete).returns(onCompleteStage)
-        lsdEvolution(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
+        (evolution.evolve _).expects(complete).returns(onCompleteStage)
+        lsdEvolution.evolve(complete) shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
 
         (evolution.dispose _).expects()
         noException should be thrownBy lsdEvolution.dispose()

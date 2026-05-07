@@ -27,8 +27,8 @@ class CountdownTest
     forAll(Gen.zip(Gen.choose(2, Long.MaxValue), Arbitrary.arbitrary[String])) { case (n, in) =>
       def test(i: Long): Assertion =
         inside(Countdown(i, n)(in)) { case Yield.Some(`in`, Status.Success, evolution) =>
-          evolution(Status.Success) shouldBe Countdown(i - 1, n)
-          evolution(mockComplete()) shouldBe Countdown(n, n)
+          evolution.evolve(Status.Success) shouldBe Countdown(i - 1, n)
+          evolution.evolve(mockComplete()) shouldBe Countdown(n, n)
           noException should be thrownBy evolution.dispose()
         }
       test(2)

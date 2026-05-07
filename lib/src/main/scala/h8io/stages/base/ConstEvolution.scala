@@ -16,7 +16,7 @@ import h8io.stages.{Evolution, Stage, Status}
   *   the error type (covariant)
   */
 final case class ConstEvolution[-I, +O, +E](stage: Stage[I, O, E], _dispose: () => Unit) extends Evolution[I, O, E] {
-  override def apply(status: Status[?]): Stage[I, O, E] = stage
+  override def evolve(status: Status[?]): Stage[I, O, E] = stage
   override def dispose(): Unit = _dispose()
 }
 

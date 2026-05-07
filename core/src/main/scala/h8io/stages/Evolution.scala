@@ -6,7 +6,7 @@ import scala.util.control.NonFatal
   * carried by the [[Yield]] returned from the most recent stage application. In a composed pipeline, this refers to the
   * combined `Yield` produced for the current input.
   *
-  * Every [[Yield]] carries an `Evolution` whose `apply` method selects the next stage based on the current [[Status]].
+  * Every [[Yield]] carries an `Evolution` whose `evolve` method selects the next stage based on the current [[Status]].
   * The appropriate stage is selected based on the [[Yield.status]] — callers use `[[Yield.evolve]]` rather than
   * dispatching on the status directly.
   *
@@ -20,7 +20,7 @@ import scala.util.control.NonFatal
   * @tparam E
   *   the error type (covariant)
   */
-trait Evolution[-I, +O, +E] extends (Status[?] => Stage[I, O, E]) {
+trait Evolution[-I, +O, +E] {
 
   /** Returns the next [[Stage]] based on the given `status`.
     *
@@ -30,7 +30,7 @@ trait Evolution[-I, +O, +E] extends (Status[?] => Stage[I, O, E]) {
     * @param status
     *   the status that determines the continuation stage
     */
-  def apply(status: Status[?]): Stage[I, O, E]
+  def evolve(status: Status[?]): Stage[I, O, E]
 
   /** Releases all resources held by the [[Stage]] that produced this evolution.
     *
@@ -142,7 +142,7 @@ object Evolution {
   final case class AndThen[-I, OI, +O, +E](upstream: Evolution[OI, O, E], downstream: Evolution[I, OI, E])
       extends Evolution[I, O, E] {
 
-    override def apply(status: Status[?]): Stage[I, O, E] = upstream(status) <~ downstream(status)
+    override def evolve(status: Status[?]): Stage[I, O, E] = upstream.evolve(status) <~ downstream.evolve(status)
 
     /** Releases resources held by both composed evolutions, disposing `upstream` first, then `downstream`.
       *
@@ -187,7 +187,7 @@ object Evolution {
       evolution: Evolution[II, IO, IE],
       f: Stage[II, IO, IE] => Stage[OI, OO, OE])
       extends Evolution[OI, OO, OE] {
-    override def apply(status: Status[?]): Stage[OI, OO, OE] = f(evolution(status))
+    override def evolve(status: Status[?]): Stage[OI, OO, OE] = f(evolution.evolve(status))
     override def dispose(): Unit = evolution.dispose()
   }
 }

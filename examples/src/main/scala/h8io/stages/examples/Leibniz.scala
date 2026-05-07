@@ -19,7 +19,7 @@ object Leibniz {
         4 * s,
         Status.Success,
         new Evolution[Unit, Double, Nothing] {
-          override def apply(status: Status[?]): Stage[Unit, Double, Nothing] =
+          override def evolve(status: Status[?]): Stage[Unit, Double, Nothing] =
             status match {
               case Status.Success =>
                 val _t = -t * (2 * n + 1) / (2 * n + 3)

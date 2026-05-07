@@ -98,7 +98,7 @@ class YieldTest
       val evolution = mock[Evolution[Instant, LocalDateTime, Long]]("evolution")
       val yld = yldSupplier(evolution)
       val stage = mock[Stage[Instant, LocalDateTime, Long]]
-      (evolution.apply _).expects(yld.status).returns(stage)
+      (evolution.evolve _).expects(yld.status).returns(stage)
       yld.evolve() shouldBe stage
     }
 

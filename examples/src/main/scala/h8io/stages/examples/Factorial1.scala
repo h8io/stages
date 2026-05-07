@@ -18,7 +18,7 @@ object Factorial1 {
         in * n,
         Status.Success,
         new Evolution.Endo[BigInt, Nothing] {
-          override def apply(status: Status[?]): Stage[BigInt, BigInt, Nothing] =
+          override def evolve(status: Status[?]): Stage[BigInt, BigInt, Nothing] =
             status match {
               case Status.Success => Agg(n + 1)
               case Status.Complete(_) => Agg

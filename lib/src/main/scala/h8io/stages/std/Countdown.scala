@@ -32,7 +32,7 @@ final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing
       in,
       Status.Success,
       new Evolution.Endo[T, Nothing] {
-        override def apply(status: Status[?]): Stage[T, T, Nothing] =
+        override def evolve(status: Status[?]): Stage[T, T, Nothing] =
           status match {
             case Status.Success => Countdown(i - 1, n)
             case _ => Countdown(n, n)

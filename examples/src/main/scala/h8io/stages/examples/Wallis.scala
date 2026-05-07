@@ -20,7 +20,7 @@ object Wallis {
         in * k / (k - 1),
         Status.Success,
         new Evolution.Endo[Double, Nothing] {
-          override def apply(status: Status[?]): Stage[Double, Double, Nothing] =
+          override def evolve(status: Status[?]): Stage[Double, Double, Nothing] =
             status match {
               case Status.Success => Pi(n + 1)
               case Status.Complete(_) => InitialStage

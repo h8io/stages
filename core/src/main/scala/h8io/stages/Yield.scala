@@ -62,7 +62,7 @@ sealed trait Yield[-I, +O, +E] {
     * @return
     *   the next `Stage` to use for re-processing
     */
-  def evolve(): Stage[I, O, E] = evolution(status)
+  def evolve(): Stage[I, O, E] = evolution.evolve(status)
 }
 
 /** Companion object containing the two concrete variants of [[Yield]]. */

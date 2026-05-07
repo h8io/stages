@@ -34,7 +34,7 @@ Here is a minimal stage that doubles its input on the active path and supplies i
 ```scala mdoc
 object Double extends Stage[Int, Int, Nothing] {
   private def evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = Double
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = Double
     override def dispose(): Unit = ()
   }
 
@@ -56,7 +56,7 @@ The result is itself a `Stage`, so further stages can be appended with additiona
 ```scala mdoc
 object ToString extends Stage[Int, String, Nothing] {
   private def evo: Evolution[Int, String, Nothing] = new Evolution[Int, String, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, String, Nothing] = ToString
+    override def evolve(status: Status[?]): Stage[Int, String, Nothing] = ToString
     override def dispose(): Unit = ()
   }
 
@@ -68,7 +68,7 @@ object ToString extends Stage[Int, String, Nothing] {
 
 object Shout extends Stage[String, String, Nothing] {
   private def evo: Evolution[String, String, Nothing] = new Evolution[String, String, Nothing] {
-    override def apply(status: Status[?]): Stage[String, String, Nothing] = Shout
+    override def evolve(status: Status[?]): Stage[String, String, Nothing] = Shout
     override def dispose(): Unit = ()
   }
 
