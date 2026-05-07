@@ -1,6 +1,6 @@
 package h8io.stages.base
 
-import h8io.stages.{Status, Yield}
+import h8io.stages.Status
 
 /** Base trait for stages that extract a value from a container type `C`.
   *
@@ -16,14 +16,14 @@ import h8io.stages.{Status, Yield}
   * @tparam O
   *   the extracted value type
   */
-trait Projection[-I, O] extends BaseStage[I, O, Nothing] {
+trait Projection[-I, O] extends StaticStage[I, O, Nothing] {
 
   /** Creates a successful `h8io.stages.Yield.Some` carrying `out`. */
-  protected def some(out: O): Yield.Some[I, O, Nothing] = Yield.Some(out, Status.Success, this.toEvolution)
+  protected def some(out: O): StaticYield.Some[O, Nothing] = StaticYield.Some(out, Status.Success)
 
   /** A pre-built `h8io.stages.Yield.None` used when the container holds no value for this projection.
     */
-  protected val none: Yield.None[I, O, Nothing] = Yield.None(Status.Success, this.toEvolution)
+  protected val none: StaticYield.None[Nothing] = StaticYield.None(Status.Success)
 }
 
 /** A [[Projection]] for the left side of a covariant binary type constructor `C[+_, +_]`.

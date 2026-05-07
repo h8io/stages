@@ -1,7 +1,6 @@
 package h8io.stages.projections
 
-import h8io.stages.Yield
-import h8io.stages.base.{LeftProjection, RightProjection}
+import h8io.stages.base.{LeftProjection, RightProjection, StaticYield}
 
 /** Stage projections for Scala's standard `scala.util.Either` type.
   *
@@ -22,7 +21,7 @@ object Either {
     * Use `Either.Left[T]` to get a typed `Projection[scala.util.Either[T, ?], T]`.
     */
   object Left extends LeftProjection[Either] {
-    override def apply(in: Either[Any, ?]): Yield[Either[Any, ?], Any, Nothing] = in.fold(some, _ => none)
+    override def process(in: Either[Any, ?]): StaticYield[Any, Nothing] = in.fold(some, _ => none)
   }
 
   /** Extracts the right value of an `Either[A, B]`, producing no output for `Left` values.
@@ -30,6 +29,6 @@ object Either {
     * Use `Either.Right[T]` to get a typed `Projection[scala.util.Either[?, T], T]`.
     */
   object Right extends RightProjection[Either] {
-    override def apply(in: Either[?, Any]): Yield[Either[?, Any], Any, Nothing] = in.fold(_ => none, some)
+    override def process(in: Either[?, Any]): StaticYield[Any, Nothing] = in.fold(_ => none, some)
   }
 }

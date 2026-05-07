@@ -1,6 +1,5 @@
 package h8io.stages.std
 
-import h8io.stages.base.StageOps
 import h8io.stages.{Status, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -11,6 +10,6 @@ class ConstTest extends AnyFlatSpec with Matchers with MockFactory with ScalaChe
   "Const" should "always return the same value" in
     forAll { (out: String) =>
       val stage = Const(out)
-      stage(mock[AnyRef]) shouldBe Yield.Some(`out`, Status.Success, stage.toEvolution)
+      stage(mock[AnyRef]) shouldBe Yield.Some(`out`, Status.Success, stage)
     }
 }

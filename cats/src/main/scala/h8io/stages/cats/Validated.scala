@@ -1,7 +1,6 @@
 package h8io.stages.cats
 
-import h8io.stages.Yield
-import h8io.stages.base.{LeftProjection, RightProjection}
+import h8io.stages.base.{LeftProjection, RightProjection, StaticYield}
 
 /** Stage projections for `cats.data.Validated`.
   *
@@ -26,7 +25,7 @@ object Validated {
     * Use `Validated.Invalid[T]` to get a typed `Projection[Validated[T, ?], T]`.
     */
   object Invalid extends LeftProjection[Validated] {
-    override def apply(in: Validated[Any, ?]): Yield[Validated[Any, ?], Any, Nothing] = in.fold(some, _ => none)
+    override def process(in: Validated[Any, ?]): StaticYield[Any, Nothing] = in.fold(some, _ => none)
   }
 
   /** Extracts the `Valid` (right/success) value, yielding nothing for `Invalid` values.
@@ -34,6 +33,6 @@ object Validated {
     * Use `Validated.Valid[T]` to get a typed `Projection[Validated[?, T], T]`.
     */
   object Valid extends RightProjection[Validated] {
-    override def apply(in: Validated[?, Any]): Yield[Validated[?, Any], Any, Nothing] = in.fold(_ => none, some)
+    override def process(in: Validated[?, Any]): StaticYield[Any, Nothing] = in.fold(_ => none, some)
   }
 }
