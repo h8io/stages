@@ -6,7 +6,7 @@ import h8io.stages.{Evolution, Stage}
   *
   * `skip` returns `ConstEvolution(this)`, so every status branch of the evolution evaluates to `this`. A skipped
   * `BaseStage` is therefore indistinguishable from an active one that evolves back to itself. This is appropriate for
-  * stateless or self-contained stages (e.g. [[Fn]], [[h8io.stages.std.GlobalSoftDeadline]]) that carry no external
+  * stateless or self-contained stages (e.g. [[h8io.stages.std.Break]], [[h8io.stages.std.GlobalSoftDeadline]]) that carry no external
   * resources and always use the same instance as the next stage.
   *
   * `dispose` is a no-op by default. Override it when the stage holds external resources that must be released (see

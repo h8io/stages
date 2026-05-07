@@ -5,7 +5,7 @@ import h8io.stages.{Evolution, Status, Yield}
 /** A [[Fruitful]] stage backed by a pure function `f`.
   *
   * `Fn` always succeeds (`h8io.stages.Status.Success`) and returns `this` as the `h8io.stages.Evolution` (via
-  * [[BaseStage]]), making it stateless and reusable. The `apply` implementation is sealed and cannot be overridden;
+  * [[Stagnation]]), making it stateless and reusable. The `apply` implementation is sealed and cannot be overridden;
   * subclasses only need to implement [[f]].
   *
   * Example usage:
