@@ -8,8 +8,8 @@ import h8io.stages.{Evolution, Stage, Status}
   * passed in, and makes `dispose` a no-op. The stage is therefore stateless with respect to evolution: every pipeline
   * run produces the same continuation.
   *
-  * Appropriate for stages that hold no external resources and whose behavior does not depend on the outcome of
-  * previous runs. See [[StaticStage]] for a concrete template-method mixin built on top of `Stagnation`.
+  * Appropriate for stages that hold no external resources and whose behavior does not depend on the outcome of previous
+  * runs. See [[SAMStage]] and [[StaticStage]] for concrete mixins built on top of `Stagnation`.
   *
   * @tparam I
   *   the input type (contravariant)

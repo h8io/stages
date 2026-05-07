@@ -1,7 +1,7 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.base.BaseStage
+import h8io.stages.base.SAMStage
 import h8io.stages.operators.Loop
 import h8io.stages.std.{Const, Countdown}
 
@@ -12,7 +12,7 @@ object Factorial1 {
    * by an internal counter and a countdown that stops after n steps.
    * Input is Unit, output is the computed factorial.
    */
-  sealed case class Agg(n: Long) extends BaseStage.Endo[BigInt, Nothing] {
+  sealed case class Agg(n: Long) extends SAMStage.Endo[BigInt, Nothing] {
     override def apply(in: BigInt): Yield.Some[BigInt, BigInt, Nothing] =
       Yield.Some(
         in * n,

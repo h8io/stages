@@ -1,6 +1,6 @@
 package h8io.stages.std
 
-import h8io.stages.base.{BaseStage, Fruitful, StageOps}
+import h8io.stages.base.{Fruitful, SAMStage, StageOps}
 import h8io.stages.{Evolution, Stage, Status, Yield}
 
 /** An endomorphic stage that passes its input through for exactly `n` invocations and then signals pipeline completion.
@@ -22,7 +22,7 @@ import h8io.stages.{Evolution, Stage, Status, Yield}
   * @tparam T
   *   the value type passed through unchanged
   */
-final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing] with BaseStage.Endo[T, Nothing] {
+final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing] with SAMStage.Endo[T, Nothing] {
   assume(n > 0, s"n must be positive, got n = $n")
   assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 

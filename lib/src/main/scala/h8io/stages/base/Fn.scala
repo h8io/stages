@@ -1,6 +1,6 @@
 package h8io.stages.base
 
-import h8io.stages.{Evolution, Status, Yield}
+import h8io.stages.{Status, Yield}
 
 /** A [[Fruitful]] stage backed by a pure function `f`.
   *
@@ -20,7 +20,8 @@ import h8io.stages.{Evolution, Status, Yield}
   * @tparam O
   *   the output type (covariant)
   */
-trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with Stagnation[I, O, Nothing] {
+trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with SAMStage[I, O, Nothing] {
+  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this)
 
   /** The pure mapping function applied to each input value.
     *
@@ -30,10 +31,6 @@ trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with Stagnation[I, O, Nothing] 
     *   the computed output value
     */
   protected def f(in: I): O
-
-  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this)
-
-  override final def skip(): Evolution[I, O, Nothing] = this
 }
 
 /** Companion object for [[Fn]]. */

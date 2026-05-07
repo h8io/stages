@@ -1,12 +1,12 @@
 package h8io.stages.base
 
-import h8io.stages.{Evolution, Stage, Yield}
+import h8io.stages.Yield
 
 /** A [[h8io.stages.Stage]] that is its own [[h8io.stages.Evolution]].
   *
   * `StaticStage` seals `apply` and `skip`, delegating the actual processing logic to [[process]]. `apply` wraps the
-  * [[StaticYield]] returned by `process` into a full [[h8io.stages.Yield]] with `this` as the evolution; `skip`
-  * returns `this` directly.
+  * [[StaticYield]] returned by `process` into a full [[h8io.stages.Yield]] with `this` as the evolution; `skip` returns
+  * `this` directly.
   *
   * Mixing in `StaticStage` is appropriate when the stage does not change between runs and holds no external resources.
   * See [[Fn]] for the further-constrained variant that always produces an output with [[h8io.stages.Status.Success]].
@@ -18,7 +18,7 @@ import h8io.stages.{Evolution, Stage, Yield}
   * @tparam E
   *   the error type (covariant)
   */
-trait StaticStage[-I, +O, +E] extends Stage[I, O, E] with Stagnation[I, O, E] {
+trait StaticStage[-I, +O, +E] extends SAMStage[I, O, E] {
   override final def apply(in: I): Yield[I, O, E] =
     process(in) match {
       case StaticYield.Some(out, status) => Yield.Some(out, status, this)
@@ -33,8 +33,6 @@ trait StaticStage[-I, +O, +E] extends Stage[I, O, E] with Stagnation[I, O, E] {
     *   a [[StaticYield]] describing whether an output was produced and the resulting [[h8io.stages.Status]]
     */
   protected def process(in: I): StaticYield[O, E]
-
-  override final def skip(): Evolution[I, O, E] = this
 }
 
 /** Companion object for [[StaticStage]]. */
