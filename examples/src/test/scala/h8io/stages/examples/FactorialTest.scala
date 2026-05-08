@@ -79,8 +79,8 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
     forAll(Gen.choose(1, 1000), Gen.choose(1, 1000)) { (n, m) =>
       val stage = Factorial3.Factorial(n, One)
       inside(stage(n + m)) { case Yield.Some(One, Status.Success, evolution) =>
-        evolution(Status.Success) shouldBe Factorial3.Factorial(n + 1, BigInt(n))
-        evolution(Status.complete) shouldBe Factorial3.InitialStage
+        evolution.evolve(Status.Success) shouldBe Factorial3.Factorial(n + 1, BigInt(n))
+        evolution.evolve(Status.complete) shouldBe Factorial3.InitialStage
         noException should be thrownBy evolution.dispose()
       }
     }

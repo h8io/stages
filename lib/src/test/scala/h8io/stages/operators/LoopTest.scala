@@ -34,7 +34,7 @@ class LoopTest
       val resultStage = mock[Stage.Endo[String, String]]("result stage")
       inSequence {
         (evolved.apply _).expects(lastIn).returns(lastYield)
-        (lastEvolution.apply _).expects(complete).returns(resultStage)
+        (lastEvolution.evolve _).expects(complete).returns(resultStage)
         val expectedStatus = if (complete.isEmpty) Status.Success else complete
         val evolution = inside((lastYield, Loop(initial)(in))) {
           case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `expectedStatus`, evolution)) =>
@@ -42,8 +42,8 @@ class LoopTest
             evolution
           case (Yield.None(_, _), Yield.None(`expectedStatus`, evolution)) => evolution
         }
-        evolution(Status.Success) shouldBe Loop(resultStage)
-        evolution(mockComplete()) shouldBe Loop(resultStage)
+        evolution.evolve(Status.Success) shouldBe Loop(resultStage)
+        evolution.evolve(mockComplete()) shouldBe Loop(resultStage)
         (lastEvolution.dispose _).expects()
         noException should be thrownBy evolution.dispose()
       }
@@ -63,13 +63,13 @@ class LoopTest
 
       inSequence {
         (evolved.apply _).expects(lastIn).returns(lastYield)
-        (lastEvolution.apply _).expects(Status.complete).returns(resultStage)
+        (lastEvolution.evolve _).expects(Status.complete).returns(resultStage)
         val evolution = inside((lastYield, Loop(initial)(in))) {
           case (Yield.None(_, _), Yield.None(Status.Success, evolution)) => evolution
         }
 
-        evolution(Status.Success) shouldBe Loop(resultStage)
-        evolution(mockComplete()) shouldBe Loop(resultStage)
+        evolution.evolve(Status.Success) shouldBe Loop(resultStage)
+        evolution.evolve(mockComplete()) shouldBe Loop(resultStage)
         (lastEvolution.dispose _).expects()
         noException should be thrownBy evolution.dispose()
       }
@@ -84,7 +84,7 @@ class LoopTest
         val evolution = mock[Evolution[T, T, E]](s"evolution $id")
         val yld = head(Status.Success, evolution)
         val evolved = mock[Stage.Endo[T, E]](s"stage $id")
-        (evolution.apply _).expects(Status.Success).returns(evolved)
+        (evolution.evolve _).expects(Status.Success).returns(evolved)
         (stage.apply _).expects(in).returns(yld)
         genStage(tail, evolved, yld.out)
       case Nil => (in, stage)

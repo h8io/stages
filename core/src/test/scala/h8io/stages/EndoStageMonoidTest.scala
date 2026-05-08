@@ -27,7 +27,7 @@ class EndoStageMonoidTest
     override def skip(): Evolution[Any, Any, Nothing] = evolution
 
     private val evolution = new Evolution[Any, Any, Nothing] {
-      override def apply(status: Status[?]): Stage[Any, Any, Nothing] = Identity
+      override def evolve(status: Status[?]): Stage[Any, Any, Nothing] = Identity
       def dispose(): Unit = ()
     }
 
@@ -53,7 +53,7 @@ class EndoStageMonoidTest
         override def skip(): Evolution[T, T, E] = evolution
 
         private val evolution = new Evolution[T, T, E] {
-          override def apply(status: Status[?]): Stage[T, T, E] = self
+          override def evolve(status: Status[?]): Stage[T, T, E] = self
           override def dispose(): Unit = {}
         }
 
@@ -73,7 +73,7 @@ class EndoStageMonoidTest
   }
 
   private def toTuple[IO, E](evolution: Evolution[IO, IO, E]): (List[Stage.Any], List[Stage.Any]) =
-    (toList(evolution(Status.Success)), toList(evolution(mockComplete())))
+    (toList(evolution.evolve(Status.Success)), toList(evolution.evolve(mockComplete())))
 
   private def toTuple[T, E](yld: Yield[T, T, E]): Product =
     yld match {

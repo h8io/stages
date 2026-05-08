@@ -63,9 +63,9 @@ package object base {
       protected def apply[_I <: I, _E >: E](leftStage: Stage[_I, LO, _E], rightStage: Stage[_I, RO, _E])
           : Stage[_I, O, _E]
 
-      override def apply(status: Status[?]): Stage[I, O, E] = {
-        val rightStage = right(status)
-        val leftStage = left(status)
+      override def evolve(status: Status[?]): Stage[I, O, E] = {
+        val rightStage = right.evolve(status)
+        val leftStage = left.evolve(status)
         apply(leftStage, rightStage)
       }
 

@@ -17,7 +17,7 @@ import h8io.stages.*
 
 ## Selecting the Next Stage
 
-`apply(status)` returns the next `Stage` based on the given status.  
+`evolve(status)` returns the next `Stage` based on the given status.  
 It is not called by application code directly; `Yield.evolve()` passes the `Yield`'s own status to it automatically.
 
 A stage that does not change between generations can return itself regardless of the status:
@@ -25,7 +25,7 @@ A stage that does not change between generations can return itself regardless of
 ```scala mdoc
 object ParseInt extends Stage[String, Int, String] {
   private val alwaysSelf = new Evolution[String, Int, String] {
-    override def apply(status: Status[?]): Stage[String, Int, String] = ParseInt
+    override def evolve(status: Status[?]): Stage[String, Int, String] = ParseInt
     override def dispose(): Unit = ()
   }
 
@@ -60,7 +60,7 @@ Two situations guarantee `dispose()` will be called:
 
 - `Stage.execute()` calls it immediately after the stage runs, since `execute` is a terminal operation and the
   continuation will never be needed.
-- If `apply` throws a `Throwable`, the caller is still required to call `dispose()` so that nothing is leaked even
+- If `evolve` throws a `Throwable`, the caller is still required to call `dispose()` so that nothing is leaked even
   when evolution itself fails.
 
 Implementations that hold no external resources may leave `dispose()` as a no-op.
@@ -73,7 +73,7 @@ class ResourceStage(name: String) extends Stage[String, String, Nothing] {
   println(s"[$name] acquired")
 
   private val evolution = new Evolution[String, String, Nothing] {
-    override def apply(status: Status[?]): Stage[String, String, Nothing] = ResourceStage.this
+    override def evolve(status: Status[?]): Stage[String, String, Nothing] = ResourceStage.this
     override def dispose(): Unit = {
       open = false
       println(s"[$name] released")
@@ -95,7 +95,7 @@ class ResourceStage(name: String) extends Stage[String, String, Nothing] {
 new ResourceStage("conn").execute("hello")
 ```
 
-When multiple stages are composed into a pipeline, both `Evolution` methods — `apply` and `dispose()` — are called
+When multiple stages are composed into a pipeline, both `Evolution` methods — `evolve` and `dispose()` — are called
 in the order opposite to the order in which stages are applied: downstream first, then upstream.
 This ensures that a downstream stage can still access anything the upstream stage provides right up until the moment
 the upstream stage is torn down:
@@ -117,7 +117,7 @@ composed(s) == self(s) ~> that(s)
 
 All `Evolution` method calls in `Evolution.AndThen` follow the same order: pipeline-downstream first, then
 pipeline-upstream — the reverse of the order in which stages are applied.
-This applies equally to `apply` and `dispose()`, since both may release or transition resources held by the
+This applies equally to `evolve` and `dispose()`, since both may release or transition resources held by the
 producing stage.  
 The [Diagram](Diagram.md) section on finalization walks through a concrete example of why this matters.
 

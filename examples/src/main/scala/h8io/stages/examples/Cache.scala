@@ -29,10 +29,10 @@ object Cache {
   }
 
   private final case class _Evolution[-I, +O, +E](out: O, evolution: Evolution[I, O, E]) extends Evolution[I, O, E] {
-    override def apply(status: Status[?]): Stage[I, O, E] =
+    override def evolve(status: Status[?]): Stage[I, O, E] =
       status match {
-        case Status.Success => Cache.Cached(out, evolution(Status.Success))
-        case complete: Status.Complete[?] => Cache(evolution(complete))
+        case Status.Success => Cache.Cached(out, evolution.evolve(Status.Success))
+        case complete: Status.Complete[?] => Cache(evolution.evolve(complete))
       }
 
     override def dispose(): Unit = evolution.dispose()

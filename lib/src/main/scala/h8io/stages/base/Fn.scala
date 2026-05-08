@@ -5,7 +5,7 @@ import h8io.stages.{Status, Yield}
 /** A [[Fruitful]] stage backed by a pure function `f`.
   *
   * `Fn` always succeeds (`h8io.stages.Status.Success`) and returns `this` as the `h8io.stages.Evolution` (via
-  * [[BaseStage]]), making it stateless and reusable. The `apply` implementation is sealed and cannot be overridden;
+  * [[Stagnation]]), making it stateless and reusable. The `apply` implementation is sealed and cannot be overridden;
   * subclasses only need to implement [[f]].
   *
   * Example usage:
@@ -20,7 +20,8 @@ import h8io.stages.{Status, Yield}
   * @tparam O
   *   the output type (covariant)
   */
-trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with BaseStage[I, O, Nothing] {
+trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with SAMStage[I, O, Nothing] {
+  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this)
 
   /** The pure mapping function applied to each input value.
     *
@@ -29,9 +30,7 @@ trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with BaseStage[I, O, Nothing] {
     * @return
     *   the computed output value
     */
-  def f(in: I): O
-
-  override final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Status.Success, this.toEvolution)
+  protected def f(in: I): O
 }
 
 /** Companion object for [[Fn]]. */

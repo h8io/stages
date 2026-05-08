@@ -66,7 +66,7 @@ object LocalSoftDeadline {
       duration: Long,
       evolution: stages.Evolution[I, O, E])
       extends stages.Evolution[I, O, E] {
-    override def apply(status: Status[?]): Stage[I, O, E] =
+    override def evolve(status: Status[?]): Stage[I, O, E] =
       LocalSoftDeadline(
         status match {
           case Status.Success => tsSupplier
@@ -74,7 +74,7 @@ object LocalSoftDeadline {
         },
         now,
         duration,
-        evolution(status))
+        evolution.evolve(status))
 
     override def dispose(): Unit = evolution.dispose()
   }

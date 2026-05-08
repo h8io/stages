@@ -19,7 +19,7 @@ import h8io.stages.*
 
 object Double extends Stage[Int, Int, Nothing] {
   private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 
@@ -38,7 +38,7 @@ output for the given input:
 ```scala mdoc
 object Drop extends Stage[Int, String, String] {
   private def stub: Evolution[Int, String, String] = new Evolution[Int, String, String] {
-    override def apply(status: Status[?]): Stage[Int, String, String] = ???
+    override def evolve(status: Status[?]): Stage[Int, String, String] = ???
     override def dispose(): Unit = ()
   }
 
@@ -67,12 +67,12 @@ object LeakyDispose extends Stage[Int, Int, Nothing] {
       in * 2,
       Status.Success,
       new Evolution[Int, Int, Nothing] {
-        override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
+        override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ???
         override def dispose(): Unit = throw new RuntimeException("cleanup failed")
       })
 
   override def skip(): Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 }

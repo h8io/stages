@@ -1,7 +1,7 @@
 package h8io.stages.examples
 
 import h8io.stages.*
-import h8io.stages.base.{BaseStage, StageOps}
+import h8io.stages.base.{SAMStage, StageOps}
 import h8io.stages.operators.Repeat
 
 object Factorial3 {
@@ -15,7 +15,7 @@ object Factorial3 {
 
   object NegativeNumberError extends FactorialError
 
-  final case class Factorial(i: Int, factorial: BigInt) extends BaseStage[Int, BigInt, FactorialError] {
+  final case class Factorial(i: Int, factorial: BigInt) extends SAMStage[Int, BigInt, FactorialError] {
     override def apply(in: Int): Yield[Int, BigInt, FactorialError] =
       if (in < 0) Yield.None(Status.error(NegativeNumberError), InitialStage.toEvolution)
       else if (in < 2) Yield.Some(One, Status.complete, InitialStage.toEvolution)
@@ -23,7 +23,7 @@ object Factorial3 {
         factorial,
         Status.Success,
         new Evolution[Int, BigInt, FactorialError] {
-          override def apply(status: Status[?]): Stage[Int, BigInt, FactorialError] =
+          override def evolve(status: Status[?]): Stage[Int, BigInt, FactorialError] =
             status match {
               case Status.Success => Factorial(i + 1, factorial * i)
               case Status.Complete(_) => InitialStage

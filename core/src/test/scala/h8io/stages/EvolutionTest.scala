@@ -76,16 +76,16 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
 
     val onSuccessStage = mock[Stage[Long, Instant, UUID]]
     val onSuccessMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
-    (evolution.apply _).expects(Status.Success).returns(onSuccessStage)
+    (evolution.evolve _).expects(Status.Success).returns(onSuccessStage)
     (f.apply _).expects(onSuccessStage).returns(onSuccessMappedStage)
-    mapped.apply(Status.Success) shouldBe onSuccessMappedStage
+    mapped.evolve(Status.Success) shouldBe onSuccessMappedStage
 
     val onCompleteStage = mock[Stage[Long, Instant, UUID]]
     val onCompleteMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
     val complete = mockComplete()
-    (evolution.apply _).expects(complete).returns(onCompleteStage)
+    (evolution.evolve _).expects(complete).returns(onCompleteStage)
     (f.apply _).expects(onCompleteStage).returns(onCompleteMappedStage)
-    mapped.apply(complete) shouldBe onCompleteMappedStage
+    mapped.evolve(complete) shouldBe onCompleteMappedStage
 
     (evolution.dispose _).expects()
     noException should be thrownBy mapped.dispose()

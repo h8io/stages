@@ -2,7 +2,7 @@ package h8io.stages.cats
 
 import cats.data.Ior
 import h8io.stages
-import h8io.stages.base.{BaseBinaryOperator, BinaryOperator, LeftProjection, RightProjection}
+import h8io.stages.base.{BaseBinaryOperator, BinaryOperator, LeftProjection, RightProjection, StaticYield}
 import h8io.stages.{Evolution, Stage, Yield}
 
 /** A binary operator that applies two stages independently to the same input and combines their outputs into a
@@ -73,7 +73,7 @@ object IOr {
     * Use `IOr.Left[T]` to get a typed `Projection[Ior[T, ?], T]`.
     */
   object Left extends LeftProjection[Ior] {
-    override def apply(in: Ior[Any, ?]): Yield[Ior[Any, ?], Any, Nothing] =
+    override def process(in: Ior[Any, ?]): StaticYield[Any, Nothing] =
       in.fold(out => some(out), _ => none, (out, _) => some(out))
   }
 
@@ -86,7 +86,7 @@ object IOr {
     * Use `IOr.Right[T]` to get a typed `Projection[Ior[?, T], T]`.
     */
   object Right extends RightProjection[Ior] {
-    override def apply(in: Ior[?, Any]): Yield[Ior[?, Any], Any, Nothing] =
+    override def process(in: Ior[?, Any]): StaticYield[Any, Nothing] =
       in.fold(_ => none, out => some(out), (_, out) => some(out))
   }
 }

@@ -23,7 +23,7 @@ status and the evolution:
 
 ```scala mdoc
 val some = Yield.Some(42, Status.Success, new Evolution[Int, Int, Nothing] {
-  override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
+  override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ???
   override def dispose(): Unit = ()
 })
 some.out
@@ -36,7 +36,7 @@ correctly:
 
 ```scala mdoc
 val none = Yield.None[Int, String, String](Status.error("filtered out"), new Evolution[Int, String, String] {
-  override def apply(status: Status[?]): Stage[Int, String, String] = ???
+  override def evolve(status: Status[?]): Stage[Int, String, String] = ???
   override def dispose(): Unit = ()
 })
 none.status
@@ -62,12 +62,12 @@ Use `outOption` when you only need to know whether a value was produced. When yo
 
 Once the pipeline has processed an input and is ready for the next one, it calls `evolve()` on the `Yield` returned
 by the last stage.  
-`evolve()` calls `evolution(status)` — the `Evolution` receives the current status and returns the next stage.
+`evolve()` calls `evolution.evolve(status)` — the `Evolution` receives the current status and returns the next stage.
 
 ```scala mdoc
 object DoubleStage extends Stage[Int, Int, Nothing] {
   private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 
@@ -79,7 +79,7 @@ object DoubleStage extends Stage[Int, Int, Nothing] {
 
 object ErrorRecovery extends Stage[Int, Int, Nothing] {
   private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ???
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ???
     override def dispose(): Unit = ()
   }
 
@@ -93,7 +93,7 @@ val yldSuccess = Yield.Some(
   21,
   Status.Success,
   new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = status match {
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = status match {
       case Status.Success => DoubleStage
       case _              => ErrorRecovery
     }
@@ -122,7 +122,7 @@ with `Evolution.map` so that future stages also go through the same conversion:
 ```scala mdoc
 object ThermStage extends Stage[Int, Int, Nothing] {
   private val evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ThermStage
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ThermStage
     override def dispose(): Unit = ()
   }
   override def apply(in: Int): Yield[Int, Int, Nothing] = Yield.Some(25, Status.Success, evo)
@@ -131,7 +131,7 @@ object ThermStage extends Stage[Int, Int, Nothing] {
 
 object ToFahrenheit extends Stage[Int, Int, Nothing] {
   private val evo: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {
-    override def apply(status: Status[?]): Stage[Int, Int, Nothing] = ToFahrenheit
+    override def evolve(status: Status[?]): Stage[Int, Int, Nothing] = ToFahrenheit
     override def dispose(): Unit = ()
   }
   override def apply(in: Int): Yield[Int, Int, Nothing] = Yield.Some(in * 9 / 5 + 32, Status.Success, evo)

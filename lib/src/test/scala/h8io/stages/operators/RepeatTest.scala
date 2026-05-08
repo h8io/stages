@@ -32,7 +32,7 @@ class RepeatTest
         val resultStage = mock[Stage[Long, String, Throwable]]("result stage")
         inSequence {
           (evolved.apply _).expects(in).returns(lastYield)
-          (lastYield.evolution.apply _).expects(complete).returns(resultStage)
+          (lastYield.evolution.evolve _).expects(complete).returns(resultStage)
           val yld = Repeat(initial)(in)
           val expectedStatus = if (complete.isEmpty) Status.Success else complete
           val evolution = inside((lastYield, yld)) {
@@ -41,8 +41,8 @@ class RepeatTest
               evolution
             case (Yield.None(_, _), Yield.None(`expectedStatus`, evolution)) => evolution
           }
-          evolution(Status.Success) shouldBe Repeat(resultStage)
-          evolution(mockComplete()) shouldBe Repeat(resultStage)
+          evolution.evolve(Status.Success) shouldBe Repeat(resultStage)
+          evolution.evolve(mockComplete()) shouldBe Repeat(resultStage)
           (lastYield.evolution.dispose _).expects()
           noException should be thrownBy evolution.dispose()
         }
@@ -56,7 +56,7 @@ class RepeatTest
         val id = yieldSuppliers.length.toString
         val yld = genYield[I, O, E](id, head, Status.Success)
         val updated = mock[Stage[I, O, E]](s"stage $id")
-        (yld.evolution.apply _).expects(Status.Success).returns(updated)
+        (yld.evolution.evolve _).expects(Status.Success).returns(updated)
         (stage.apply _).expects(in).returns(yld)
         createStage(tail, updated, in)
       case Nil => stage

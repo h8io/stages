@@ -1,8 +1,7 @@
 package h8io.stages.std
 
-import h8io.stages
-import h8io.stages.base.{BaseStage, StageOps}
-import h8io.stages.{Status, Yield}
+import h8io.stages.Status
+import h8io.stages.base.{StaticStage, StaticYield}
 
 /** A terminal stage that never produces an output value.
   *
@@ -19,9 +18,10 @@ import h8io.stages.{Status, Yield}
   * @param _dispose
   *   a thunk invoked by `h8io.stages.Evolution.dispose`; defaults to a no-op in the companion object
   */
-sealed case class DeadEnd(_dispose: () => Unit) extends BaseStage[Any, Nothing, Nothing] {
-  override final def apply(in: Any): stages.Yield.None[Any, Nothing, Nothing] =
-    Yield.None[Any, Nothing, Nothing](Status.complete, this.toEvolution(_dispose))
+sealed case class DeadEnd(_dispose: () => Unit) extends StaticStage[Any, Nothing, Nothing] {
+  override final def process(in: Any): StaticYield.None[Nothing] = StaticYield.None[Nothing](Status.complete)
+
+  override final def dispose(): Unit = _dispose()
 }
 
 /** Default no-op [[DeadEnd]] instance.
