@@ -1,0 +1,21 @@
+# Complete
+
+`Complete` is a stage that signals pipeline completion while still passing the input through as output.
+Every invocation yields `Status.Complete` with the input value intact — no value is dropped.
+
+It is designed as the terminal element in a conditional pipeline: once a preceding stage decides that
+processing should stop, `Complete` is used to emit the final value and close the pipeline cleanly.
+The [`CompleteIfSome`](../operators/CompleteIfSome.md) operator uses `Complete` for exactly this purpose.
+
+`Complete` is a polymorphic singleton. Use `Complete[T]` to obtain a typed `Fruitful.Endo[T, Nothing]`.
+
+```scala mdoc
+import h8io.stages.*
+import h8io.stages.std.*
+```
+
+```scala mdoc
+val stage = Complete[String]
+stage("hello")
+stage("world")
+```
