@@ -9,9 +9,8 @@ pipeline continues normally.
 `BreakIfSome[I, O, E]` returns a typed `Decoration[I, O, E]` that can be applied to any matching stage.
 
 ```scala mdoc
-import h8io.stages.*
-import h8io.stages.std.*
 import h8io.stages.operators.*
+import h8io.stages.projections.*
 ```
 
 ```scala mdoc
