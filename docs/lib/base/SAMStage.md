@@ -1,7 +1,8 @@
 # SAMStage
 
 `SAMStage` (Single Abstract Method Stage) adds a sealed `skip` on top of `Stagnation`: `skip` returns `this`,
-making the stage its own evolution whether or not it was applied. The only method left open is `apply`.
+making the stage its own evolution whether or not it was applied. `apply` is the only abstract method, but
+`dispose` remains open and can be overridden when the stage holds resources that must be released.
 
 ```scala mdoc
 import h8io.stages.*
@@ -20,5 +21,3 @@ object ParseInt extends SAMStage[String, Int, String] {
 ParseInt("42")
 ParseInt("hello")
 ```
-
-`dispose` is a no-op by default. Override it when the stage holds an external resource that must be released.
