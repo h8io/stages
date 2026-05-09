@@ -9,5 +9,5 @@ same input and error type but may have different output types. `BaseBinaryOperat
 `Evolution` that pairs two sub-evolutions and delegates both `evolve` and `dispose` to them with the same
 exception-safe ordering.
 
-Concrete operators such as `And`, `Or`, and `IAnd` extend `BinaryOperator` and implement `apply` to decide how the
+Concrete operators such as [`And`](../operators/And.md), [`Or`](../operators/Or.md), and [`IAnd`](../operators/IAnd.md) extend `BinaryOperator` and implement `apply` to decide how the
 results of the two sides are combined.

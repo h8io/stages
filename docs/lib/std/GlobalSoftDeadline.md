@@ -6,7 +6,7 @@ once at construction and never updated. On each invocation, if the elapsed time 
 stage yields `Status.Success`; otherwise it yields `Status.Complete`.
 
 The deadline is *global* in the sense that it is fixed at construction. This contrasts with
-`LocalSoftDeadline`, which resets its clock after each evolution transition.
+[`LocalSoftDeadline`](../operators/LocalSoftDeadline.md), which resets its clock after each evolution transition.
 
 The factory has three overloads:
 

@@ -5,7 +5,7 @@ Every invocation yields `Status.Complete` with the input value intact — no val
 
 It is designed as the terminal element in a conditional pipeline: once a preceding stage decides that
 processing should stop, `Break` is used to emit the final value and close the pipeline cleanly.
-The `BreakIfSome` operator uses `Break` for exactly this purpose.
+The [`BreakIfSome`](../operators/BreakIfSome.md) operator uses `Break` for exactly this purpose.
 
 `Break` is a polymorphic singleton. Use `Break[T]` to obtain a typed `Fruitful.Endo[T, Nothing]`.
 

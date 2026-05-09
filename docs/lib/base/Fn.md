@@ -1,6 +1,6 @@
 # Fn
 
-`Fn` is the most constrained member of the hierarchy: a `StaticStage` that always produces `Yield.Some` with
+`Fn` is the most constrained member of the hierarchy: a [`StaticStage`](StaticStage.md) that always produces `Yield.Some` with
 `Status.Success`. Only the pure mapping function `f` is abstract. The sealed `apply` calls `f` and wraps the result
 automatically — there is no way for a `Fn` stage to produce `Yield.None` or any non-`Success` status.
 
