@@ -7,7 +7,7 @@ import h8io.stages.{Status, Yield}
   *
   * `Break` always yields `h8io.stages.Status.Complete` while still passing the input through as the output. It is
   * useful as the terminal element in a pipeline to stop further processing after a condition is met (see
-  * [[h8io.stages.operators.BreakIfSome]]).
+  * [[h8io.stages.operators.CompleteIfSome]]).
   *
   * The singleton operates on `Any` and can be safely cast to any `Fruitful.Endo[T]` via `apply[T]`.
   */

@@ -8,9 +8,9 @@ import org.scalatest.matchers.should.Matchers
 
 import java.time.{ZoneId, ZoneOffset}
 
-class BreakIfSomeTest extends AnyFlatSpec with Matchers with MockFactory {
-  "BreakIfSome" should "create a correct stage" in {
+class CompleteIfSomeTest extends AnyFlatSpec with Matchers with MockFactory {
+  "CompleteIfSome" should "create a correct stage" in {
     val alterand = mock[Stage[ZoneId, ZoneOffset, Exception]]
-    BreakIfSome[ZoneId, ZoneOffset, Exception](alterand) shouldBe alterand ~> Break[ZoneOffset]
+    CompleteIfSome[ZoneId, ZoneOffset, Exception](alterand) shouldBe alterand ~> Break[ZoneOffset]
   }
 }

@@ -6,7 +6,7 @@ import h8io.stages.std.Break
 
 /** A [[h8io.stages.base.Decoration]] that stops the pipeline as soon as the decorated stage produces an output value.
   *
-  * `BreakIfSome` appends [[h8io.stages.std.Break]] after the decorated stage via `~>`. If the stage yields
+  * `CompleteIfSome` appends [[h8io.stages.std.Break]] after the decorated stage via `~>`. If the stage yields
   * `h8io.stages.Yield.Some`, `Break` immediately emits `h8io.stages.Status.Complete`, terminating the pipeline. If the
   * stage yields `h8io.stages.Yield.None`, `Break` is not reached and the pipeline continues normally.
   *
@@ -16,11 +16,11 @@ import h8io.stages.std.Break
   * Example:
   * {{{
   * val stage: Stage[Int, Int, Nothing] = ...
-  * val breaking: Stage[Int, Int, Nothing] = BreakIfSome(stage)
+  * val completing: Stage[Int, Int, Nothing] = CompleteIfSome(stage)
   * // Once stage produces a value, the pipeline stops.
   * }}}
   */
-object BreakIfSome extends Decoration[Any, Any, Nothing] {
+object CompleteIfSome extends Decoration[Any, Any, Nothing] {
 
   /** Returns a typed view of this singleton as a `Decoration[I, O, E]`.
     *

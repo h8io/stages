@@ -8,7 +8,7 @@ import scala.util.control.NonFatal
   *
   * {{{
   * // A decorator wraps a Stage[I, O, E] and returns another Stage[I, O, E]:
-  * val myDecorator: Decorator[String, Int, Nothing] = BreakIfNone(_)
+  * val myDecorator: Decorator[String, Int, Nothing] = CompleteIfNone(_)
   *
   * // An alteration converts any Stage to a (possibly different) Stage:
   * val myAlt: Alteration[Stage[String, Int, Nothing], Stage[String, Option[Int], Nothing]] = Lift(_)
@@ -22,7 +22,7 @@ package object base {
   type UnaryOperator[+S <: Stage[I, ?, ?], -I, +O, +E] = Alterator[S, I, O, E]
 
   /** A [[UnaryOperator]] that wraps a `Stage[I, O, E]` and preserves its type — the standard shape for decorators (e.g.
-    * [[h8io.stages.operators.BreakIfNone]], [[h8io.stages.operators.KeepLastOutput]]).
+    * [[h8io.stages.operators.CompleteIfNone]], [[h8io.stages.operators.KeepLastOutput]]).
     */
   type Decorator[-I, +O, +E] = UnaryOperator[Stage[I, O, E], I, O, E]
 
