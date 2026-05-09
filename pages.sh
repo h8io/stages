@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-sbt pages/clean +pages/unidoc pages/tlSite
+sbt clean pages/clean +pages/unidoc pages/tlSite
 
 mkdir -p target/pages
 cp -pr pages/target/docs/site/. target/pages
