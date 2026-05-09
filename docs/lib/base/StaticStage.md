@@ -4,9 +4,9 @@
 `process(in: I): StaticYield[O, E]`. The sealed `apply` wraps the result into a full `Yield` with `this` as the
 evolution — the implementor never has to write that part.
 
-`StaticYield` mirrors `Yield` but omits the `Evolution` field, since `StaticStage` always supplies `this` as the
-continuation. It has two variants: `StaticYield.Some(out, status)` when a value is produced, and
-`StaticYield.None(status)` when the stage deliberately emits nothing.
+`StaticYield` mirrors [`Yield`](../../core/classes/Yield.md) but omits the `Evolution` field, since `StaticStage`
+always supplies `this` as the continuation. It has two variants: `StaticYield.Some(out, status)` when a value is
+produced, and `StaticYield.None(status)` when the stage deliberately emits nothing.
 
 ```scala mdoc
 import h8io.stages.*

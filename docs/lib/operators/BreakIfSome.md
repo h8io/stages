@@ -1,8 +1,9 @@
 # BreakIfSome
 
-`BreakIfSome` is a polymorphic singleton `Decoration` that stops the pipeline as soon as the decorated stage
-produces a value. It works by appending [`Break`](../std/Break.md) via `~>`: when the stage yields `Yield.Some`,
-`Break` immediately emits `Status.Complete`; when the stage yields `Yield.None`, `Break` is skipped and the
+`BreakIfSome` is a polymorphic singleton [`Decoration`](../base/Alterator.md) that stops the pipeline as soon as
+the decorated stage produces a value. It works by appending [`Break`](../std/Break.md) via `~>`: when the stage
+yields [`Yield.Some`](../../core/classes/Yield.md), `Break` immediately emits
+[`Status.Complete`](../../core/classes/Status.md); when the stage yields `Yield.None`, `Break` is skipped and the
 pipeline continues normally.
 
 `BreakIfSome[I, O, E]` returns a typed `Decoration[I, O, E]` that can be applied to any matching stage.

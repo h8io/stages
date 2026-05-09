@@ -5,9 +5,10 @@ stage in a tail-recursive loop until it stops.
 
 The loop terminates when:
 
-- The stage yields `Status.Complete` — the loop exits, converting an error-free `Complete` back to `Success`.
-- The stage yields `Yield.None(Status.Success, ...)` — no output was produced; the loop emits
-  `Yield.None(Success, ...)`.
+- The stage yields [`Status.Complete`](../../core/classes/Status.md) — the loop exits, converting an error-free
+  `Complete` back to `Success`.
+- The stage yields [`Yield.None`](../../core/classes/Yield.md) with
+  [`Status.Success`](../../core/classes/Status.md) — no output was produced; the loop emits `Yield.None(Success, ...)`.
 
 `Loop` is suited for in-process iterative computations where each step seeds the next.
 

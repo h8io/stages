@@ -1,8 +1,9 @@
 # Projection
 
-`Projection` is a `StaticStage` for extracting a value from a container type. When the expected value is present it
-returns `Yield.Some`; when it is absent it returns `Yield.None` with `Status.Success`, preserving the overall
-pipeline status without signalling an error.
+`Projection` is a [`StaticStage`](StaticStage.md) for extracting a value from a container type. When the expected
+value is present it returns [`Yield.Some`](../../core/classes/Yield.md); when it is absent it returns `Yield.None`
+with [`Status.Success`](../../core/classes/Status.md), preserving the overall pipeline status without signalling an
+error.
 
 Two convenience members simplify `process` implementations: `some(out)` produces `StaticYield.Some(out, Status.Success)`
 and `none` is a pre-built `StaticYield.None(Status.Success)` — both with `this` as the implicit evolution.

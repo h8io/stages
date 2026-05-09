@@ -2,8 +2,10 @@
 
 `BreakIfNone` is a decorator that stops the pipeline when the inner stage produces no output.
 
-When the inner stage yields `Yield.None(Status.Success, ...)`, `BreakIfNone` upgrades the status to
-`Status.Complete`, signalling that processing should not continue. All other yields are forwarded unchanged.
+When the inner stage yields [`Yield.None`](../../core/classes/Yield.md) with a
+[`Status.Success`](../../core/classes/Status.md) status, `BreakIfNone` upgrades the status to
+[`Status.Complete`](../../core/classes/Status.md), signalling that processing should not continue. All other yields
+are forwarded unchanged.
 The evolution is mapped in both cases so that continuations remain wrapped in `BreakIfNone`.
 
 This is useful for stages that return `None` when their input stream is exhausted — wrapping them with

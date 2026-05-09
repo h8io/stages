@@ -1,6 +1,7 @@
 # Identity
 
-`operators.Identity` is a polymorphic singleton `Decoration` that returns the decorated stage unchanged.
+`operators.Identity` is a polymorphic singleton [`Decoration`](../base/Alterator.md) that returns the decorated
+stage unchanged.
 It is the identity element for decoration composition — useful as a no-op placeholder when a `Decoration`
 is required by an API but no transformation is needed.
 

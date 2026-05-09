@@ -1,11 +1,11 @@
 # Overview
 
 The `h8io.stages.base` package sits between the core abstractions and concrete stage implementations.
-The core `Stage` interface — implement `apply` and `skip`, supply an `Evolution` with `evolve` and `dispose` — is
-intentionally minimal. That minimalism is useful at the boundary, but it leaves every implementor to repeat the same
-structural boilerplate: a stage that never changes needs the same `skip`-returns-`this` pattern; a stage that wraps
-another needs to forward `dispose`; a stage backed by a pure function always writes the same
-`Yield.Some(f(in), Status.Success, this)`.
+The core [`Stage`](../../core/classes/Stage.md) interface — implement `apply` and `skip`, supply an `Evolution`
+with `evolve` and `dispose` — is intentionally minimal. That minimalism is useful at the boundary, but it leaves
+every implementor to repeat the same structural boilerplate: a stage that never changes needs the same
+`skip`-returns-`this` pattern; a stage that wraps another needs to forward `dispose`; a stage backed by a pure
+function always writes the same `Yield.Some(f(in), Status.Success, this)`.
 
 The `base` package captures those patterns as composable, reusable traits. Concrete stages mix in what they need and
 implement only the logic that is genuinely specific to them.

@@ -1,6 +1,6 @@
 # StatusInstances
 
-`StatusInstances` provides `cats.Monoid` and `cats.Eq` instances for `Status[E]`.
+`StatusInstances` provides `cats.Monoid` and `cats.Eq` instances for [`Status`](../../core/classes/Status.md)`[E]`.
 
 The `Monoid` instance exposes the algebraic structure described in the core module: `Status.Success` is the
 identity element, and `combine` is the binary operation. Import `StatusInstances.*` to bring the instances

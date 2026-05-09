@@ -1,9 +1,11 @@
 # Safe
 
-`Safe` catches non-fatal exceptions thrown by the inner stage and converts them into `Status.Complete` error
-values, widening the error type from `E` to `Either[Throwable, E]`.
+`Safe` catches non-fatal exceptions thrown by the inner stage and converts them into
+[`Status.Complete`](../../core/classes/Status.md) error values, widening the error type from `E` to
+`Either[Throwable, E]`.
 
-- Exceptions caught during `apply` are reported as `Left(throwable)` in `Yield.None(Status.error(Left(e)), ...)`.
+- Exceptions caught during `apply` are reported as `Left(throwable)` in
+  [`Yield.None`](../../core/classes/Yield.md)`(Status.error(Left(e)), ...)`.
 - Errors already carried by the inner stage are wrapped as `Right(e)`.
 
 Fatal exceptions (those not matched by `scala.util.control.NonFatal`) propagate normally. The evolution is

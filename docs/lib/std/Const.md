@@ -1,7 +1,7 @@
 # Const
 
 `Const(out)` is a stage that always produces the same constant value, ignoring its input entirely.
-It is a `Fn[Any, O]`, so it always yields `Status.Success` and is stateless and freely reusable.
+It is a [`Fn`](../base/Fn.md)`[Any, O]`, so it always yields `Status.Success` and is stateless and freely reusable.
 
 ```scala mdoc
 import h8io.stages.*

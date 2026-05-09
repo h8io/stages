@@ -1,9 +1,11 @@
 # Stagnation
 
-`Stagnation` is an `Evolution` mixin that seals `evolve` to unconditionally return `this`, regardless of the status,
-and makes `dispose` a no-op. Mixing it into a stage expresses that the stage is always its own continuation.
+`Stagnation` is an [`Evolution`](../../core/classes/Evolution.md) mixin that seals `evolve` to unconditionally return
+`this`, regardless of the status, and makes `dispose` a no-op. Mixing it into a stage expresses that the stage is
+always its own continuation.
 
-`Stagnation` has a self-type of `Stage[I, O, E]`, so it can only be mixed into things that are already stages.
+`Stagnation` has a self-type of [`Stage`](../../core/classes/Stage.md)`[I, O, E]`, so it can only be mixed into
+things that are already stages.
 
 ```scala mdoc
 import h8io.stages.*

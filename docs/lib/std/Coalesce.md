@@ -1,7 +1,7 @@
 # Coalesce
 
 `Coalesce` collapses an `Either[T, T]` to its contained value, regardless of which side holds it.
-It is a `Fn[Either[T, T], T]`, so it always yields `Status.Success` and is stateless.
+It is a [`Fn`](../base/Fn.md)`[Either[T, T], T]`, so it always yields `Status.Success` and is stateless.
 
 `Coalesce` is a polymorphic singleton. Use `Coalesce[T]` to obtain a typed `Fn[Either[T, T], T]`.
 

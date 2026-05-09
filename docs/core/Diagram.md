@@ -6,13 +6,15 @@ ideas:
 
 - how stages are applied one after another;
 - how a pipeline folds the statuses of individual stages into a single overall status;
-- why `Evolution` methods are called in the order opposite to the order stages are applied, and what that guarantees.
+- why [`Evolution`](classes/Evolution.md) methods are called in the order opposite to the order stages are applied,
+  and what that guarantees.
 
 The pipeline will consist of three stages. Each of them has two versions, that is, two generations.  
 In a stage name, the first digit denotes its position in the pipeline, and the second digit denotes the pipeline
 generation in which that version of the stage is used.
 
-Since this example is illustrative, I will use only the basic `Stage` definitions from the `core` module.  
+Since this example is illustrative, I will use only the basic [`Stage`](classes/Stage.md) definitions from
+the `core` module.  
 All methods that are not supposed to be called in this scenario are defined as `???`.
 
 To avoid cluttering the example with repetitive placeholders, let us first introduce a small helper base class,

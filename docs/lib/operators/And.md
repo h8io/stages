@@ -1,7 +1,8 @@
 # And
 
 `And` applies `left` and `right` to the same input and produces a `(LO, RO)` tuple when both succeed.
-Evaluation is short-circuit on the left: if `left` yields `Yield.None`, `right` is not applied at all.
+Evaluation is short-circuit on the left: if `left` yields [`Yield.None`](../../core/classes/Yield.md), `right` is
+not applied at all.
 
 | left \ right | `Some` | `None` |
 |---|---|---|

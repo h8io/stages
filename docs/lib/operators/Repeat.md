@@ -1,8 +1,8 @@
 # Repeat
 
-`Repeat` keeps re-applying the inner stage to the same input, following `Status.Success` transitions, until
-the stage signals completion. On an error-free `Status.Complete` the status is converted back to `Success`;
-if the `Complete` carries errors, those are preserved.
+`Repeat` keeps re-applying the inner stage to the same input, following [`Status.Success`](../../core/classes/Status.md)
+transitions, until the stage signals completion. On an error-free [`Status.Complete`](../../core/classes/Status.md)
+the status is converted back to `Success`; if the `Complete` carries errors, those are preserved.
 
 Unlike [`Loop`](Loop.md), `Repeat` does not feed output back as input — the same original input is passed on
 every iteration. It is suited for stages like [`Countdown`](../std/Countdown.md) that batch a fixed number of

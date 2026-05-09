@@ -15,20 +15,22 @@ any effect system. `stages-lib` and `stages-cats` depend on `core` and extend it
 
 ## The types
 
-`Stage[-I, +O, +E]` is a function `I => Yield[I, O, E]`, extended with `skip(): Evolution[I, O, E]` for the bypass
-path. Exactly one of `apply` or `skip` is called per pipeline run; the `Evolution` returned from either call owns
-resource cleanup for that stage.
+[`Stage`](classes/Stage.md)`[-I, +O, +E]` is a function `I => Yield[I, O, E]`, extended with
+`skip(): Evolution[I, O, E]` for the bypass path. Exactly one of `apply` or `skip` is called per pipeline run; the
+[`Evolution`](classes/Evolution.md) returned from either call owns resource cleanup for that stage.
 
-`Yield[-I, +O, +E]` is what a stage returns when applied: an optional output value, a `Status`, and an `Evolution`.
+[`Yield`](classes/Yield.md)`[-I, +O, +E]` is what a stage returns when applied: an optional output value, a
+[`Status`](classes/Status.md), and an [`Evolution`](classes/Evolution.md).
 The `I` parameter is contravariant because the enclosed `Evolution` will eventually consume inputs again.
 
-`Status[+E]` records how the stage completed: `Success` (pipeline continues) or `Complete[E]` (pipeline is done,
-possibly with accumulated errors).
+[`Status`](classes/Status.md)`[+E]` records how the stage completed: `Success` (pipeline continues) or `Complete[E]`
+(pipeline is done, possibly with accumulated errors).
 
-`Evolution[-I, +O, +E]` is a continuation: given a `Status`, it returns the next stage to use for re-processing.
-It also owns disposal of the resources held by the stage that produced it.
+[`Evolution`](classes/Evolution.md)`[-I, +O, +E]` is a continuation: given a [`Status`](classes/Status.md), it returns
+the next stage to use for re-processing. It also owns disposal of the resources held by the stage that produced it.
 
-`Outcome[+O, +E]` is the terminal result of `Stage.execute`: a `Yield` stripped of its `Evolution`.
+[`Outcome`](classes/Outcome.md)`[+O, +E]` is the terminal result of [`Stage.execute`](classes/Stage.md): a
+[`Yield`](classes/Yield.md) stripped of its `Evolution`.
 
 ## Algebraic structure
 

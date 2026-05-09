@@ -1,12 +1,13 @@
 # LocalSoftDeadline
 
 `LocalSoftDeadline` stops the pipeline after a given duration has elapsed since the last successful evolution
-transition. The clock resets on every `Status.Success` transition, so the deadline window starts fresh after
-each successful step. On a `Complete` or error transition the clock also resets, but the deadline is checked
-at the very next `apply` call.
+transition. The clock resets on every [`Status.Success`](../../core/classes/Status.md) transition, so the deadline
+window starts fresh after each successful step. On a `Complete` or error transition the clock also resets, but the
+deadline is checked at the very next `apply` call.
 
 If the elapsed time reaches `duration` when `apply` is called, the current yield's status is upgraded to
-`Status.Complete`. If `duration ≤ 0`, the factory returns [`DeadEnd`](../std/DeadEnd.md) directly.
+[`Status.Complete`](../../core/classes/Status.md). If `duration ≤ 0`, the factory returns
+[`DeadEnd`](../std/DeadEnd.md) directly.
 
 This contrasts with [`GlobalSoftDeadline`](../std/GlobalSoftDeadline.md), whose deadline is fixed at
 construction and never resets.
