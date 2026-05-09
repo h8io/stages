@@ -13,9 +13,8 @@ The decorator has two states:
 The factory `KeepLastOutput(stage)` always starts in the initial state.
 
 ```scala mdoc
-import h8io.stages.*
-import h8io.stages.std.*
 import h8io.stages.operators.*
+import h8io.stages.projections.*
 ```
 
 ```scala mdoc

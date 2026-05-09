@@ -14,7 +14,7 @@ import h8io.stages.{Evolution, Stage, Yield}
   * so that every continuation stage is also wrapped in `Lift`, preserving the lifting semantics across the entire
   * pipeline.
   *
-  * `Lift` is the inverse of [[h8io.stages.std.Unlift]].
+  * `Lift` is the inverse of [[h8io.stages.projections.Unlift]].
   *
   * @param alterand
   *   the inner stage whose output is optionally present

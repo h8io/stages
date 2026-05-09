@@ -8,8 +8,7 @@ an error.
 [`Stage`](../../core/classes/Stage.md)`[Option[T], T, Nothing]`.
 
 ```scala mdoc
-import h8io.stages.*
-import h8io.stages.std.*
+import h8io.stages.projections.*
 ```
 
 ```scala mdoc
