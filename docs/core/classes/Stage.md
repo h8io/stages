@@ -26,7 +26,7 @@ produces `Yield.None` and there is nothing to pass downstream, or when a non-inc
 this branch of the pipeline.
 
 `skip` exists precisely so that stages further downstream still get a chance to evolve correctly even when they
-are not directly executed. The [Diagram](Diagram.md) explains this with a concrete example involving Stage 3-1,
+are not directly executed. The [Diagram](../Diagram.md) explains this with a concrete example involving Stage 3-1,
 which is skipped in the first generation but still needs to evolve into Stage 3-2.
 
 Here is a minimal stage that doubles its input on the active path and supplies its evolution on the skipped path:

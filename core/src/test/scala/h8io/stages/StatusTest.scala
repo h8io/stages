@@ -36,6 +36,11 @@ class StatusTest
       i.toList should contain theSameElementsInOrderAs c.errors
     }
 
+  it should "render as 'Complete(...)' with comma-separated values" in
+    forAll { (c: Status.Complete[String]) =>
+      c.toString shouldBe c.errors.mkString("Complete(", ", ", ")")
+    }
+
   "map" should "not change the Success status" in {
     Status.Success.map(mock[String => Long]) shouldBe Status.Success
   }
@@ -57,11 +62,6 @@ class StatusTest
         )
         initialComplete.map(f) shouldBe mappedComplete
       }
-    }
-
-  it should "render as 'Complete(...)' with comma-separated values" in
-    forAll { (c: Status.Complete[String]) =>
-      c.toString shouldBe c.mkString("Complete(", ", ", ")")
     }
 
   "Complete.apply" should "create a Complete status from a sequence of errors" in {

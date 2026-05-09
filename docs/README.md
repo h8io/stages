@@ -30,7 +30,8 @@ InitSpark ~>
   Save("users", format = "csv")
 ```
 
-This is not pseudocode. It is real Scala, and it is meant to read as naturally as a description of what the pipeline does.
+This is not pseudocode. It is real Scala, and it is meant to read as naturally as a description of what the pipeline
+does.
 
 ## How it works
 

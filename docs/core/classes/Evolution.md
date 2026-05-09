@@ -119,7 +119,7 @@ All `Evolution` method calls in `Evolution.AndThen` follow the same order: pipel
 pipeline-upstream — the reverse of the order in which stages are applied.
 This applies equally to `evolve` and `dispose()`, since both may release or transition resources held by the
 producing stage.  
-The [Diagram](Diagram.md) section on finalization walks through a concrete example of why this matters.
+The [Diagram](../Diagram.md) section on finalization walks through a concrete example of why this matters.
 
 `compose` is an implementation detail of `Stage.AndThen` and is not part of the typical application-level API.
 
