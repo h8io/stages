@@ -47,7 +47,7 @@ class LocalSoftDeadlineTest
       test(LocalSoftDeadline(jDuration.ofNanos(nanos))(stage))
     }
 
-  it should "return a yield with Break status and the initial stage (tsSupplier == now) when overdue" in
+  it should "return a yield with Complete status and the initial stage (tsSupplier == now) when overdue" in
     forAll(
       Gen.zip(
         Gen.long,
