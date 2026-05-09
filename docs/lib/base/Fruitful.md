@@ -1,8 +1,9 @@
 # Fruitful
 
-`Fruitful` expresses a weaker guarantee than [`Fn`](Fn.md): the stage always returns [`Yield.Some`](../../core/classes/Yield.md), but it is free to choose
-any status and any evolution. The return type of `apply` is narrowed to `Yield.Some[I, O, E]` so the compiler can
-track this guarantee statically, making `Fruitful` stages safe to use wherever an output value is always expected.
+`Fruitful` expresses a weaker guarantee than [`Fn`](Fn.md): the stage always returns
+[`Yield.Some`](../../core/classes/Yield.md), but it is free to choose any status and any evolution. The return type
+of `apply` is narrowed to `Yield.Some[I, O, E]` so the compiler can track this guarantee statically, making
+`Fruitful` stages safe to use wherever an output value is always expected.
 
 ```scala mdoc
 import h8io.stages.*

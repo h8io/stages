@@ -5,8 +5,8 @@
 - `Yield.Some(v, ...)` → `Yield.Some(Some(v), ...)`
 - `Yield.None(...)` → `Yield.Some(None, ...)`
 
-Because `Lift` always emits a value, it extends [`Fruitful`](../base/Fruitful.md). The evolution is mapped so that every continuation
-stage remains wrapped in `Lift`. `Lift` is the inverse of [`Unlift`](../std/Unlift.md).
+Because `Lift` always emits a value, it extends [`Fruitful`](../base/Fruitful.md). The evolution is mapped so that
+every continuation stage remains wrapped in `Lift`. `Lift` is the inverse of [`Unlift`](../std/Unlift.md).
 
 ```scala mdoc
 import h8io.stages.*

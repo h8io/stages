@@ -8,9 +8,9 @@ The type parameter `S` is covariant and bounded to `Stage.Any`, preserving the c
 wrapper's static type without information loss.
 
 **Do not mix `Alterator` with traits that introduce independent state or their own evolution logic** — for example,
-[`SAMStage`](SAMStage.md) or [`Stagnation`](Stagnation.md). `Alterator` assumes that `alterand` owns all resources and controls all evolution.
-A co-mixed trait that adds its own resources or overrides evolution without coordinating with the alterand breaks
-that contract silently: its resources will not be released and its transitions will be ignored.
+[`SAMStage`](SAMStage.md) or [`Stagnation`](Stagnation.md). `Alterator` assumes that `alterand` owns all resources and
+controls all evolution. A co-mixed trait that adds its own resources or overrides evolution without coordinating with
+the alterand breaks that contract silently: its resources will not be released and its transitions will be ignored.
 
 The `base` package provides four type aliases built on `Alterator`:
 
