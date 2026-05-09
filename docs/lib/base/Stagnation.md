@@ -27,6 +27,7 @@ Counter(())
 Counter.skip()
 ```
 
-`Stagnation` seals only `evolve` and `dispose`. The `skip` method stays open, so the stage has full control over
-what evolution it exposes when bypassed. In practice, most stateless stages use `this` for `skip` as well — which
-is exactly what the next layer provides.
+`Stagnation` seals `evolve` but only provides a default no-op `dispose` — `dispose` remains open for override,
+so a stage can still release resources when it is torn down. The `skip` method stays open as well, giving the stage
+full control over what evolution it exposes when bypassed. In practice, most stateless stages use `this` for `skip`
+too — which is exactly what the next layer provides.
