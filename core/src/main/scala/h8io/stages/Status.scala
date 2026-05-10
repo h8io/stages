@@ -8,8 +8,9 @@ import scala.annotation.nowarn
   * composed. There are two possible states:
   *
   *   - [[Status.Success]] — the stage completed normally and processing may continue.
-  *   - [[Status.Complete]] — the pipeline has finished; no further input should be processed. When `errors` is empty
-  *     this represents clean completion; when `errors` is non-empty it represents one or more accumulated errors.
+  *   - [[Status.Complete]] — a unit of work has finished. Passed to [[Evolution]] when selecting the next continuation
+  *     stage; enclosing alterators such as `Loop` or `Repeat` use it to end the current cycle. When `errors` is empty
+  *     this represents clean completion; when `errors` is non-empty it carries one or more accumulated errors.
   *
   * Statuses form a semigroup under `combine`, used when merging the results of composed stages: `Success` is the
   * identity element and `Complete` accumulates errors on combination.
@@ -55,10 +56,12 @@ object Status {
     override def map[_E](f: Nothing => _E): this.type = this
   }
 
-  /** Indicates that the pipeline has finished processing.
+  /** Indicates that a unit of work has finished.
     *
-    * When `errors` is empty (i.e., `this == complete`) the pipeline completed normally without errors. When `errors` is
-    * non-empty the pipeline encountered one or more accumulated errors.
+    * When `errors` is empty (i.e., `this == complete`) this represents clean completion. When `errors` is non-empty one
+    * or more errors were accumulated. The signal is passed to [[Evolution.evolve]], which may select a different
+    * continuation stage than it would for [[Success]]. Enclosing alterators such as `Loop` or `Repeat` intercept it as
+    * the cue to stop looping and reset for the next cycle.
     *
     * `Complete` dominates [[Success]] in composition. Two `Complete` statuses are merged by concatenating their error
     * sequences.
