@@ -8,7 +8,6 @@ Use `Either.Left[T]` and `Either.Right[T]` to obtain a typed [`Projection`](../b
 `Projection[Either[?, T], T]` respectively.
 
 ```scala mdoc
-import h8io.stages.*
 import h8io.stages.projections.*
 ```
 

@@ -11,7 +11,6 @@ Both are polymorphic singletons. Use `Validated.Valid[T]` and `Validated.Invalid
 `Projection[cats.data.Validated[?, T], T]` and `Projection[cats.data.Validated[T, ?], T]` respectively.
 
 ```scala mdoc
-import h8io.stages.*
 import h8io.stages.cats.*
 ```
 

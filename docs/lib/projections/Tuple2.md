@@ -8,7 +8,6 @@ Use `Tuple2.Left[T]` and `Tuple2.Right[T]` to obtain a typed [`Projection`](../b
 `Projection[(?, T), T]` respectively.
 
 ```scala mdoc
-import h8io.stages.*
 import h8io.stages.projections.*
 ```
 
