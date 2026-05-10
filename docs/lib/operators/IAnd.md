@@ -25,7 +25,8 @@ object IsPositive extends SAMStage[Int, Int, Nothing] {
 
 object IsEven extends SAMStage[Int, Int, Nothing] {
   override def apply(in: Int): Yield[Int, Int, Nothing] =
-    if (in % 2 == 0) Yield.Some(in, Status.Success, this) else Yield.None(Status.Success, this)
+    if (in % 2 == 0) Yield.Some(in, Status.Success, this)
+    else Yield.None(Status.Success, this)
 }
 
 val iand = IAnd(IsPositive, IsEven)

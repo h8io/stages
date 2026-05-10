@@ -73,7 +73,9 @@ class ResourceStage(name: String) extends Stage[String, String, Nothing] {
   println(s"[$name] acquired")
 
   private val evolution = new Evolution[String, String, Nothing] {
-    override def evolve(status: Status[?]): Stage[String, String, Nothing] = ResourceStage.this
+    override def evolve(status: Status[?]): Stage[String, String, Nothing] =
+      ResourceStage.this
+
     override def dispose(): Unit = {
       open = false
       println(s"[$name] released")

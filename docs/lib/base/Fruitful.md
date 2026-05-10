@@ -11,7 +11,7 @@ import h8io.stages.base.*
 ```
 
 ```scala mdoc
-object Loudify extends Fruitful[String, String, Nothing] with SAMStage[String, String, Nothing] {
+object Loudify extends Fruitful.Endo[String, Nothing] with SAMStage.Endo[String, Nothing] {
   override def apply(in: String): Yield.Some[String, String, Nothing] =
     Yield.Some(in.toUpperCase + "!", Status.Success, this)
 }

@@ -23,8 +23,10 @@ any effect system. `stages-lib` and `stages-cats` depend on `core` and extend it
 [`Status`](classes/Status.md), and an [`Evolution`](classes/Evolution.md).
 The `I` parameter is contravariant because the enclosed `Evolution` will eventually consume inputs again.
 
-[`Status`](classes/Status.md)`[+E]` records how the stage completed: `Success` (pipeline continues) or `Complete[E]`
-(pipeline is done, possibly with accumulated errors).
+[`Status`](classes/Status.md)`[+E]` is the completion signal attached to every [`Yield`](classes/Yield.md):
+`Success` for ordinary processing, or `Complete[E]` when a unit of work has finished — cleanly or with accumulated
+errors. `Complete` is passed to [`Evolution`](classes/Evolution.md) when selecting the next continuation stage, and
+is intercepted by enclosing alterators such as `Loop` and `Repeat` as the cue to end the current cycle.
 
 [`Evolution`](classes/Evolution.md)`[-I, +O, +E]` is a continuation: given a [`Status`](classes/Status.md), it returns
 the next stage to use for re-processing. It also owns disposal of the resources held by the stage that produced it.

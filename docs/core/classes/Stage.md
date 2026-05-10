@@ -20,10 +20,10 @@ Every `Stage` participates in exactly one of two paths during a pipeline run.
 **apply** — the active path. The stage receives a real input value and returns a `Yield`. It is free to perform
 side effects, update internal state, and produce any output it likes.
 
-**skip** — the bypassed path. The stage is not given any input. Instead it returns the `Evolution` it _would_ have
-returned had it run — without performing any side effects or consuming any value. This happens when an upstream stage
-produces `Yield.None` and there is nothing to pass downstream, or when a non-inclusive binary operation excludes
-this branch of the pipeline.
+**skip** — the bypassed path. Any stage that participates in a pipeline run but does not process the current input
+must take this path: it returns the `Evolution` it _would_ have returned had it run — without performing any side
+effects or consuming any value. Common triggers are an upstream stage producing `Yield.None` (nothing to pass
+downstream) or a non-inclusive binary operation that excludes this branch.
 
 `skip` exists precisely so that stages further downstream still get a chance to evolve correctly even when they
 are not directly executed. The [Diagram](../Diagram.md) explains this with a concrete example involving Stage 3-1,

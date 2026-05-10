@@ -2,11 +2,14 @@ package h8io.stages.base
 
 import h8io.stages.{Status, Yield}
 
-/** A [[Fruitful]] stage backed by a pure function `f`.
+/** The simplest way to create a `Stage` from a single pure function.
   *
-  * `Fn` always succeeds (`h8io.stages.Status.Success`) and returns `this` as the `h8io.stages.Evolution` (via
-  * [[Stagnation]]), making it stateless and reusable. The `apply` implementation is sealed and cannot be overridden;
-  * subclasses only need to implement [[f]].
+  * Extend `Fn` and implement [[f]]; everything else — wrapping in `Yield.Some`, attaching `Status.Success`, wiring the
+  * evolution — is handled automatically. `Fn` always succeeds and returns `this` as the evolution (via [[Stagnation]]),
+  * making it stateless and reusable.
+  *
+  * Because `apply` is sealed, a `Fn` stage can never produce `Yield.None` or a non-`Success` status. When either of
+  * those is needed, use [[StaticStage]] instead.
   *
   * Example usage:
   * {{{

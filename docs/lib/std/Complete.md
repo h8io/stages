@@ -1,10 +1,10 @@
 # Complete
 
-`Complete` is a stage that signals pipeline completion while still passing the input through as output.
+`Complete` is a stage that emits `Status.Complete` while passing the input through as output unchanged.
 Every invocation yields `Status.Complete` with the input value intact — no value is dropped.
 
-It is designed as the terminal element in a conditional pipeline: once a preceding stage decides that
-processing should stop, `Complete` is used to emit the final value and close the pipeline cleanly.
+It signals that the current unit of work is done. At the top level of a pipeline this becomes the run's terminal
+status; inside an enclosing alterator such as `Loop` or `Repeat` it ends the current cycle.
 The [`CompleteIfSome`](../operators/CompleteIfSome.md) operator uses `Complete` for exactly this purpose.
 
 `Complete` is a polymorphic singleton. Use `Complete[T]` to obtain a typed `Fruitful.Endo[T, Nothing]`.
