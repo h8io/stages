@@ -14,7 +14,9 @@ import h8io.stages.base.*
 ```
 
 ```scala mdoc
-object SafeParseInt extends SafeStage[String, Int, String] with SAMStage[String, Int, String] {
+object SafeParseInt
+  extends SafeStage[String, Int, String] with SAMStage[String, Int, String] {
+
   override def body(in: String): Yield[String, Int, String] =
     Yield.Some(in.toInt, Status.Success, this)
 
