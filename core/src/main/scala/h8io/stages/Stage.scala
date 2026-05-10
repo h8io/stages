@@ -50,9 +50,10 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   /** Returns the [[Evolution]] for this stage without processing any input.
     *
-    * Called when the stage is bypassed during a pipeline run — for instance, because an upstream stage produced no
-    * output ([[Yield.None]]), or because a non-inclusive binary operation excluded this branch. The stage must return
-    * its [[Evolution]] as it would have appeared had it run, but must not perform any side effects or consume input.
+    * Any stage that participates in a pipeline run but does not process the current input must call `skip()` instead of
+    * `apply`. Common triggers: an upstream stage produced no output ([[Yield.None]]), or a non-inclusive binary
+    * operation excluded this branch. The stage must return its [[Evolution]] as it would have appeared had it run, but
+    * must not perform any side effects or consume input.
     *
     * See the ''Lifecycle'' section in [[Stage]] for the full contract.
     *
