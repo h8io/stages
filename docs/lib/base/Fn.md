@@ -1,12 +1,14 @@
 # Fn
 
-`Fn` is the most constrained member of the hierarchy: a [`StaticStage`](StaticStage.md) that always produces
-`Yield.Some` with `Status.Success`. Only the pure mapping function `f` is abstract. The sealed `apply` calls `f`
-and wraps the result automatically — there is no way for a `Fn` stage to produce `Yield.None` or any non-`Success`
-status.
+`Fn` is the simplest way to turn a single pure function into a [`Stage`](../../core/classes/Stage.md): extend `Fn`
+and implement `f`. Everything else — wrapping in `Yield.Some`, attaching `Status.Success`, wiring the evolution —
+is handled automatically.
+
+As the most constrained member of the hierarchy, a `Fn` stage can never produce `Yield.None` or a non-`Success`
+status. When output is not always guaranteed or a different status is needed, use
+[`StaticStage`](StaticStage.md) instead.
 
 ```scala mdoc
-import h8io.stages.*
 import h8io.stages.base.*
 ```
 
