@@ -1,8 +1,6 @@
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.0")
-//addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.8.2")
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.2")
 addSbtPlugin("com.github.sbt" % "sbt-unidoc" % "0.6.1")
-// addSbtPlugin("org.typelevel" % "laika-sbt"  % "1.3.2")
 addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % "0.8.5")
 addSbtPlugin("io.h8.sbt" %% "sbt-dependencies" % "1.0.7")
 addSbtPlugin("io.h8.sbt" % "sbt-scoverage-summary" % "1.0.6")
