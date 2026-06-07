@@ -22,7 +22,7 @@ inThisBuild(
 
 ThisBuild / scalaVersion := "2.13.18"
 ThisBuild / crossScalaVersions += "2.12.21"
-ThisBuild / javacOptions ++= Seq("-target", "8")
+ThisBuild / javacOptions ++= Seq("--release", "11")
 
 ThisBuild / versionScheme := Some("semver-spec")
 ThisBuild / dynverSonatypeSnapshots := true
