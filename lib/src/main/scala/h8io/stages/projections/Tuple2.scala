@@ -1,7 +1,6 @@
 package h8io.stages.projections
 
-import h8io.stages.Status
-import h8io.stages.base.FruitfulStaticStage
+import h8io.stages.base.{LeftProjection, RightProjection, StaticYield}
 
 /** Stage projections for Scala's standard `scala.Tuple2` type.
   *
@@ -22,32 +21,15 @@ object Tuple2 {
     *
     * Use `Tuple2.Left[T]` to get a typed `FruitfulStaticStage[(T, ?), T, Nothing]`.
     */
-  object Left extends FruitfulStaticStage[(Any, ?), Any, Nothing] {
-    override def process(in: (Any, ?)): (Any, Status[Nothing]) = (in._1, Status.Success)
-
-    /** Returns a typed view of this projection for first elements of type `T`.
-      *
-      * The cast is safe because `Tuple2` is covariant in both parameters and the projection only reads (never writes)
-      * the pair.
-      *
-      * @tparam T
-      *   the concrete first-element type
-      */
-    def apply[T]: FruitfulStaticStage[(T, ?), T, Nothing] = asInstanceOf[FruitfulStaticStage[(T, ?), T, Nothing]]
+  object Left extends LeftProjection[Tuple2] {
+    override def process(in: (Any, ?)): StaticYield.Some[Any, Nothing] = some(in._1)
   }
 
   /** Extracts the second element (`_2`) of a `(A, B)` pair.
     *
     * Use `Tuple2.Right[T]` to get a typed `FruitfulStaticStage[(?, T), T, Nothing]`.
     */
-  object Right extends FruitfulStaticStage[(?, Any), Any, Nothing] {
-    override def process(in: (?, Any)): (Any, Status[Nothing]) = (in._2, Status.Success)
-
-    /** Returns a typed view of this projection for second elements of type `T`.
-      *
-      * @tparam T
-      *   the concrete second-element type
-      */
-    def apply[T]: FruitfulStaticStage[(?, T), T, Nothing] = asInstanceOf[FruitfulStaticStage[(?, T), T, Nothing]]
+  object Right extends RightProjection[Tuple2] {
+    override def process(in: (?, Any)): StaticYield.Some[Any, Nothing] = some(in._2)
   }
 }
