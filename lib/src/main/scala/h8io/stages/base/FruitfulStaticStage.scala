@@ -4,7 +4,7 @@ import h8io.stages.{Status, Yield}
 
 /** A `h8io.stages.Stage` that is its own `Evolution` and is guaranteed to always produce an output value.
   *
-  * The fruitful counterpart of [[StaticStage]]: `apply` and `skip` are sealed, and subclasses implement [[produce]],
+  * The fruitful counterpart of [[StaticStage]]: `apply` and `skip` are sealed, and subclasses implement [[process]],
   * returning the output value paired with its `h8io.stages.Status` — no yield wrapping at all. `apply` carries the
   * `h8io.stages.Yield.Some` return type required by [[Fruitful]], so the always-an-output guarantee is statically
   * tracked.
@@ -20,7 +20,7 @@ import h8io.stages.{Status, Yield}
   */
 trait FruitfulStaticStage[-I, +O, +E] extends SAMStage[I, O, E] with Fruitful[I, O, E] {
   override final def apply(in: I): Yield.Some[I, O, E] = {
-    val (out, status) = produce(in)
+    val (out, status) = process(in)
     Yield.Some(out, status, this)
   }
 
@@ -32,7 +32,7 @@ trait FruitfulStaticStage[-I, +O, +E] extends SAMStage[I, O, E] with Fruitful[I,
     * @return
     *   the output value paired with the execution status
     */
-  protected def produce(in: I): (O, Status[E])
+  protected def process(in: I): (O, Status[E])
 }
 
 /** Companion object for [[FruitfulStaticStage]]. */

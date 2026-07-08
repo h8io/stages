@@ -23,7 +23,7 @@ object Tuple2 {
     * Use `Tuple2.Left[T]` to get a typed `FruitfulStaticStage[(T, ?), T, Nothing]`.
     */
   object Left extends FruitfulStaticStage[(Any, ?), Any, Nothing] {
-    override def produce(in: (Any, ?)): (Any, Status[Nothing]) = (in._1, Status.Success)
+    override def process(in: (Any, ?)): (Any, Status[Nothing]) = (in._1, Status.Success)
 
     /** Returns a typed view of this projection for first elements of type `T`.
       *
@@ -41,7 +41,7 @@ object Tuple2 {
     * Use `Tuple2.Right[T]` to get a typed `FruitfulStaticStage[(?, T), T, Nothing]`.
     */
   object Right extends FruitfulStaticStage[(?, Any), Any, Nothing] {
-    override def produce(in: (?, Any)): (Any, Status[Nothing]) = (in._2, Status.Success)
+    override def process(in: (?, Any)): (Any, Status[Nothing]) = (in._2, Status.Success)
 
     /** Returns a typed view of this projection for second elements of type `T`.
       *

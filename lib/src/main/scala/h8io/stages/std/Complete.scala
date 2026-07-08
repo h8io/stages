@@ -20,5 +20,5 @@ object Complete extends FruitfulStaticStage.Endo[Any, Nothing] {
     */
   def apply[T]: Fruitful.Endo[T, Nothing] = asInstanceOf[Fruitful.Endo[T, Nothing]]
 
-  override protected def produce(in: Any): (Any, Status[Nothing]) = (in, Status.complete)
+  override protected def process(in: Any): (Any, Status[Nothing]) = (in, Status.complete)
 }

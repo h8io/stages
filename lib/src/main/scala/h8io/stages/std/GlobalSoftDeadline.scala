@@ -26,7 +26,7 @@ final class GlobalSoftDeadline[T] private (val now: () => Long, val duration: Lo
     extends FruitfulStaticStage.Endo[T, Nothing] {
   private val ts: Long = now()
 
-  override protected def produce(in: T): (T, Status[Nothing]) =
+  override protected def process(in: T): (T, Status[Nothing]) =
     (in, if (now() - ts < duration) Status.Success else Status.complete)
 }
 
