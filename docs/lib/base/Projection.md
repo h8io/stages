@@ -6,7 +6,7 @@ with [`Status.Success`](../../core/classes/Status.md), preserving the overall pi
 error.
 
 Two convenience members simplify `process` implementations: `some(out)` produces `StaticYield.Some(out, Status.Success)`
-and `none` is a pre-built `StaticYield.None(Status.Success)` — both with `this` as the implicit evolution.
+and `none` is a pre-built `StaticYield.None(Status.Success)` — ready to return from `process`.
 
 ```scala mdoc
 import h8io.stages.*

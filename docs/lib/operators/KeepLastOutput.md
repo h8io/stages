@@ -7,8 +7,8 @@ The decorator has two states:
 
 - **Initial state** (no value seen yet): [`Yield.None`](../../core/classes/Yield.md) is forwarded unchanged;
   `Yield.Some` is forwarded and transitions to the remembered state.
-- **Remembered state**: regardless of whether the inner stage yields `Some` or `None`, the last known value is
-  always emitted. A new `Yield.Some` updates the remembered value.
+- **Remembered state**: the wrapper always emits a value. A new `Yield.Some` from the inner stage is forwarded
+  as is and updates the remembered value; on `Yield.None` the remembered value is emitted instead.
 
 The factory `KeepLastOutput(stage)` always starts in the initial state.
 

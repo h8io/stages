@@ -5,8 +5,8 @@ and implement `f`. Everything else — wrapping in `Yield.Some`, attaching `Stat
 is handled automatically.
 
 As the most constrained member of the hierarchy, a `Fn` stage can never produce `Yield.None` or a non-`Success`
-status. When output is not always guaranteed or a different status is needed, use
-[`StaticStage`](StaticStage.md) instead.
+status. When output is guaranteed but the status may vary, use [`FruitfulStaticStage`](FruitfulStaticStage.md);
+when output is not always produced, use [`StaticStage`](StaticStage.md).
 
 ```scala mdoc
 import h8io.stages.base.*
