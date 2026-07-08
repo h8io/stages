@@ -1,13 +1,11 @@
 # Tuple2
 
-`Tuple2.Left` and `Tuple2.Right` extract one element of a pair `(A, B)`. Because a tuple always has both elements
-present, they always yield `Yield.Some` with `Status.Success` — so unlike the other projections they are
-[`FruitfulStaticStage`](../base/FruitfulStaticStage.md)s rather than
-[`Projection`](../base/Projection.md)s: the always-an-output guarantee is visible in their types.
+Tuple2.Left` and `Tuple2.Right` are `Projection` stages for Scala's standard `scala.Tuple2` type.
+Each extracts one element of a pair `(A, B)` and always yields `Yield.Some` with `Status.Success`,
+because a tuple always has both elements present.
 
-Use `Tuple2.Left[T]` and `Tuple2.Right[T]` to obtain a typed
-[`FruitfulStaticStage`](../base/FruitfulStaticStage.md)`[(T, ?), T, Nothing]` or
-`FruitfulStaticStage[(?, T), T, Nothing]` respectively.
+Use `Tuple2.Left[T]` and `Tuple2.Right[T]` to obtain a typed [`Projection`](../base/Projection.md)`[(T, ?), T]` or
+`Projection[(?, T), T]` respectively.
 
 ```scala mdoc
 import h8io.stages.projections.*
