@@ -1,6 +1,6 @@
 # Tuple2
 
-Tuple2.Left` and `Tuple2.Right` are `Projection` stages for Scala's standard `scala.Tuple2` type.
+`Tuple2.Left` and `Tuple2.Right` are `Projection` stages for Scala's standard `scala.Tuple2` type.
 Each extracts one element of a pair `(A, B)` and always yields `Yield.Some` with `Status.Success`,
 because a tuple always has both elements present.
 
