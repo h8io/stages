@@ -11,13 +11,14 @@ import scala.annotation.tailrec
   * The tail-recursive loop works as follows:
   *
   *   - `h8io.stages.Status.Success` + `h8io.stages.Yield.Some`: the output becomes the new input and the loop continues
-  *     with the `onSuccess` continuation.
-  *   - `h8io.stages.Status.Success` + `h8io.stages.Yield.None`: no output was produced; the loop stops and emits
-  *     `Yield.None(Success, Loop(onComplete))`.
-  *   - `h8io.stages.Status.Complete` with no errors: the loop stops, converts the status back to `Success`, and selects
-  *     the `Complete` continuation for the next outer invocation.
-  *   - `h8io.stages.Status.Complete` with errors: the loop stops, preserves the errors, and selects the `Complete`
-  *     continuation for the next outer invocation.
+  *     with the stage selected by `evolution.evolve(Status.Success)`.
+  *   - `h8io.stages.Status.Success` + `h8io.stages.Yield.None`: no output was produced; the loop stops and emits a
+  *     `Yield.None` with `Success` status whose continuation is the stage selected by
+  *     `evolution.evolve(Status.complete)`, wrapped back in `Loop`.
+  *   - `h8io.stages.Status.Complete` with no errors: the loop stops, converts the status back to `Success`, and wraps
+  *     the stage selected by `evolution.evolve(status)` in `Loop` for the next outer invocation.
+  *   - `h8io.stages.Status.Complete` with errors: the loop stops, preserves the errors, and selects the continuation
+  *     the same way.
   *
   * This makes `Loop` suitable for in-process iterative computations (e.g., fixed-point iterations) where the result of
   * one step seeds the next.

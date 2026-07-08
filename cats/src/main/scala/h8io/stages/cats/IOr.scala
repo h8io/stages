@@ -17,8 +17,8 @@ import h8io.stages.{Evolution, Stage, Yield}
   * | `Yield.None` | `Yield.Some` | `Ior.Right(r)`   |
   * | `Yield.None` | `Yield.None` | `Yield.None`     |
   *
-  * Unlike `h8io.stages.operators.And` (which short-circuits on the left) and `h8io.stages.operators.Or` (which
-  * short-circuits on the right), `IOr` always applies both stages, making it the inclusive variant.
+  * Unlike `h8io.stages.operators.And` (which skips `right` when `left` yields no output) and `h8io.stages.operators.Or`
+  * (which skips `right` when `left` yields one), `IOr` always applies both stages, making it the inclusive variant.
   *
   * Statuses from both stages are merged with `combine`. The evolution pairs corresponding branches symmetrically (like
   * `h8io.stages.operators.IAnd`).

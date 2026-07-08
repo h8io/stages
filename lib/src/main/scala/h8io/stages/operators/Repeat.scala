@@ -5,8 +5,8 @@ import h8io.stages.base.{Decorator, StageOps}
 
 import scala.annotation.tailrec
 
-/** A decorator that keeps re-applying the inner stage (following its `h8io.stages.Evolution.onSuccess` transitions)
-  * until the stage signals completion or an error.
+/** A decorator that keeps re-applying the inner stage (following the continuations its `h8io.stages.Evolution` selects
+  * for `h8io.stages.Status.Success`) until the stage signals completion or an error.
   *
   * The loop is implemented with `@tailrec` so it does not grow the stack. The loop continues as long as the inner stage
   * yields `h8io.stages.Status.Success`. It stops on `h8io.stages.Status.Complete`: if there are no errors the status is

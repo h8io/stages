@@ -4,9 +4,10 @@ import h8io.stages.Stage
 
 /** A `h8io.stages.Stage` that composes two sub-stages operating on the same input type.
   *
-  * `BinaryOperator` provides exception-safe disposal of both sub-stages: `right.dispose()` is called first, then
-  * `left.dispose()`. If `right.dispose()` throws, `left.dispose()` is still attempted and any exception it throws is
-  * attached as a suppressed exception to the primary one.
+  * Exception-safe disposal of both sub-stage evolutions is provided by `BaseBinaryOperator.Evolution` (in the `base`
+  * package object): `right.dispose()` is called first, then `left.dispose()`. If `right.dispose()` throws,
+  * `left.dispose()` is still attempted and any exception it throws is attached as a suppressed exception to the primary
+  * one.
   *
   * Concrete subclasses (e.g. [[h8io.stages.operators.And]], [[h8io.stages.operators.Or]],
   * [[h8io.stages.operators.IAnd]]) implement `apply` to define how the two sub-stages are combined.

@@ -2,7 +2,6 @@
 
 `DeadEnd` is a terminal stage that never produces an output value. Every invocation returns
 `Yield.None(Status.Complete)`, immediately signalling that the pipeline is finished.
-The yield is pre-built and cached to avoid allocation on each call.
 
 `DeadEnd` is the natural end-of-stream marker. It is also returned by [`Countdown`](Countdown.md)`(n)` when `n ≤ 0`.
 

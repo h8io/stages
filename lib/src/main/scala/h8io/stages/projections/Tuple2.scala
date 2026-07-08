@@ -17,7 +17,7 @@ object Tuple2 {
 
   /** Extracts the first element (`_1`) of a `(A, B)` pair.
     *
-    * Use `Tuple2.Left[T]` to get a typed `Projection[(T, ?), T]`.
+    * Use `Tuple2.Left[T]` to get a typed `Projection[(T, ?), T, Nothing]`.
     */
   object Left extends LeftProjection[Tuple2] {
     override def process(in: (Any, ?)): StaticYield.Some[Any, Nothing] = some(in._1)
@@ -25,7 +25,7 @@ object Tuple2 {
 
   /** Extracts the second element (`_2`) of a `(A, B)` pair.
     *
-    * Use `Tuple2.Right[T]` to get a typed `Projection[(?, T), T]`.
+    * Use `Tuple2.Right[T]` to get a typed `Projection[(?, T), T, Nothing]`.
     */
   object Right extends RightProjection[Tuple2] {
     override def process(in: (?, Any)): StaticYield.Some[Any, Nothing] = some(in._2)

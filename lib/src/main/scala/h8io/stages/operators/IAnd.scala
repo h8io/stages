@@ -4,8 +4,8 @@ import h8io.stages
 import h8io.stages.base.{BaseBinaryOperator, BinaryOperator}
 import h8io.stages.{Evolution, Stage, Yield}
 
-/** An ''independent'' binary operator that applies two stages to the same input simultaneously and combines their
-  * outputs into a tuple.
+/** An ''independent'' binary operator that applies two stages to the same input and combines their outputs into a
+  * tuple.
   *
   * Both `left` and `right` are always applied — unlike [[And]], which skips `right` if `left` produces no output.
   *

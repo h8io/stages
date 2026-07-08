@@ -21,3 +21,7 @@ Loudify("hello")
 
 `Fruitful` is useful for binary operators that need to guarantee both branches always produce output, or for stages
 that always yield a value but may still signal errors or transition to a different stage.
+
+For the common case of a static stage that always produces an output — like `Loudify` above —
+[`FruitfulStaticStage`](FruitfulStaticStage.md) removes the remaining boilerplate: implement a single `produce`
+method returning the output paired with its status.

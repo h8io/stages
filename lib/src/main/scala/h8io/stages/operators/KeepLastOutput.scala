@@ -10,9 +10,9 @@ import h8io.stages.{Evolution, Stage, Yield}
   *
   *   - **`None` state** (initial): no output has been seen yet. The inner stage's `h8io.stages.Yield.None` is forwarded
   *     unchanged; a `h8io.stages.Yield.Some` is forwarded and transitions the wrapper to the `Some` state.
-  *   - **`Some` state**: a previous output `out` is remembered. On every subsequent call the inner stage's last known
-  *     output is emitted regardless of whether the inner stage yields `Some` or `None`. A new `h8io.stages.Yield.Some`
-  *     updates the remembered value.
+  *   - **`Some` state**: a previous output `out` is remembered, so the wrapper always emits a value. A new
+  *     `h8io.stages.Yield.Some` from the inner stage is forwarded as is and updates the remembered value; on
+  *     `h8io.stages.Yield.None` the remembered value is emitted instead.
   *
   * In both states the evolution is mapped so that continuations remain wrapped in the appropriate `KeepLastOutput`
   * variant, preserving the last-value semantics.

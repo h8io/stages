@@ -1,7 +1,6 @@
 package h8io.stages.std
 
 import h8io.stages.*
-import h8io.stages.base.StageOps
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -20,7 +19,7 @@ class CountdownTest
 
   it should "return a yield with status Complete when i == 1" in
     forAll(Gen.zip(Gen.choose(1, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
-      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Status.complete, Countdown[Short](n, n).toEvolution)
+      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Status.complete, Countdown[Short](n, n))
     }
 
   it should "return a yield with status Success if i > 1" in

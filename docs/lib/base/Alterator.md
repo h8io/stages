@@ -1,8 +1,8 @@
 # Alterator
 
 `Alterator` is the base trait for stages that wrap a single inner stage — the *alterand*. It declares the
-abstract `alterand` member and seals `dispose` to forward to `alterand.dispose()`, so concrete subclasses never
-need to handle disposal themselves.
+abstract `alterand` member. Resource disposal stays with the `Evolution`s returned by `apply` and `skip`: a
+concrete alterator must make sure its evolution delegates `dispose` to the alterand's evolution.
 
 The type parameter `S` is covariant and bounded to `Stage.Any`, preserving the concrete type of the alterand in the
 wrapper's static type without information loss.

@@ -1,7 +1,7 @@
 package h8io.stages.std
 
 import h8io.stages.*
-import h8io.stages.base.{Fruitful, SAMStage, StageOps}
+import h8io.stages.base.{Fruitful, FruitfulStaticStage}
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
@@ -13,7 +13,7 @@ import scala.concurrent.duration.FiniteDuration
   * nanoseconds), the stage yields `h8io.stages.Status.Success`; otherwise it yields `h8io.stages.Status.Complete`.
   *
   * The deadline is ''global'' in the sense that it is fixed at construction and never resets, unlike
-  * [[h8io.stages.operators.LocalSoftDeadline]] which resets after each successful evolution transition.
+  * [[h8io.stages.operators.LocalSoftDeadline]] which restarts its window with each new unit of work.
   *
   * @param now
   *   a supplier of the current time in nanoseconds (typically `System.nanoTime _`)
@@ -23,11 +23,11 @@ import scala.concurrent.duration.FiniteDuration
   *   the value type passed through unchanged
   */
 final class GlobalSoftDeadline[T] private (val now: () => Long, val duration: Long)
-    extends Fruitful.Endo[T, Nothing] with SAMStage.Endo[T, Nothing] {
+    extends FruitfulStaticStage.Endo[T, Nothing] {
   private val ts: Long = now()
 
-  override def apply(in: T): Yield.Some[T, T, Nothing] =
-    Yield.Some(in, if (now() - ts < duration) Status.Success else Status.complete, this.toEvolution)
+  override protected def process(in: T): (T, Status[Nothing]) =
+    (in, if (now() - ts < duration) Status.Success else Status.complete)
 }
 
 /** Factory for [[GlobalSoftDeadline]] stages. */

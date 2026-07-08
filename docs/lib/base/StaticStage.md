@@ -25,4 +25,5 @@ IsEven(7)
 ```
 
 Use `StaticStage` when the stage may or may not produce a value depending on the input. When output is always
-guaranteed, [`Fn`](Fn.md) is more specific.
+guaranteed, [`FruitfulStaticStage`](FruitfulStaticStage.md) is more specific; when in addition the status is always
+`Success`, use [`Fn`](Fn.md).

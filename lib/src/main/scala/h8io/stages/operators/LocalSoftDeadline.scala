@@ -7,23 +7,24 @@ import h8io.stages.{Stage, Status, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
-/** A decorator that stops the pipeline after a given duration has elapsed since the last successful
-  * `h8io.stages.Evolution` transition.
+/** A decorator that stops the pipeline when a time budget measured from the beginning of the current unit of work is
+  * exhausted.
   *
-  * Unlike [[h8io.stages.std.GlobalSoftDeadline]], which measures time from the moment the stage is created,
-  * `LocalSoftDeadline` resets its clock on every `onSuccess` transition: the timestamp is captured at each `apply` call
-  * and preserved through the `onSuccess` transition, so the deadline window of the next stage starts from when the
-  * previous `apply` was evaluated. On `onComplete` and `onError` transitions the clock is also reset (to `now`), but
-  * the deadline is checked on the very next `apply` call.
+  * Unlike [[h8io.stages.std.GlobalSoftDeadline]], which measures time from the moment the stage is created and never
+  * resets, `LocalSoftDeadline` measures time from the `apply` call that started the current unit of work: the timestamp
+  * is captured at that call and preserved for as long as the evolution is invoked with `h8io.stages.Status.Success`.
+  * When the evolution is invoked with any other status, the clock is reset — the new window starts at the next `apply`
+  * call. The same reset happens after the deadline has been exceeded.
   *
-  * If the deadline is exceeded, the `h8io.stages.Status` of the current `h8io.stages.Yield` is upgraded to its break
-  * variant (e.g. `Success` → `Complete`) by applying `break` to the status.
+  * The deadline is ''soft'': it is checked after the inner stage has already been applied. If it is exceeded, a
+  * `h8io.stages.Status.Success` in the current `h8io.stages.Yield` is upgraded to an errorless
+  * `h8io.stages.Status.Complete`; any other status is left unchanged.
   *
   * If `duration ≤ 0` the factory methods return [[h8io.stages.std.DeadEnd]] directly, ensuring the pipeline immediately
   * terminates.
   *
   * @param tsSupplier
-  *   a thunk that returns the timestamp captured at the last `apply` call
+  *   a thunk that returns the timestamp of the start of the current deadline window
   * @param now
   *   a supplier of the current time in nanoseconds
   * @param duration
