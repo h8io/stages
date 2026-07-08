@@ -1,0 +1,71 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project
+
+`stages` is an experimental Scala library for building pipelines out of steps ("stages") that can evolve as they run.
+Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1.x on `main`; an sbt 2.0.0 migration
+lives on the `update/sbt-2.0.0` branch.
+
+## Commands
+
+```bash
+sbt test                          # run all tests (all modules)
+sbt lib/test                      # run tests for one module (core / lib / cats / examples)
+sbt "lib/testOnly h8io.stages.operators.LoopTest"          # single test suite
+sbt "lib/testOnly *LoopTest -- -z \"substring of test name\""  # single test case
+sbt +test                         # tests across both Scala versions (2.13 and 2.12)
+sbt scalafmtAll scalafmtSbt       # format code and build files
+sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
+./test.sh                         # full CI check: format check, cross-build, coverage, docs, site
+./pages.sh                        # build the documentation site into target/pages
+```
+
+## Modules
+
+- **core** — the minimal model: `Stage`, `Yield`, `Status`, `Evolution`, `Outcome` (package `h8io.stages`). No
+  dependencies.
+- **lib** — the standard library on top of core: `base` (building blocks: `SAMStage`, `Fn`, `Projection`,
+  `ConstEvolution`, `Alterator`/`BinaryOperator`, and type aliases like `Decorator`/`Alteration`), `operators` (
+  combinators wrapping stages: `And`, `Or`, `Loop`, `Repeat`, `Lift`, `Safe`, `CompleteIfNone`, deadlines…), `std` (leaf
+  stages: `Const`, `Identity`, `Countdown`, `Coalesce`…), `projections`.
+- **cats** — cats-core integration (`Validated`, `IOr`, `Monoid`/typeclass instances for `Status`).
+- **examples** — runnable examples used by docs and tests; not published.
+- **pages** — Typelevel-site documentation project (sources in `docs/`); not aggregated in root, built via
+  `pages/tlSite`.
+
+Dependency chain: `cats`/`examples` → `lib` → `core`.
+
+## Core model (read before touching core)
+
+A `Stage[-I, +O, +E]` maps an input to a `Yield[I, O, E]`, which carries three things: an optional output (`Yield.Some`/
+`Yield.None`), a `Status[E]`, and an `Evolution[I, O, E]`.
+
+- **Status** is a semigroup: `Success` (identity, keep going) or `Complete(errors)` (a unit of work finished; errors
+  accumulate on combine). `Complete` dominates `Success`.
+- **Evolution** decides which stage instance handles the *next* input, chosen by the previous status (
+  `evolution.evolve(status)`) — this is how stages "evolve" between runs. It is also the exclusive owner of resource
+  cleanup via `dispose()`.
+- **Lifecycle contract**: for each pipeline run, exactly one of `apply(in)` or `skip()` is called on every stage.
+  `skip()` must return the stage's evolution without side effects (used when an upstream produced no output or a binary
+  operator excluded the branch). After `dispose()` the stage is permanently unusable.
+- Composition is `a ~> b` (`Stage.AndThen`). When the upstream yields `None`, the downstream is not applied but its
+  `skip()` evolution is still composed in. Note `Evolution.AndThen` deliberately names its fields in the reverse of
+  `Stage.AndThen` — see its scaladoc before modifying.
+- `stage.execute(in)` is the terminal operation: it runs once, disposes the evolution, and returns an `Outcome` (dispose
+  failures are captured in `Outcome.disposeFailure`, not thrown).
+
+## Testing setup
+
+- ScalaTest + ScalaMock + ScalaCheck; cats-laws/discipline in the cats module.
+- The `sbt-testkit` plugin adds a `TestKit` configuration: shared test utilities live in `core/src/testkit/scala` (
+  `StagesCoreArbitraries`, `StagesCoreTestUtil`) and are consumed by other modules via `core % "test->testkit"`.
+
+## Style
+
+- Use Scala 3-style wildcard imports (`import foo.*`, `import Dependencies.*`), not `foo._` — the build enforces
+  `-Xsource:3` and scalafmt uses the `scala213source3` dialect.
+- Warnings are fatal (compiler and scalafmt), including unused-symbol warnings; run `sbt scalafmtAll` before committing.
+- Scaladoc is extensive and normative in core — the comments document behavioral contracts (lifecycle, disposal order,
+  variance), so keep them in sync with code changes.
