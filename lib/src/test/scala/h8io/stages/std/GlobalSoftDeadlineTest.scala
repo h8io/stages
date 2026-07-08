@@ -1,6 +1,5 @@
 package h8io.stages.std
 
-import h8io.stages.base.StageOps
 import h8io.stages.{StagesCoreArbitraries, Status, Yield}
 import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
@@ -48,7 +47,7 @@ class GlobalSoftDeadlineTest
               val currentInterval = previousInterval + interval
               (now.apply _).expects().returns(currentTS)
               val expectedStatus = if (currentInterval < duration) Status.Success else Status.complete
-              stage(in) shouldBe Yield.Some(`in`, `expectedStatus`, stage.toEvolution)
+              stage(in) shouldBe Yield.Some(`in`, `expectedStatus`, stage)
               loop(currentTS, currentInterval, tail)
             case Nil =>
           }

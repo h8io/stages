@@ -5,9 +5,8 @@ import h8io.stages.base.{StaticStage, StaticYield}
 
 /** A terminal stage that never produces an output value.
   *
-  * Every invocation of `apply` returns a pre-built `h8io.stages.Yield.None` with `h8io.stages.Status.Complete`,
-  * immediately signaling that the pipeline is finished. The `h8io.stages.Yield` instance is cached as a `val` to avoid
-  * allocation on each call.
+  * Every invocation of `apply` returns a `h8io.stages.Yield.None` with `h8io.stages.Status.Complete`, immediately
+  * signaling that the pipeline is finished.
   *
   * `DeadEnd` is the natural "end-of-stream" marker and is also returned by [[Countdown.apply]] when `n ≤ 0` and by
   * [[h8io.stages.operators.LocalSoftDeadline]] when the duration is non-positive.

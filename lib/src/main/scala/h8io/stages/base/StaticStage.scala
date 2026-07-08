@@ -9,7 +9,8 @@ import h8io.stages.Yield
   * `this` directly.
   *
   * Mixing in `StaticStage` is appropriate when the stage does not change between runs and holds no external resources.
-  * See [[Fn]] for the further-constrained variant that always produces an output with `h8io.stages.Status.Success`.
+  * See [[FruitfulStaticStage]] for the counterpart that always produces an output, and [[Fn]] for the
+  * further-constrained variant that always produces an output with `h8io.stages.Status.Success`.
   *
   * @tparam I
   *   the input type (contravariant)

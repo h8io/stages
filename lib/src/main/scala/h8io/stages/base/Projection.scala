@@ -8,8 +8,8 @@ import h8io.stages.Status
   * `h8io.stages.Yield.None` (with `h8io.stages.Status.Success`) when it is absent — preserving the overall pipeline
   * status without signaling an error.
   *
-  * Helper values [[some]] and [[none]] are pre-built with `Status.Success` and `this` as the evolution, ready for use
-  * in `apply` implementations of concrete projections.
+  * The helper constructor [[some]] and the pre-built [[none]] carry `Status.Success` and are ready for use in
+  * [[StaticStage.process]] implementations of concrete projections.
   *
   * @tparam I
   *   the container input type (contravariant)

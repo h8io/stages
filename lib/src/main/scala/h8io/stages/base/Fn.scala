@@ -8,7 +8,7 @@ import h8io.stages.{Status, Yield}
   * evolution — is handled automatically. `Fn` always succeeds and returns `this` as the evolution (via [[Stagnation]]),
   * making it stateless and reusable.
   *
-  * Because `apply` is sealed, a `Fn` stage can never produce `Yield.None` or a non-`Success` status. When either of
+  * Because `apply` is final, a `Fn` stage can never produce `Yield.None` or a non-`Success` status. When either of
   * those is needed, use [[StaticStage]] instead.
   *
   * Example usage:

@@ -1,7 +1,7 @@
 package h8io.stages.std
 
-import h8io.stages.base.{Fruitful, SAMStage}
-import h8io.stages.{Status, Yield}
+import h8io.stages.Status
+import h8io.stages.base.{Fruitful, FruitfulStaticStage}
 
 /** A stage that immediately signals pipeline completion without dropping the input value.
   *
@@ -11,7 +11,7 @@ import h8io.stages.{Status, Yield}
   *
   * The singleton operates on `Any` and can be safely cast to any `Fruitful.Endo[T]` via `apply[T]`.
   */
-object Complete extends Fruitful.Endo[Any, Nothing] with SAMStage.Endo[Any, Nothing] {
+object Complete extends FruitfulStaticStage.Endo[Any, Nothing] {
 
   /** Returns a typed view of this singleton as a `Fruitful.Endo[T]`.
     *
@@ -20,5 +20,5 @@ object Complete extends Fruitful.Endo[Any, Nothing] with SAMStage.Endo[Any, Noth
     */
   def apply[T]: Fruitful.Endo[T, Nothing] = asInstanceOf[Fruitful.Endo[T, Nothing]]
 
-  override def apply(in: Any): Yield.Some[Any, Any, Nothing] = Yield.Some(in, Status.complete, this)
+  override protected def produce(in: Any): (Any, Status[Nothing]) = (in, Status.complete)
 }
