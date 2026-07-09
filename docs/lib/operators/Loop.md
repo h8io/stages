@@ -12,6 +12,11 @@ The loop terminates when:
 
 `Loop` is suited for in-process iterative computations where each step seeds the next.
 
+Whichever way the loop ends, the continuation of the inner stage is selected on the status the inner stage itself
+produced — never on the status `Loop` reports to the enclosing pipeline (an error-free `Complete` is absorbed into a
+`Success`), and never on the status that pipeline later evolves `Loop` with. A skipped `Loop` skips its inner stage and
+selects the inner continuation on the neutral `Success`.
+
 ```scala mdoc
 import h8io.stages.*
 import h8io.stages.base.*

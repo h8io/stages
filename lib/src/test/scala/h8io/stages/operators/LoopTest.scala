@@ -63,7 +63,7 @@ class LoopTest
 
       inSequence {
         (evolved.apply _).expects(lastIn).returns(lastYield)
-        (lastEvolution.evolve _).expects(Status.complete).returns(resultStage)
+        (lastEvolution.evolve _).expects(Status.Success).returns(resultStage)
         val evolution = inside((lastYield, Loop(initial)(in))) {
           case (Yield.None(_, _), Yield.None(Status.Success, evolution)) => evolution
         }
@@ -90,10 +90,17 @@ class LoopTest
       case Nil => (in, stage)
     }
 
-  it should "call the alterand.skip() method" in {
+  it should "call the alterand.skip() method and evolve the skipped alterand on Success" in {
     val stage = mock[Stage.Endo[UUID, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, UUID, Exception]]("evolution")
-    (stage.skip _).expects().returns(evolution)
-    testMappedEvolution(Loop(stage).skip(), evolution, Loop[UUID, Exception])
+    val skipped = mock[Stage.Endo[UUID, Exception]]("skipped stage")
+    inSequence {
+      (stage.skip _).expects().returns(evolution)
+      (evolution.evolve _).expects(Status.Success).returns(skipped)
+      val result = Loop(stage).skip()
+      testConstEvolution(result, Loop(skipped))
+      (evolution.dispose _).expects()
+      noException should be thrownBy result.dispose()
+    }
   }
 }
