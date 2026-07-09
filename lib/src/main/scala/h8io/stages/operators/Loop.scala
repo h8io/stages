@@ -11,14 +11,21 @@ import scala.annotation.tailrec
   * The tail-recursive loop works as follows:
   *
   *   - `h8io.stages.Status.Success` + `h8io.stages.Yield.Some`: the output becomes the new input and the loop continues
-  *     with the stage selected by `evolution.evolve(Status.Success)`.
+  *     with the stage selected by `yld.evolve()`.
   *   - `h8io.stages.Status.Success` + `h8io.stages.Yield.None`: no output was produced; the loop stops and emits a
-  *     `Yield.None` with `Success` status whose continuation is the stage selected by
-  *     `evolution.evolve(Status.complete)`, wrapped back in `Loop`.
+  *     `Yield.None` with `Success` status whose continuation is the stage selected by `yld.evolve()`, wrapped back in
+  *     `Loop`.
   *   - `h8io.stages.Status.Complete` with no errors: the loop stops, converts the status back to `Success`, and wraps
-  *     the stage selected by `evolution.evolve(status)` in `Loop` for the next outer invocation.
+  *     the stage selected by `yld.evolve()` in `Loop` for the next outer invocation.
   *   - `h8io.stages.Status.Complete` with errors: the loop stops, preserves the errors, and selects the continuation
   *     the same way.
+  *
+  * In every branch the continuation of the inner stage is selected by the status the inner stage itself produced, and
+  * never by the status `Loop` reports to the enclosing pipeline — the two differ, since an error-free `Complete` is
+  * absorbed into a `Success`. For the same reason the returned evolution is a `h8io.stages.base.ConstEvolution`: the
+  * status the enclosing pipeline evolves `Loop` with belongs to that pipeline, not to the inner stage, and must not be
+  * passed inwards. Symmetrically, a skipped `Loop` skips its inner stage and selects the inner continuation on the
+  * neutral `Status.Success`.
   *
   * This makes `Loop` suitable for in-process iterative computations (e.g., fixed-point iterations) where the result of
   * one step seeds the next.
@@ -37,10 +44,9 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends Decorator[T, T,
       yld.status match {
         case Status.Success =>
           yld match {
-            case Yield.Some(out, _, _) => loop(yld.evolution.evolve(Status.Success), out)
-            case Yield.None(_, _) =>
-              Yield.None(
-                Status.Success, Loop(yld.evolution.evolve(Status.complete)).toEvolution(yld.evolution.dispose _))
+            case Yield.Some(out, _, _) => loop(yld.evolve(), out)
+            case Yield.None(_, evolution) =>
+              Yield.None(Status.Success, Loop(evolution.evolve(Status.Success)).toEvolution(evolution.dispose _))
           }
         case status: Status.Complete[?] =>
           yld.map(
@@ -52,5 +58,8 @@ final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends Decorator[T, T,
     loop(alterand, in)
   }
 
-  override def skip(): Evolution[T, T, E] = alterand.skip().map(Loop(_))
+  override def skip(): Evolution[T, T, E] = {
+    val evolution = alterand.skip()
+    Loop(evolution.evolve(Status.Success)).toEvolution(evolution.dispose _)
+  }
 }

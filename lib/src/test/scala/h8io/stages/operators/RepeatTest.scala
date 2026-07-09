@@ -67,10 +67,17 @@ class RepeatTest
       yieldSupplier: StatusAndEvolutionToYield[I, O, E], status: Status[E]): Yield[I, O, E] =
     yieldSupplier(status, mock[Evolution[I, O, E]](s"evolution $id"))
 
-  it should "call the alterand.skip() method" in {
+  it should "call the alterand.skip() method and evolve the skipped alterand on Success" in {
     val stage = mock[Stage[UUID, String, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, String, Exception]]("evolution")
-    (stage.skip _).expects().returns(evolution)
-    testMappedEvolution(Repeat(stage).skip(), evolution, Repeat[UUID, String, Exception])
+    val skipped = mock[Stage[UUID, String, Exception]]("skipped stage")
+    inSequence {
+      (stage.skip _).expects().returns(evolution)
+      (evolution.evolve _).expects(Status.Success).returns(skipped)
+      val result = Repeat(stage).skip()
+      testConstEvolution(result, Repeat(skipped))
+      (evolution.dispose _).expects()
+      noException should be thrownBy result.dispose()
+    }
   }
 }
