@@ -17,6 +17,13 @@ import h8io.stages.{Evolution, Stage, Status, Yield}
   * The evolution is mapped so that every continuation stage remains wrapped in `Safe`, maintaining exception safety
   * across the entire pipeline.
   *
+  * `Safe` is a crutch for the simplest cases — ''stateless'' stages. Per the ''Lifecycle'' contract in
+  * `h8io.stages.Stage`, a stage that throws from `apply` has already released its own resources, so the recovered
+  * continuation simply reuses the inner stage — retrying it on the next input — and carries a no-op dispose. A stage
+  * that owns resources should be made safe by itself instead of being wrapped: extend [[h8io.stages.base.SafeStage]]
+  * and supply a `recover` with the appropriate cleanup (the `h8io.stages.base.ConstEvolution` overload taking a
+  * `dispose` function exists for exactly this).
+  *
   * @param alterand
   *   the inner stage whose exceptions should be caught
   * @tparam I

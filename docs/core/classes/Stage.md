@@ -30,6 +30,12 @@ non-inclusive binary operation that excludes this branch.
 are not directly executed. The [Diagram](../Diagram.md) explains this with a concrete example involving Stage 3-1,
 which is skipped in the first generation but still needs to evolve into Stage 3-2.
 
+**apply that throws** — the failure path. No `Yield` — and therefore no [`Evolution`](Evolution.md) — is produced,
+so nobody can release the stage's resources from the outside: a stage that throws from `apply` must release its own
+resources before the exception escapes, and is permanently unusable afterwards. The core takes no other part in
+exception handling; for the simplest — stateless — stages the lib module offers the
+[`Safe`](../../lib/operators/Safe.md) crutch.
+
 Here is a minimal stage that doubles its input on the active path and supplies its evolution on the skipped path:
 
 ```scala mdoc
