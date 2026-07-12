@@ -52,8 +52,9 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     *
     * Any stage that participates in a pipeline run but does not process the current input must call `skip()` instead of
     * `apply`. Common triggers: an upstream stage produced no output ([[Yield.None]]), or a non-inclusive binary
-    * operation excluded this branch. The stage must return its [[Evolution]] as it would have appeared had it run, but
-    * must not perform any side effects or consume input.
+    * operation excluded this branch. The stage must return its [[Evolution]] as it would have appeared had it run,
+    * without consuming any input. Like `apply`, `skip()` may perform side effects — e.g. advancing internal state or
+    * releasing resources that a decorator owns on behalf of an inner stage.
     *
     * See the ''Lifecycle'' section in [[Stage]] for the full contract.
     *

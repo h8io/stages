@@ -48,8 +48,9 @@ A `Stage[-I, +O, +E]` maps an input to a `Yield[I, O, E]`, which carries three t
   `evolution.evolve(status)`) — this is how stages "evolve" between runs. It is also the exclusive owner of resource
   cleanup via `dispose()`.
 - **Lifecycle contract**: for each pipeline run, exactly one of `apply(in)` or `skip()` is called on every stage.
-  `skip()` must return the stage's evolution without side effects (used when an upstream produced no output or a binary
-  operator excluded the branch). After `dispose()` the stage is permanently unusable.
+  `skip()` must return the stage's evolution without consuming input (used when an upstream produced no output or a
+  binary operator excluded the branch); like `apply`, it may perform side effects. After `dispose()` the stage is
+  permanently unusable.
 - Composition is `a ~> b` (`Stage.AndThen`). When the upstream yields `None`, the downstream is not applied but its
   `skip()` evolution is still composed in. Note `Evolution.AndThen` deliberately names its fields in the reverse of
   `Stage.AndThen` — see its scaladoc before modifying.
