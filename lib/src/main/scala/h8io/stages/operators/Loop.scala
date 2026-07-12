@@ -25,7 +25,9 @@ import scala.annotation.tailrec
   * absorbed into a `Success`. For the same reason the returned evolution is a `h8io.stages.base.ConstEvolution`: the
   * status the enclosing pipeline evolves `Loop` with belongs to that pipeline, not to the inner stage, and must not be
   * passed inwards. Symmetrically, a skipped `Loop` skips its inner stage and selects the inner continuation on the
-  * neutral `Status.Success`.
+  * neutral `Status.Success`. The returned `ConstEvolution` keeps the inner evolution's `dispose` as its own: per the
+  * `h8io.stages.Evolution` contract, the inner evolution stays the terminal cleanup handle for the generation
+  * constructed here until that generation runs.
   *
   * This makes `Loop` suitable for in-process iterative computations (e.g., fixed-point iterations) where the result of
   * one step seeds the next.

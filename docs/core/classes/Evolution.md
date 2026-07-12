@@ -59,6 +59,17 @@ applied or skipped again.
 One situation guarantees `dispose()` will be called: `Stage.execute()` invokes it immediately after the stage runs,
 since `execute` is a terminal operation and the continuation will never be needed.
 
+By default at most one of `evolve` and `dispose()` is called on any evolution instance: `execute` only disposes,
+and a pipeline that continues only evolves, dropping the previous evolution. The two calls are not mutually
+exclusive, though: a caller that has obtained the continuation via `evolve` may still call `dispose()` on the same
+instance later. Operators that own their inner stage — [`Loop`](../../lib/operators/Loop.md) and
+[`Repeat`](../../lib/operators/Repeat.md) — do exactly that: they evolve the inner evolution eagerly and keep its
+`dispose` as the terminal cleanup handle for the generation just constructed. `dispose()` must therefore stay valid
+after `evolve` and release everything still alive — including resources acquired while constructing the
+continuation. `evolve` transfers no ownership: the evolution remains the cleanup point for its lineage until the
+continuation has run and produced an evolution of its own, which takes over as the terminal handle from that moment
+on.
+
 Exception handling is not part of the core model. A stage whose `apply` throws produces no `Yield` and therefore no
 `Evolution` — there is nothing the caller could dispose. Such a stage must release its own resources before letting
 the exception escape (see the [Lifecycle](Stage.md#the-lifecycle-apply-and-skip) section).

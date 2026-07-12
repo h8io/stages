@@ -46,7 +46,9 @@ A `Stage[-I, +O, +E]` maps an input to a `Yield[I, O, E]`, which carries three t
   accumulate on combine). `Complete` dominates `Success`.
 - **Evolution** decides which stage instance handles the *next* input, chosen by the previous status (
   `evolution.evolve(status)`) — this is how stages "evolve" between runs. It is also the exclusive owner of resource
-  cleanup via `dispose()`.
+  cleanup via `dispose()`. `evolve` and `dispose()` are not mutually exclusive: operators that own their inner stage
+  (`Loop`, `Repeat`) evolve eagerly and keep the inner `dispose` as the terminal handle of the generation just
+  constructed, so `dispose()` must stay valid after `evolve` and release everything still alive.
 - **Lifecycle contract**: for each pipeline run, exactly one of `apply(in)` or `skip()` is called on every stage.
   `skip()` must return the stage's evolution without consuming input (used when an upstream produced no output or a
   binary operator excluded the branch); like `apply`, it may perform side effects. After `dispose()` the stage is
