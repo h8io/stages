@@ -1,4 +1,4 @@
-package h8io.stages.operators
+package h8io.stages.cycles
 
 import h8io.stages.*
 import h8io.stages.base.{Decorator, StageOps}

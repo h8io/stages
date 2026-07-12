@@ -2,7 +2,7 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.base.SAMStage
-import h8io.stages.operators.Loop
+import h8io.stages.cycles.Loop
 import h8io.stages.std.{Const, Countdown}
 
 object Factorial1 {

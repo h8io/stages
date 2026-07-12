@@ -46,8 +46,8 @@ package object base {
 
     /** Lifts this stage into a [[ConstEvolution]] that returns it for every status branch.
       *
-      * Useful inside [[h8io.stages.operators.Loop]] and [[h8io.stages.operators.Repeat]] to produce the evolution
-      * embedded in a `Yield`.
+      * Useful inside [[h8io.stages.cycles.Loop]] and [[h8io.stages.cycles.Repeat]] to produce the evolution embedded in
+      * a `Yield`.
       */
     @inline def toEvolution: Evolution[I, O, E] = ConstEvolution(stage)
 

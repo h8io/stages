@@ -20,7 +20,7 @@ selects the inner continuation on the neutral `Success`.
 ```scala mdoc
 import h8io.stages.*
 import h8io.stages.base.*
-import h8io.stages.operators.*
+import h8io.stages.cycles.*
 ```
 
 ```scala mdoc

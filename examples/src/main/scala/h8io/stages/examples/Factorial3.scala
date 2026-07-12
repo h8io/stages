@@ -2,7 +2,7 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.base.{SAMStage, StageOps}
-import h8io.stages.operators.Repeat
+import h8io.stages.cycles.Repeat
 
 object Factorial3 {
   /*
