@@ -27,9 +27,9 @@ sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
 - **core** — the minimal model: `Stage`, `Yield`, `Status`, `Evolution` (package `h8io.stages`). No dependencies.
 - **lib** — the standard library on top of core: `base` (building blocks: `SAMStage`, `Fn`, `Projection`,
   `ConstEvolution`, `Alterator`/`BinaryOperator`, the `execute` terminal driver with its `Outcome` result type, and
-  type aliases like `Decorator`/`Alteration`), `operators` (
-  combinators wrapping stages: `And`, `Or`, `Loop`, `Repeat`, `Lift`, `Safe`, `CompleteIfNone`, deadlines…), `std` (leaf
-  stages: `Const`, `Identity`, `Countdown`, `Coalesce`…), `projections`.
+  type aliases like `Decorator`/`Alteration`), `operators` (combinators wrapping stages: `And`, `Or`, `Lift`, `Safe`,
+  `CompleteIfNone`, deadlines…), `cycles` (operators that drive a whole cycle of the inner stage per outer run:
+  `Loop`, `Repeat`), `std` (leaf stages: `Const`, `Identity`, `Countdown`, `Coalesce`…), `projections`.
 - **cats** — cats-core integration (`Validated`, `IOr`, `Monoid`/typeclass instances for `Status`).
 - **examples** — runnable examples used by docs and tests; not published.
 - **pages** — Typelevel-site documentation project (sources in `docs/`); not aggregated in root, built via

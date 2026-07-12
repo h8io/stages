@@ -65,8 +65,8 @@ immediately rather than carried forward. The reference terminal driver — the `
 By default at most one of `evolve` and `dispose()` is called on any evolution instance: `execute` only disposes,
 and a pipeline that continues only evolves, dropping the previous evolution. The two calls are not mutually
 exclusive, though: a caller that has obtained the continuation via `evolve` may still call `dispose()` on the same
-instance later. Operators that own their inner stage — [`Loop`](../../lib/operators/Loop.md) and
-[`Repeat`](../../lib/operators/Repeat.md) — do exactly that: they evolve the inner evolution eagerly and keep its
+instance later. Operators that own their inner stage — [`Loop`](../../lib/cycles/Loop.md) and
+[`Repeat`](../../lib/cycles/Repeat.md) — do exactly that: they evolve the inner evolution eagerly and keep its
 `dispose` as the terminal cleanup handle for the generation just constructed. `dispose()` must therefore stay valid
 after `evolve` and release everything still alive — including resources acquired while constructing the
 continuation. `evolve` transfers no ownership: the evolution remains the cleanup point for its lineage until the

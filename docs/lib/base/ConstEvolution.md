@@ -21,8 +21,8 @@ evo.evolve(Status.Success)
 evo.evolve(Status.complete)
 ```
 
-Both calls return `DoubleInt`. Use `ConstEvolution` inside operators like [`Loop`](../operators/Loop.md) or
-[`Repeat`](../operators/Repeat.md) where a fixed stage should always be the continuation, regardless of what happened
+Both calls return `DoubleInt`. Use `ConstEvolution` inside operators like [`Loop`](../cycles/Loop.md) or
+[`Repeat`](../cycles/Repeat.md) where a fixed stage should always be the continuation, regardless of what happened
 in the previous run.
 
 The overload `stage.toEvolution(dispose: () => Unit)` produces a `ConstEvolution` that calls the supplied function

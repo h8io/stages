@@ -16,7 +16,7 @@ runs and signal `Complete` at the end of each batch.
 ```scala mdoc
 import h8io.stages.*
 import h8io.stages.std.*
-import h8io.stages.operators.*
+import h8io.stages.cycles.*
 ```
 
 ```scala mdoc

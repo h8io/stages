@@ -2,7 +2,8 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.base.{SAMStage, StageOps}
-import h8io.stages.operators.{And, Loop}
+import h8io.stages.cycles.Loop
+import h8io.stages.operators.And
 import h8io.stages.projections.Tuple2
 import h8io.stages.std.{Const, Identity}
 

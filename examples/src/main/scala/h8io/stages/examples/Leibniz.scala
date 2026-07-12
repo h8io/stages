@@ -2,7 +2,8 @@ package h8io.stages.examples
 
 import h8io.stages.*
 import h8io.stages.base.SAMStage
-import h8io.stages.operators.{LocalSoftDeadline, Repeat}
+import h8io.stages.cycles.Repeat
+import h8io.stages.operators.LocalSoftDeadline
 
 import scala.concurrent.duration.FiniteDuration
 
