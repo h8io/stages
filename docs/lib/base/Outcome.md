@@ -1,21 +1,25 @@
 # Outcome
 
-`Outcome` is the terminal result returned by `Stage.execute()`.
+`Outcome` is the terminal result returned by `execute` — the extension method on
+[`Stage`](../../core/classes/Stage.md) that `h8io.stages.base` adds as the reference terminal driver of the
+pipeline model.
 
-Unlike a [`Yield`](Yield.md), an `Outcome` carries no [`Evolution`](Evolution.md). It is the value given to the
+Unlike a [`Yield`](../../core/classes/Yield.md), an `Outcome` carries no
+[`Evolution`](../../core/classes/Evolution.md). It is the value given to the
 caller once the pipeline has finished processing a single input and all resources have been released. The
-[`Status`](Status.md) inside indicates whether execution succeeded (`Status.Success`) or completed
+[`Status`](../../core/classes/Status.md) inside indicates whether execution succeeded (`Status.Success`) or completed
 (`Status.Complete`), with or without accumulated errors. If the `Evolution` disposal threw an exception, that is
 recorded in `disposeFailure` without preventing the outcome from being returned.
 
 ## Outcome.Some and Outcome.None
 
-There are two variants, mirroring the two variants of [`Yield`](Yield.md).
+There are two variants, mirroring the two variants of [`Yield`](../../core/classes/Yield.md).
 
 `Outcome.Some` is produced when the executed stage yielded a `Yield.Some`. It carries the output value:
 
 ```scala mdoc
 import h8io.stages.*
+import h8io.stages.base.*
 
 object Double extends Stage[Int, Int, Nothing] {
   private def stub: Evolution[Int, Int, Nothing] = new Evolution[Int, Int, Nothing] {

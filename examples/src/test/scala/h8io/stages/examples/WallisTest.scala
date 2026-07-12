@@ -1,6 +1,7 @@
 package h8io.stages.examples
 
-import h8io.stages.{Outcome, Status}
+import h8io.stages.Status
+import h8io.stages.base.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec

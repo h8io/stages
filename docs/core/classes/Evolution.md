@@ -13,6 +13,7 @@ Three ideas make `Evolution` work:
 
 ```scala mdoc
 import h8io.stages.*
+import h8io.stages.base.*
 ```
 
 ## Selecting the Next Stage
@@ -56,8 +57,10 @@ errResult.evolve()
 After `dispose()` is called the producing stage must be considered permanently unusable — it must not be
 applied or skipped again.
 
-One situation guarantees `dispose()` will be called: `Stage.execute()` invokes it immediately after the stage runs,
-since `execute` is a terminal operation and the continuation will never be needed.
+Whoever terminates a pipeline must dispose the evolution of the final `Yield`, so that resources are released
+immediately rather than carried forward. The reference terminal driver — the `execute` extension method from
+[`h8io.stages.base`](../../lib/base/Outcome.md) — invokes `dispose()` immediately after the stage runs, since
+`execute` is a terminal operation and the continuation will never be needed.
 
 By default at most one of `evolve` and `dispose()` is called on any evolution instance: `execute` only disposes,
 and a pipeline that continues only evolves, dropping the previous evolution. The two calls are not mutually
@@ -102,7 +105,7 @@ class ResourceStage(name: String) extends Stage[String, String, Nothing] {
 }
 ```
 
-`Stage.execute()` triggers `dispose()` automatically after the stage runs:
+`execute` triggers `dispose()` automatically after the stage runs:
 
 ```scala mdoc
 new ResourceStage("conn").execute("hello")

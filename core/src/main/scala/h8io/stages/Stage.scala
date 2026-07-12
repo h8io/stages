@@ -1,7 +1,5 @@
 package h8io.stages
 
-import scala.util.Try
-
 /** A single processing unit in a pipeline that transforms input values into [[Yield]] results.
   *
   * A `Stage` produces a [[Yield]] that carries an optional output of type `O`, a [[Status]], and an [[Evolution]]
@@ -65,32 +63,6 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     *   the [[Evolution]] representing how the pipeline should continue from this stage
     */
   def skip(): Evolution[I, O, E]
-
-  /** Executes this stage end-to-end and returns a plain [[Outcome]].
-    *
-    * Internally this method:
-    *   1. Applies the stage to `in`, obtaining a [[Yield]].
-    *   1. Disposes the [[Evolution]] carried by the [[Yield]] — since `execute` is a terminal operation, the
-    *      continuation is not needed and the resources held by this stage must be released immediately.
-    *   1. Wraps the result in an [[Outcome.Some]] or [[Outcome.None]].
-    *
-    * Disposal failures do not prevent the result from being returned. Any non-fatal exception raised by
-    * [[Evolution.dispose]] is captured in [[Outcome.disposeFailure]] and the outcome is still produced. Fatal
-    * exceptions are not caught and will propagate.
-    *
-    * @param in
-    *   the input value
-    * @return
-    *   [[Outcome.Some]] if this stage produced an output, [[Outcome.None]] otherwise
-    */
-  @inline final def execute(in: I): Outcome[O, E] = {
-    val yld = this(in)
-    val disposeFailure = Try(yld.evolution.dispose()).failed.toOption
-    yld match {
-      case Yield.Some(out, status, _) => Outcome.Some(out, status, disposeFailure)
-      case Yield.None(status, _) => Outcome.None(status, disposeFailure)
-    }
-  }
 
   /** Composes this stage with `that`, producing a new stage that feeds the output of this stage into `that`.
     *

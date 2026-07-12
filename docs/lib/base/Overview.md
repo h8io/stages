@@ -10,6 +10,10 @@ function always writes the same `Yield.Some(f(in), Status.Success, this)`.
 The `base` package captures those patterns as composable, reusable traits. Concrete stages mix in what they need and
 implement only the logic that is genuinely specific to them.
 
+The package also hosts the terminal side of the model: the `execute` extension method — the reference one-shot
+driver that runs a stage once, disposes the evolution, and returns a plain result — together with its result type
+[`Outcome`](Outcome.md).
+
 ## The Immutability Hierarchy
 
 The most common class of stages is those that do not change between runs: a filter, a transformer, a pure mapping.

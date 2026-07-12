@@ -271,7 +271,8 @@ Finally, `dispose()` is called on the `Evolution` associated with the result of 
 If any of these `dispose()` calls fail, the failures are aggregated into a single exception ㉓.  
 The earliest exception becomes the primary one, and all later exceptions are attached to it.
 
-After that, the final `Outcome` ㉔ is assembled from three components:
+After that, the final [`Outcome`](../lib/base/Outcome.md) ㉔ is assembled by the `execute` driver
+(`h8io.stages.base`) from three components:
 
 - the output value of the second generation (`false`);
 - the overall pipeline status (`Complete`);
