@@ -2,6 +2,7 @@ package h8io.stages
 
 import h8io.stages
 
+import scala.util.Try
 import scala.util.control.NonFatal
 
 /** Type aliases used throughout the `lib` module for describing stage transformations.
@@ -51,6 +52,32 @@ package object base {
     @inline def toEvolution: Evolution[I, O, E] = ConstEvolution(stage)
 
     @inline def toEvolution(dispose: () => Unit): ConstEvolution[I, O, E] = ConstEvolution(stage, dispose)
+
+    /** Executes this stage end-to-end and returns a plain [[Outcome]].
+      *
+      * This is the reference terminal driver of the pipeline model. Internally this method:
+      *   1. Applies the stage to `in`, obtaining a `h8io.stages.Yield`.
+      *   1. Disposes the `h8io.stages.Evolution` carried by the `Yield` — since `execute` is a terminal operation, the
+      *      continuation is not needed and the resources held by the stage must be released immediately.
+      *   1. Wraps the result in an [[Outcome.Some]] or [[Outcome.None]].
+      *
+      * Disposal failures do not prevent the result from being returned. Any non-fatal exception raised by
+      * `h8io.stages.Evolution.dispose` is captured in [[Outcome.disposeFailure]] and the outcome is still produced.
+      * Fatal exceptions are not caught and will propagate.
+      *
+      * @param in
+      *   the input value
+      * @return
+      *   [[Outcome.Some]] if this stage produced an output, [[Outcome.None]] otherwise
+      */
+    def execute(in: I): Outcome[O, E] = {
+      val yld = stage(in)
+      val disposeFailure = Try(yld.evolution.dispose()).failed.toOption
+      yld match {
+        case Yield.Some(out, status, _) => Outcome.Some(out, status, disposeFailure)
+        case Yield.None(status, _) => Outcome.None(status, disposeFailure)
+      }
+    }
   }
 
   type BaseBinaryOperator[-I, +LO, +RO, +O, +E] = BinaryOperator[Stage[I, LO, E], Stage[I, RO, E], I, O, E]

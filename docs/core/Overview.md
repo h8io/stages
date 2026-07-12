@@ -31,8 +31,9 @@ is intercepted by enclosing alterators such as `Loop` and `Repeat` as the cue to
 [`Evolution`](classes/Evolution.md)`[-I, +O, +E]` is a continuation: given a [`Status`](classes/Status.md), it returns
 the next stage to use for re-processing. It also owns disposal of the resources held by the stage that produced it.
 
-[`Outcome`](classes/Outcome.md)`[+O, +E]` is the terminal result of [`Stage.execute`](classes/Stage.md): a
-[`Yield`](classes/Yield.md) stripped of its `Evolution`.
+The core model ends at [`Yield`](classes/Yield.md). The one-shot terminal driver `execute` and its result type
+[`Outcome`](../lib/base/Outcome.md)`[+O, +E]` — a `Yield` stripped of its `Evolution` — live in the lib module
+(`h8io.stages.base`).
 
 ## Algebraic structure
 

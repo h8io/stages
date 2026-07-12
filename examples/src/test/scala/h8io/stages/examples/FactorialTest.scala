@@ -1,6 +1,7 @@
 package h8io.stages.examples
 
-import h8io.stages.{Outcome, Status, Yield}
+import h8io.stages.{Status, Yield}
+import h8io.stages.base.*
 import org.scalacheck.Gen
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec

@@ -7,7 +7,7 @@ Every `Yield` bundles three things together:
 - a [`Status`](Status.md) describing how the stage completed;
 - an [`Evolution`](Evolution.md) that knows which stage to use when the pipeline is ready to process the next input.
 
-`Yield` is not the final answer the pipeline gives to the outside world — that is [`Outcome`](Outcome.md).
+`Yield` is not the final answer the pipeline gives to the outside world — that is [`Outcome`](../../lib/base/Outcome.md) in the lib module.
 `Yield` is the internal value that flows from one stage to the next, carrying the continuation forward.
 
 ```scala mdoc

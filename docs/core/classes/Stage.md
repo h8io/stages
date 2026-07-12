@@ -100,18 +100,17 @@ pipeline(5)
 When the upstream stage produces `Yield.None`, the downstream stage is not applied; instead it is wired into the
 combined evolution so that it will be called when the next input arrives.
 
-## Terminal Execution with execute
+## Terminal Execution
 
-`execute` is the one-shot path: it applies the stage to an input, immediately disposes the `Evolution`, and returns
-a plain [`Outcome`](Outcome.md) with no continuation.
-
-It is the right choice when a single stage — or a composed pipeline — should run exactly once and the next
-generation is not needed:
+The core model ends at `Yield`: whoever terminates a pipeline is responsible for disposing the evolution of the
+final `Yield`. The reference terminal driver is the `execute` extension method from `h8io.stages.base` — the
+one-shot path that applies the stage to an input, immediately disposes the `Evolution`, and returns a plain
+[`Outcome`](../../lib/base/Outcome.md) with no continuation:
 
 ```scala mdoc
+import h8io.stages.base.*
+
 val outcome = pipeline.execute(5)
 ```
 
-The disposal of the `Evolution` happens inside `execute` regardless of what the stage returned. If `dispose()`
-throws a non-fatal exception, the exception is captured in `Outcome.disposeFailure` and the outcome is still
-returned normally. Fatal exceptions are not caught and will propagate.
+See [`Outcome`](../../lib/base/Outcome.md) for the details, including how disposal failures are reported.

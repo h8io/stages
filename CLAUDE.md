@@ -24,10 +24,10 @@ sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
 
 ## Modules
 
-- **core** — the minimal model: `Stage`, `Yield`, `Status`, `Evolution`, `Outcome` (package `h8io.stages`). No
-  dependencies.
+- **core** — the minimal model: `Stage`, `Yield`, `Status`, `Evolution` (package `h8io.stages`). No dependencies.
 - **lib** — the standard library on top of core: `base` (building blocks: `SAMStage`, `Fn`, `Projection`,
-  `ConstEvolution`, `Alterator`/`BinaryOperator`, and type aliases like `Decorator`/`Alteration`), `operators` (
+  `ConstEvolution`, `Alterator`/`BinaryOperator`, the `execute` terminal driver with its `Outcome` result type, and
+  type aliases like `Decorator`/`Alteration`), `operators` (
   combinators wrapping stages: `And`, `Or`, `Loop`, `Repeat`, `Lift`, `Safe`, `CompleteIfNone`, deadlines…), `std` (leaf
   stages: `Const`, `Identity`, `Countdown`, `Coalesce`…), `projections`.
 - **cats** — cats-core integration (`Validated`, `IOr`, `Monoid`/typeclass instances for `Status`).
@@ -58,8 +58,9 @@ A `Stage[-I, +O, +E]` maps an input to a `Yield[I, O, E]`, which carries three t
 - Composition is `a ~> b` (`Stage.AndThen`). When the upstream yields `None`, the downstream is not applied but its
   `skip()` evolution is still composed in. Note `Evolution.AndThen` deliberately names its fields in the reverse of
   `Stage.AndThen` — see its scaladoc before modifying.
-- `stage.execute(in)` is the terminal operation: it runs once, disposes the evolution, and returns an `Outcome` (dispose
-  failures are captured in `Outcome.disposeFailure`, not thrown).
+- `stage.execute(in)` is the terminal operation (an extension method from `h8io.stages.base`, not part of core): it
+  runs once, disposes the evolution, and returns an `Outcome` (dispose failures are captured in
+  `Outcome.disposeFailure`, not thrown).
 
 ## Testing setup
 
