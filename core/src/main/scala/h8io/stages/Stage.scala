@@ -18,6 +18,9 @@ import scala.util.Try
   *   - '''Skipped''': [[skip]] is called when the stage is bypassed — for example, because an upstream stage produced
   *     no output, or because of a non-inclusive binary operation. The stage must return its [[Evolution]] without
   *     performing any processing.
+  *   - '''Failed''': [[apply]] throws. No [[Yield]] — and therefore no [[Evolution]] — is produced, so nobody can
+  *     release the stage's resources from the outside: the stage must release them itself before the exception escapes,
+  *     and is permanently unusable afterwards. The core takes no other part in exception handling.
   *
   * Exactly one of [[apply]] or [[skip]] is called per pipeline run. Resource cleanup is the responsibility of the
   * [[Evolution]] returned from either call: [[Evolution.dispose]] releases the resources held by this stage, and after

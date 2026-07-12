@@ -56,12 +56,12 @@ errResult.evolve()
 After `dispose()` is called the producing stage must be considered permanently unusable — it must not be
 applied or skipped again.
 
-Two situations guarantee `dispose()` will be called:
+One situation guarantees `dispose()` will be called: `Stage.execute()` invokes it immediately after the stage runs,
+since `execute` is a terminal operation and the continuation will never be needed.
 
-- `Stage.execute()` calls it immediately after the stage runs, since `execute` is a terminal operation and the
-  continuation will never be needed.
-- If `evolve` throws a `Throwable`, the caller is still required to call `dispose()` so that nothing is leaked even
-  when evolution itself fails.
+Exception handling is not part of the core model. A stage whose `apply` throws produces no `Yield` and therefore no
+`Evolution` — there is nothing the caller could dispose. Such a stage must release its own resources before letting
+the exception escape (see the [Lifecycle](Stage.md#the-lifecycle-apply-and-skip) section).
 
 Implementations that hold no external resources may leave `dispose()` as a no-op.
 

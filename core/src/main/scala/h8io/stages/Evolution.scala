@@ -37,11 +37,12 @@ trait Evolution[-I, +O, +E] {
     * After this call the producing stage must be considered permanently unusable — it must not be applied or skipped
     * again. This is the exclusive cleanup point for resources owned by the producing stage.
     *
-    * Called when the producing stage is permanently shut down:
-    *   - by [[Stage.execute]] after the pipeline has produced its terminal [[Outcome]], so the continuation is released
-    *     immediately rather than carried forward;
-    *   - when `apply` throws a `Throwable`, since the stage can no longer be used and all its resources must still be
-    *     released.
+    * Called when the producing stage is permanently shut down: by [[Stage.execute]] after the pipeline has produced its
+    * terminal [[Outcome]], so the continuation is released immediately rather than carried forward.
+    *
+    * Exception handling is not part of the core model: a stage whose `apply` throws produces no [[Yield]] and therefore
+    * no `Evolution` — there is nothing the caller could dispose. Such a stage must release its own resources before
+    * letting the exception escape (see the ''Lifecycle'' section in [[Stage]]).
     *
     * Implementations that hold no external resources may leave this as a no-op.
     */
