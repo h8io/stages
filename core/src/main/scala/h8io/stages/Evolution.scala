@@ -27,6 +27,13 @@ trait Evolution[-I, +O, +E] {
     * May release resources that are specific to this evolution instance and will not be reused by subsequent
     * generations (i.e. resources not needed by the returned stage or its own evolution).
     *
+    * By default at most one of `evolve` and [[dispose]] is called on any evolution instance: [[Stage.execute]] only
+    * disposes, and a pipeline that continues only evolves, dropping the previous evolution. The two calls are not
+    * mutually exclusive, though: a caller that has obtained the continuation via `evolve` may still call [[dispose]] on
+    * the same instance later. Operators that own their inner stage (e.g. `Loop` and `Repeat` in the lib module) do
+    * exactly that — they evolve the inner evolution eagerly and keep its `dispose` as the terminal cleanup handle for
+    * the generation just constructed.
+    *
     * @param status
     *   the status that determines the continuation stage
     */
@@ -39,6 +46,11 @@ trait Evolution[-I, +O, +E] {
     *
     * Called when the producing stage is permanently shut down: by [[Stage.execute]] after the pipeline has produced its
     * terminal [[Outcome]], so the continuation is released immediately rather than carried forward.
+    *
+    * `dispose()` must stay valid after [[evolve]] has been called on the same instance, and must then release
+    * everything still alive — including resources acquired while constructing the continuation. `evolve` transfers no
+    * ownership: this evolution remains the cleanup point for its lineage until the continuation has run and produced an
+    * evolution of its own, which takes over as the terminal handle from that moment on.
     *
     * Exception handling is not part of the core model: a stage whose `apply` throws produces no [[Yield]] and therefore
     * no `Evolution` — there is nothing the caller could dispose. Such a stage must release its own resources before
