@@ -58,6 +58,42 @@ none.outOption   // None
 Use `outOption` when you only need to know whether a value was produced. When you also need the `status` or
 `evolution`, pattern-match on the concrete subtype directly instead.
 
+## Constructing from an Option
+
+The companion object provides an `apply` that selects the variant from an optional output: a `Some` becomes
+`Yield.Some`, a `None` becomes `Yield.None`. It is convenient when the presence of an output is only known at
+runtime — for example, when it comes from a lookup:
+
+```scala mdoc
+def lookup(key: Int): Option[String] = if (key > 0) Some(s"value-$key") else None
+
+val lookupEvolution = new Evolution[Int, String, Nothing] {
+  override def evolve(status: Status[?]): Stage[Int, String, Nothing] = ???
+  override def dispose(): Unit = ()
+}
+
+Yield(lookup(1), Status.Success, lookupEvolution)
+Yield(lookup(-1), Status.Success, lookupEvolution)
+```
+
+## Matching Without Naming the Variant
+
+The mirror `unapply` makes `Yield` itself usable as an extractor: a single case binds the optional output, the
+status and the evolution, whichever variant the value is. It is the inverse of `apply`; because it returns
+`scala.Some`, the compiler knows the extractor always matches, and a single `case Yield(...)` is exhaustive:
+
+```scala mdoc
+def render(yld: Yield[Int, String, Nothing]): String = yld match {
+  case Yield(out, status, _) => s"out: $out, status: $status"
+}
+
+render(Yield(lookup(1), Status.Success, lookupEvolution))
+render(Yield(lookup(-1), Status.Success, lookupEvolution))
+```
+
+Prefer matching on `Yield.Some` / `Yield.None` when the two variants are handled differently — the generic
+extractor is for the cases where they are treated uniformly.
+
 ## Evolving the Pipeline
 
 Once the pipeline has processed an input and is ready for the next one, it calls `evolve()` on the `Yield` returned

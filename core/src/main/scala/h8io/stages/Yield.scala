@@ -166,4 +166,23 @@ object Yield {
         mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E] =
       Yield.None(mapStatus(status), mapEvolution(evolution))
   }
+
+  /** Creates a [[Yield]] from an optional output: `scala.Some` becomes [[Yield.Some]], `scala.None` becomes
+    * [[Yield.None]].
+    */
+  def apply[I, O, E](out: Option[O], status: Status[E], evolution: Evolution[I, O, E]): Yield[I, O, E] =
+    out match {
+      case scala.Some(out) => Some(out, status, evolution)
+      case scala.None => None(status, evolution)
+    }
+
+  /** Extractor matching any [[Yield]] as `case Yield(out, status, evolution)`, where `out` is the optional output — the
+    * inverse of [[apply]]. The `scala.Some` return type marks the extractor as irrefutable: it always matches, and a
+    * single `case Yield(...)` is exhaustive.
+    */
+  def unapply[I, O, E](yld: Yield[I, O, E]): scala.Some[(Option[O], Status[E], Evolution[I, O, E])] =
+    yld match {
+      case Some(out, status, evolution) => scala.Some((scala.Some(out), status, evolution))
+      case None(status, evolution) => scala.Some((scala.None, status, evolution))
+    }
 }
