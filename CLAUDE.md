@@ -53,8 +53,8 @@ A `Stage[-I, +O, +E]` maps an input to a `Yield[I, O, E]`, which carries three t
   `skip()` must return the stage's evolution without consuming input (used when an upstream produced no output or a
   binary operator excluded the branch); like `apply`, it may perform side effects. After `dispose()` the stage is
   permanently unusable. A stage that throws from `apply` must release its own resources before propagating — core
-  takes no other part in exception handling (`execute` capturing dispose failures and `Evolution.AndThen.dispose`
-  suppression are the only exception-aware spots).
+  takes no other part in exception handling (`execute` capturing dispose failures and the varargs `Evolution.dispose`
+  helper — the shared disposal discipline with suppression — are the only exception-aware spots).
 - Composition is `a ~> b` (`Stage.AndThen`). When the upstream yields `None`, the downstream is not applied but its
   `skip()` evolution is still composed in. Note `Evolution.AndThen` deliberately names its fields in the reverse of
   `Stage.AndThen` — see its scaladoc before modifying.

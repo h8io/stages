@@ -6,7 +6,9 @@ growing the stack — until the stage signals the end of the cycle with
 [`Status.Complete`](../../core/classes/Status.md).
 
 [`Loop`](Loop.md) feeds each output back as the next input; [`Repeat`](Repeat.md) re-applies the stage to the
-same input. Both absorb an error-free `Complete` into a `Success` and preserve accumulated errors.
+same input; [`Reduce`](Reduce.md) re-applies the stage to the same input like `Repeat` and folds every output
+into an accumulator with a binary operation stage. All of them absorb an error-free `Complete` into a `Success`
+and preserve accumulated errors.
 
 The family shares one lifecycle contract:
 
@@ -15,6 +17,6 @@ The family shares one lifecycle contract:
   pipeline later evolves the operator with. The evolution returned outwards is a
   [`ConstEvolution`](../base/ConstEvolution.md) — exactly the barrier for the outer status. A skipped operator
   skips its inner stage and selects the inner continuation on the neutral `Success`.
-- **Lifecycle ownership.** The operator fully owns the inner stage: it evolves the inner evolution eagerly and
-  keeps its `dispose` as the terminal cleanup handle for the generation just constructed — see the
+- **Lifecycle ownership.** The operator fully owns its inner stages: it evolves the inner evolutions eagerly and
+  keeps their `dispose` as the terminal cleanup handle for the generation just constructed — see the
   [`Evolution`](../../core/classes/Evolution.md) contract.
