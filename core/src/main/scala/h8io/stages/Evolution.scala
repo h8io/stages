@@ -108,29 +108,36 @@ object Evolution {
 
   type Any = Evolution[?, ?, ?]
 
-  /** Disposes `first`, then `second`, ensuring both are attempted.
+  /** Disposes the evolutions in argument order, ensuring every one is attempted.
     *
-    * If `first.dispose()` throws a non-fatal exception, `second.dispose()` is still attempted and any non-fatal
-    * exception it throws is added as suppressed to the primary one before it is re-thrown.
+    * The first non-fatal exception becomes the primary one: the remaining evolutions are still disposed, any further
+    * non-fatal exception is added as suppressed to the primary, and the primary is re-thrown at the end.
     *
-    * This is the single disposal discipline for every evolution that owns a pair of inner evolutions (e.g. [[AndThen]],
-    * or `BaseBinaryOperator.Evolution` and `Reduce` in the lib module); the parameter names are deliberately positional
-    * — each call site maps its own domain roles onto the disposal order.
+    * This is the single disposal discipline for every evolution that owns several inner evolutions (e.g. [[AndThen]],
+    * or `BaseBinaryOperator.Evolution` and `Reduce` in the lib module); the parameter list is deliberately positional —
+    * each call site maps its own domain roles onto the disposal order.
     *
-    * @param first
+    * @param head
     *   the evolution disposed first
-    * @param second
-    *   the evolution disposed second, even if `first` fails
+    * @param tail
+    *   the remaining evolutions, disposed in order even if earlier disposals fail
     */
-  def dispose(first: Evolution.Any, second: Evolution.Any): Unit = {
-    try first.dispose()
-    catch {
-      case NonFatal(primary) =>
-        try second.dispose()
-        catch { case NonFatal(secondary) => primary.addSuppressed(secondary) }
-        finally throw primary
+  def dispose(head: Evolution.Any, tail: Evolution.Any*): Unit = {
+    val primary = (head +: tail).foldLeft(Option.empty[Throwable]) { (primary, evolution) =>
+      try {
+        evolution.dispose()
+        primary
+      } catch {
+        case NonFatal(e) =>
+          primary match {
+            case Some(p) =>
+              p.addSuppressed(e)
+              primary
+            case None => Some(e)
+          }
+      }
     }
-    second.dispose()
+    primary.foreach(p => throw p)
   }
 
   /** An [[Evolution]] composed of two sequential evolutions.

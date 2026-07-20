@@ -67,6 +67,43 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
     thrown.getSuppressed should contain only secondException
   }
 
+  it should "dispose all evolutions in argument order" in {
+    val first = mock[Evolution[Instant, Long, Exception]]
+    val second = mock[Evolution[String, Instant, Exception]]
+    val third = mock[Evolution[Long, String, Exception]]
+    inSequence {
+      (first.dispose _).expects()
+      (second.dispose _).expects()
+      (third.dispose _).expects()
+    }
+    noException should be thrownBy Evolution.dispose(first, second, third)
+  }
+
+  it should "keep the first exception primary and suppress every subsequent one" in {
+    val first = mock[Evolution[Instant, Long, Exception]]
+    val second = mock[Evolution[String, Instant, Exception]]
+    val third = mock[Evolution[Long, String, Exception]]
+    val firstException = new Exception("first")
+    val thirdException = new Exception("third")
+    inSequence {
+      (first.dispose _).expects().throws(firstException)
+      (second.dispose _).expects()
+      (third.dispose _).expects().throws(thirdException)
+    }
+    val thrown = the[Exception] thrownBy Evolution.dispose(first, second, third)
+    thrown shouldBe firstException
+    thrown.getSuppressed should contain only thirdException
+  }
+
+  it should "propagate a sole evolution's dispose exception" in {
+    val sole = mock[Evolution[Instant, Long, Exception]]
+    val soleException = new Exception("sole")
+    (sole.dispose _).expects().throws(soleException)
+    val thrown = the[Exception] thrownBy Evolution.dispose(sole)
+    thrown shouldBe soleException
+    thrown.getSuppressed shouldBe empty
+  }
+
   "AndThen" should "compose Evolution objects correctly" in {
     val upstreamEvolution = mock[Evolution[Instant, Long, Exception]]
     val downstreamEvolution = mock[Evolution[String, Instant, Exception]]
