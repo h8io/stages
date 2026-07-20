@@ -117,13 +117,11 @@ object Evolution {
     * or `BaseBinaryOperator.Evolution` and `Reduce` in the lib module); the parameter list is deliberately positional —
     * each call site maps its own domain roles onto the disposal order.
     *
-    * @param head
-    *   the evolution disposed first
-    * @param tail
-    *   the remaining evolutions, disposed in order even if earlier disposals fail
+    * @param evolutions
+    *   the evolutions to dispose, in order, even if earlier disposals fail
     */
-  def dispose(head: Evolution.Any, tail: Evolution.Any*): Unit = {
-    val primary = (head +: tail).foldLeft(Option.empty[Throwable]) { (primary, evolution) =>
+  def dispose(evolutions: Evolution.Any*): Unit =
+    evolutions.foldLeft(Option.empty[Throwable]) { (primary, evolution) =>
       try {
         evolution.dispose()
         primary
@@ -136,9 +134,7 @@ object Evolution {
             case None => Some(e)
           }
       }
-    }
-    primary.foreach(p => throw p)
-  }
+    }.foreach(throw _)
 
   /** An [[Evolution]] composed of two sequential evolutions.
     *
