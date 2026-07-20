@@ -108,6 +108,31 @@ object Evolution {
 
   type Any = Evolution[?, ?, ?]
 
+  /** Disposes `first`, then `second`, ensuring both are attempted.
+    *
+    * If `first.dispose()` throws a non-fatal exception, `second.dispose()` is still attempted and any non-fatal
+    * exception it throws is added as suppressed to the primary one before it is re-thrown.
+    *
+    * This is the single disposal discipline for every evolution that owns a pair of inner evolutions (e.g. [[AndThen]],
+    * or `BaseBinaryOperator.Evolution` and `Reduce` in the lib module); the parameter names are deliberately positional
+    * — each call site maps its own domain roles onto the disposal order.
+    *
+    * @param first
+    *   the evolution disposed first
+    * @param second
+    *   the evolution disposed second, even if `first` fails
+    */
+  def dispose(first: Evolution.Any, second: Evolution.Any): Unit = {
+    try first.dispose()
+    catch {
+      case NonFatal(primary) =>
+        try second.dispose()
+        catch { case NonFatal(secondary) => primary.addSuppressed(secondary) }
+        finally throw primary
+    }
+    second.dispose()
+  }
+
   /** An [[Evolution]] composed of two sequential evolutions.
     *
     * ==Parameter naming==
@@ -158,21 +183,10 @@ object Evolution {
 
     override def evolve(status: Status[?]): Stage[I, O, E] = upstream.evolve(status) <~ downstream.evolve(status)
 
-    /** Releases resources held by both composed evolutions, disposing `upstream` first, then `downstream`.
-      *
-      * If `upstream.dispose()` throws a non-fatal exception, `downstream.dispose()` is still attempted. Any non-fatal
-      * exception from `downstream.dispose()` is added as suppressed to the primary before it is re-thrown.
+    /** Releases resources held by both composed evolutions via [[Evolution.dispose]], disposing `upstream` first, then
+      * `downstream`.
       */
-    override def dispose(): Unit = {
-      try upstream.dispose()
-      catch {
-        case NonFatal(primary) =>
-          try downstream.dispose()
-          catch { case NonFatal(secondary) => primary.addSuppressed(secondary) }
-          finally throw primary
-      }
-      downstream.dispose()
-    }
+    override def dispose(): Unit = Evolution.dispose(upstream, downstream)
   }
 
   /** An [[Evolution]] whose continuations are produced by applying `f` to the corresponding continuations of

@@ -3,7 +3,6 @@ package h8io.stages
 import h8io.stages
 
 import scala.util.Try
-import scala.util.control.NonFatal
 
 /** Type aliases used throughout the `lib` module for describing stage transformations.
   *
@@ -96,16 +95,7 @@ package object base {
         apply(leftStage, rightStage)
       }
 
-      override def dispose(): Unit = {
-        try right.dispose()
-        catch {
-          case NonFatal(primary) =>
-            try left.dispose()
-            catch { case NonFatal(secondary) => primary.addSuppressed(secondary) }
-            finally throw primary
-        }
-        left.dispose()
-      }
+      override def dispose(): Unit = stages.Evolution.dispose(right, left)
     }
   }
 }

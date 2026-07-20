@@ -21,6 +21,52 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
     evolution.map(f) shouldBe Mapped(evolution, f)
   }
 
+  "dispose" should "dispose first, then second" in {
+    val first = mock[Evolution[Instant, Long, Exception]]
+    val second = mock[Evolution[String, Instant, Exception]]
+    inSequence {
+      (first.dispose _).expects()
+      (second.dispose _).expects()
+    }
+    noException should be thrownBy Evolution.dispose(first, second)
+  }
+
+  it should "dispose second even when the first dispose throws" in {
+    val first = mock[Evolution[Instant, Long, Exception]]
+    val second = mock[Evolution[String, Instant, Exception]]
+    val firstException = new Exception("first")
+    inSequence {
+      (first.dispose _).expects().throws(firstException)
+      (second.dispose _).expects()
+    }
+    the[Exception] thrownBy Evolution.dispose(first, second) shouldBe firstException
+  }
+
+  it should "propagate the second dispose exception" in {
+    val first = mock[Evolution[Instant, Long, Exception]]
+    val second = mock[Evolution[String, Instant, Exception]]
+    val secondException = new Exception("second")
+    inSequence {
+      (first.dispose _).expects()
+      (second.dispose _).expects().throws(secondException)
+    }
+    the[Exception] thrownBy Evolution.dispose(first, second) shouldBe secondException
+  }
+
+  it should "suppress the second exception when both disposes throw" in {
+    val first = mock[Evolution[Instant, Long, Exception]]
+    val second = mock[Evolution[String, Instant, Exception]]
+    val firstException = new Exception("first")
+    val secondException = new Exception("second")
+    inSequence {
+      (first.dispose _).expects().throws(firstException)
+      (second.dispose _).expects().throws(secondException)
+    }
+    val thrown = the[Exception] thrownBy Evolution.dispose(first, second)
+    thrown shouldBe firstException
+    thrown.getSuppressed should contain only secondException
+  }
+
   "AndThen" should "compose Evolution objects correctly" in {
     val upstreamEvolution = mock[Evolution[Instant, Long, Exception]]
     val downstreamEvolution = mock[Evolution[String, Instant, Exception]]
