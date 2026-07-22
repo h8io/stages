@@ -15,6 +15,10 @@ import scala.annotation.tailrec
   * `h8io.stages.Status.Success` keeps the cycle spinning, like [[Repeat]]. The cycle is `@tailrec` and does not grow
   * the stack.
   *
+  * When `op` is applied but itself yields no output for a given fold — e.g. it filters some outputs out — the
+  * accumulator is left unchanged rather than discarded, exactly as in [[Fold]]. `op`'s status is still combined into
+  * the iteration's status in this case, since `op` was applied, not skipped, for that output.
+  *
   * The cycle stops when the status of an iteration is `h8io.stages.Status.Complete`: an error-free `Complete` is
   * reported to the enclosing pipeline as `Success`, a `Complete` with errors is preserved. The value accumulated so
   * far, if any, is yielded. The accumulator is local to one outer run: the next generation of `Reduce` starts empty.
@@ -51,26 +55,27 @@ final case class Reduce[-I, O, +E](alterand: Stage[I, O, E], op: Stage[(O, O), O
 }
 
 object Reduce {
-  @tailrec private def execute[I, O, E](in: I, value: Option[O], alterand: Stage[I, O, E], op: Stage[(O, O), O, E])
+  @tailrec private def execute[I, O, E](in: I, optValue: Option[O], alterand: Stage[I, O, E], op: Stage[(O, O), O, E])
       : Yield[I, O, E] = {
     val Yield(optAlterandOut, alterandStatus, alterandEvolution) = alterand(in)
-    val (out, status, opEvolution) = optAlterandOut match {
+    val (result, status, opEvolution) = optAlterandOut match {
       case Some(alterandOut) =>
-        value match {
+        optValue match {
           case Some(value) =>
             val Yield(out, opStatus, opEvolution) = op((value, alterandOut))
-            (out, alterandStatus.combine(opStatus), opEvolution)
+            (out orElse optValue, alterandStatus.combine(opStatus), opEvolution)
           case None => (optAlterandOut, alterandStatus, op.skip())
         }
-      case None => (value, alterandStatus, op.skip())
+      case None => (optValue, alterandStatus, op.skip())
     }
     status match {
       case Status.Success =>
         val evolvedOp = opEvolution.evolve(status)
         val evolvedAlterand = alterandEvolution.evolve(status)
-        execute(in, out, evolvedAlterand, evolvedOp)
+        execute(in, result, evolvedAlterand, evolvedOp)
       case complete: Status.Complete[E] =>
-        Yield(out, if (complete.isEmpty) Status.Success else complete, evolve(status, alterandEvolution, opEvolution))
+        Yield(
+          result, if (complete.isEmpty) Status.Success else complete, evolve(status, alterandEvolution, opEvolution))
     }
   }
 

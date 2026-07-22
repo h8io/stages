@@ -6,9 +6,9 @@ import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory with StagesCoreTestUtil {
-  "Reduce" should "yield a single output without applying op and absorb an error-free Complete" in {
-    val in = 42L
+class FoldTest extends AnyFlatSpec with Matchers with Inside with MockFactory with StagesCoreTestUtil {
+  "Fold" should "fold the seed's first output through op and absorb an error-free Complete" in {
+    val in = 5L
     val alterand = mock[Stage[Long, String, String]]("alterand")
     val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
     val op = mock[Stage[(String, String), String, String]]("op")
@@ -17,12 +17,12 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val nextOp = mock[Stage[(String, String), String, String]]("next op")
     inSequence {
       (alterand.apply _).expects(in).returns(Yield.Some("a", Status.complete, alterandEvolution))
-      (op.skip _).expects().returns(opEvolution)
+      (op.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.Success, opEvolution))
       (opEvolution.evolve _).expects(Status.complete).returns(nextOp)
       (alterandEvolution.evolve _).expects(Status.complete).returns(nextAlterand)
-      inside(Reduce(alterand, op)(in)) { case Yield.Some(out, Status.Success, evolution) =>
-        out shouldBe "a"
-        testConstEvolution(evolution, Reduce(nextAlterand, nextOp))
+      inside(Fold(alterand, op)(("z", in))) { case Yield.Some(out, Status.Success, evolution) =>
+        out shouldBe "za"
+        testConstEvolution(evolution, Fold(nextAlterand, nextOp))
         (opEvolution.dispose _).expects()
         (alterandEvolution.dispose _).expects()
         noException should be thrownBy evolution.dispose()
@@ -49,21 +49,21 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val nextOp = mock[Stage[(String, String), String, String]]("next op")
     inSequence {
       (alterand1.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution1))
-      (op1.skip _).expects().returns(opEvolution1)
+      (op1.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.Success, opEvolution1))
       (opEvolution1.evolve _).expects(Status.Success).returns(op2)
       (alterandEvolution1.evolve _).expects(Status.Success).returns(alterand2)
       (alterand2.apply _).expects(in).returns(Yield.Some("b", Status.Success, alterandEvolution2))
-      (op2.apply _).expects(("a", "b")).returns(Yield.Some("ab", Status.Success, opEvolution2))
+      (op2.apply _).expects(("za", "b")).returns(Yield.Some("zab", Status.Success, opEvolution2))
       (opEvolution2.evolve _).expects(Status.Success).returns(op3)
       (alterandEvolution2.evolve _).expects(Status.Success).returns(alterand3)
       (alterand3.apply _).expects(in).returns(Yield.Some("c", complete, alterandEvolution3))
-      (op3.apply _).expects(("ab", "c")).returns(Yield.Some("abc", Status.Success, opEvolution3))
+      (op3.apply _).expects(("zab", "c")).returns(Yield.Some("zabc", Status.Success, opEvolution3))
       (opEvolution3.evolve _).expects(complete).returns(nextOp)
       (alterandEvolution3.evolve _).expects(complete).returns(nextAlterand)
-      inside(Reduce(alterand1, op1)(in)) { case Yield.Some(out, status, evolution) =>
-        out shouldBe "abc"
+      inside(Fold(alterand1, op1)(("z", in))) { case Yield.Some(out, status, evolution) =>
+        out shouldBe "zabc"
         status shouldBe complete
-        testConstEvolution(evolution, Reduce(nextAlterand, nextOp))
+        testConstEvolution(evolution, Fold(nextAlterand, nextOp))
         (opEvolution3.dispose _).expects()
         (alterandEvolution3.dispose _).expects()
         noException should be thrownBy evolution.dispose()
@@ -72,33 +72,25 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
   }
 
   it should "keep the accumulator when op yields no output, but still combine its status" in {
-    val in = 6L
-    val complete = Status.error("done")
-    val alterand1 = mock[Stage[Long, String, String]]("alterand 1")
-    val alterandEvolution1 = mock[Evolution[Long, String, String]]("alterand evolution 1")
-    val alterand2 = mock[Stage[Long, String, String]]("alterand 2")
-    val alterandEvolution2 = mock[Evolution[Long, String, String]]("alterand evolution 2")
+    val in = 5L
+    val alterand = mock[Stage[Long, String, String]]("alterand")
+    val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
+    val op = mock[Stage[(String, String), String, String]]("op")
+    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
     val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val op1 = mock[Stage[(String, String), String, String]]("op 1")
-    val opEvolution1 = mock[Evolution[(String, String), String, String]]("op evolution 1")
-    val op2 = mock[Stage[(String, String), String, String]]("op 2")
-    val opEvolution2 = mock[Evolution[(String, String), String, String]]("op evolution 2")
     val nextOp = mock[Stage[(String, String), String, String]]("next op")
+    val error = Status.error("op says no")
     inSequence {
-      (alterand1.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution1))
-      (op1.skip _).expects().returns(opEvolution1)
-      (opEvolution1.evolve _).expects(Status.Success).returns(op2)
-      (alterandEvolution1.evolve _).expects(Status.Success).returns(alterand2)
-      (alterand2.apply _).expects(in).returns(Yield.Some("b", complete, alterandEvolution2))
-      (op2.apply _).expects(("a", "b")).returns(Yield.None(Status.Success, opEvolution2))
-      (opEvolution2.evolve _).expects(complete).returns(nextOp)
-      (alterandEvolution2.evolve _).expects(complete).returns(nextAlterand)
-      inside(Reduce(alterand1, op1)(in)) { case Yield.Some(out, status, evolution) =>
-        out shouldBe "a"
-        status shouldBe complete
-        testConstEvolution(evolution, Reduce(nextAlterand, nextOp))
-        (opEvolution2.dispose _).expects()
-        (alterandEvolution2.dispose _).expects()
+      (alterand.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution))
+      (op.apply _).expects(("z", "a")).returns(Yield.None(error, opEvolution))
+      (opEvolution.evolve _).expects(error).returns(nextOp)
+      (alterandEvolution.evolve _).expects(error).returns(nextAlterand)
+      inside(Fold(alterand, op)(("z", in))) { case Yield.Some(out, status, evolution) =>
+        out shouldBe "z"
+        status shouldBe error
+        testConstEvolution(evolution, Fold(nextAlterand, nextOp))
+        (opEvolution.dispose _).expects()
+        (alterandEvolution.dispose _).expects()
         noException should be thrownBy evolution.dispose()
       }
     }
@@ -106,32 +98,24 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
 
   it should "combine the statuses of an iteration in pipeline order: alterand first, then op" in {
     val in = 2L
-    val alterand1 = mock[Stage[Long, String, String]]("alterand 1")
-    val alterandEvolution1 = mock[Evolution[Long, String, String]]("alterand evolution 1")
-    val alterand2 = mock[Stage[Long, String, String]]("alterand 2")
-    val alterandEvolution2 = mock[Evolution[Long, String, String]]("alterand evolution 2")
+    val alterand = mock[Stage[Long, String, String]]("alterand")
+    val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
+    val op = mock[Stage[(String, String), String, String]]("op")
+    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
     val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val op1 = mock[Stage[(String, String), String, String]]("op 1")
-    val opEvolution1 = mock[Evolution[(String, String), String, String]]("op evolution 1")
-    val op2 = mock[Stage[(String, String), String, String]]("op 2")
-    val opEvolution2 = mock[Evolution[(String, String), String, String]]("op evolution 2")
     val nextOp = mock[Stage[(String, String), String, String]]("next op")
     val combined = Status.error("alterand error", "op error")
     inSequence {
-      (alterand1.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution1))
-      (op1.skip _).expects().returns(opEvolution1)
-      (opEvolution1.evolve _).expects(Status.Success).returns(op2)
-      (alterandEvolution1.evolve _).expects(Status.Success).returns(alterand2)
-      (alterand2.apply _).expects(in).returns(Yield.Some("b", Status.error("alterand error"), alterandEvolution2))
-      (op2.apply _).expects(("a", "b")).returns(Yield.Some("ab", Status.error("op error"), opEvolution2))
-      (opEvolution2.evolve _).expects(combined).returns(nextOp)
-      (alterandEvolution2.evolve _).expects(combined).returns(nextAlterand)
-      inside(Reduce(alterand1, op1)(in)) { case Yield.Some(out, status, evolution) =>
-        out shouldBe "ab"
+      (alterand.apply _).expects(in).returns(Yield.Some("a", Status.error("alterand error"), alterandEvolution))
+      (op.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.error("op error"), opEvolution))
+      (opEvolution.evolve _).expects(combined).returns(nextOp)
+      (alterandEvolution.evolve _).expects(combined).returns(nextAlterand)
+      inside(Fold(alterand, op)(("z", in))) { case Yield.Some(out, status, evolution) =>
+        out shouldBe "za"
         status shouldBe combined
-        testConstEvolution(evolution, Reduce(nextAlterand, nextOp))
-        (opEvolution2.dispose _).expects()
-        (alterandEvolution2.dispose _).expects()
+        testConstEvolution(evolution, Fold(nextAlterand, nextOp))
+        (opEvolution.dispose _).expects()
+        (alterandEvolution.dispose _).expects()
         noException should be thrownBy evolution.dispose()
       }
     }
@@ -155,7 +139,7 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val nextOp = mock[Stage[(String, String), String, String]]("next op")
     inSequence {
       (alterand1.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution1))
-      (op1.skip _).expects().returns(opEvolution1)
+      (op1.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.Success, opEvolution1))
       (opEvolution1.evolve _).expects(Status.Success).returns(op2)
       (alterandEvolution1.evolve _).expects(Status.Success).returns(alterand2)
       (alterand2.apply _).expects(in).returns(Yield.None(Status.Success, alterandEvolution2))
@@ -166,35 +150,11 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
       (op3.skip _).expects().returns(opEvolution3)
       (opEvolution3.evolve _).expects(Status.complete).returns(nextOp)
       (alterandEvolution3.evolve _).expects(Status.complete).returns(nextAlterand)
-      inside(Reduce(alterand1, op1)(in)) { case Yield.Some(out, Status.Success, evolution) =>
-        out shouldBe "a"
-        testConstEvolution(evolution, Reduce(nextAlterand, nextOp))
+      inside(Fold(alterand1, op1)(("z", in))) { case Yield.Some(out, Status.Success, evolution) =>
+        out shouldBe "za"
+        testConstEvolution(evolution, Fold(nextAlterand, nextOp))
         (opEvolution3.dispose _).expects()
         (alterandEvolution3.dispose _).expects()
-        noException should be thrownBy evolution.dispose()
-      }
-    }
-  }
-
-  it should "yield None when the cycle completes without producing any output" in {
-    val in = 4L
-    val complete = Status.error("failure")
-    val alterand = mock[Stage[Long, String, String]]("alterand")
-    val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
-    val op = mock[Stage[(String, String), String, String]]("op")
-    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
-    val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val nextOp = mock[Stage[(String, String), String, String]]("next op")
-    inSequence {
-      (alterand.apply _).expects(in).returns(Yield.None(complete, alterandEvolution))
-      (op.skip _).expects().returns(opEvolution)
-      (opEvolution.evolve _).expects(complete).returns(nextOp)
-      (alterandEvolution.evolve _).expects(complete).returns(nextAlterand)
-      inside(Reduce(alterand, op)(in)) { case Yield.None(status, evolution) =>
-        status shouldBe complete
-        testConstEvolution(evolution, Reduce(nextAlterand, nextOp))
-        (opEvolution.dispose _).expects()
-        (alterandEvolution.dispose _).expects()
         noException should be thrownBy evolution.dispose()
       }
     }
@@ -212,8 +172,8 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
       (op.skip _).expects().returns(opEvolution)
       (opEvolution.evolve _).expects(Status.Success).returns(skippedOp)
       (alterandEvolution.evolve _).expects(Status.Success).returns(skippedAlterand)
-      val result = Reduce(alterand, op).skip()
-      testConstEvolution(result, Reduce(skippedAlterand, skippedOp))
+      val result = Fold(alterand, op).skip()
+      testConstEvolution(result, Fold(skippedAlterand, skippedOp))
       (opEvolution.dispose _).expects()
       (alterandEvolution.dispose _).expects()
       noException should be thrownBy result.dispose()
@@ -234,7 +194,7 @@ class ReduceTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
       (op.skip _).expects().returns(opEvolution)
       (opEvolution.evolve _).expects(Status.Success).returns(skippedOp)
       (alterandEvolution.evolve _).expects(Status.Success).returns(skippedAlterand)
-      val result = Reduce(alterand, op).skip()
+      val result = Fold(alterand, op).skip()
       (opEvolution.dispose _).expects().throws(primary)
       (alterandEvolution.dispose _).expects().throws(secondary)
       val thrown = the[RuntimeException] thrownBy result.dispose()
