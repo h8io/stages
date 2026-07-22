@@ -7,8 +7,9 @@ growing the stack — until the stage signals the end of the cycle with
 
 [`Loop`](Loop.md) feeds each output back as the next input; [`Repeat`](Repeat.md) re-applies the stage to the
 same input; [`Reduce`](Reduce.md) re-applies the stage to the same input like `Repeat` and folds every output
-into an accumulator with a binary operation stage. All of them absorb an error-free `Complete` into a `Success`
-and preserve accumulated errors.
+into an accumulator with a binary operation stage; [`Fold`](Fold.md) does the same as `Reduce`, but seeded from
+the outer input, so — unlike `Reduce` — it always has a value to yield. All of them absorb an error-free
+`Complete` into a `Success` and preserve accumulated errors.
 
 The family shares one lifecycle contract:
 
