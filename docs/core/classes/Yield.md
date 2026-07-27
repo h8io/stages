@@ -42,9 +42,41 @@ val none = Yield.None[Int, String, String](Status.error("filtered out"), new Evo
 none.status
 ```
 
-When a `Yield.None` reaches a `Stage.AndThen`, the downstream stage is not applied to the current input.  
+When a `Yield.None` reaches a composed stage, the downstream stage is not applied to the current input.  
 Instead it is wired into the evolution so that the full composed stage will be called when a value eventually
 arrives.
+
+## The Fruitful Variant
+
+`Yield.Some` has a second form. `Yield.Some.Fruitful` is what a [`Stage.Fruitful`](Stage.md) returns: the output is
+present, as in any `Yield.Some`, and in addition the evolution it carries is an `Evolution.Fruitful`, so `evolve()`
+returns a `Stage.Fruitful` rather than a plain `Stage`. That is how the always-an-output guarantee survives into the
+next generation.
+
+```scala mdoc
+val fruitfulEvolution = new Evolution.Fruitful[Int, Int, Nothing] {
+  override def evolve(status: Status[?]): Stage.Fruitful[Int, Int, Nothing] = ???
+  override def dispose(): Unit = ()
+}
+
+val fruitful = Yield.Some.Fruitful(42, Status.Success, fruitfulEvolution)
+fruitful.out
+```
+
+Both forms match as `Yield.Some`, so code that only cares about "there is an output" needs no changes:
+
+```scala mdoc
+def describe(yld: Yield[Int, Int, Nothing]): String = yld match {
+  case Yield.Some(out, _, _) => s"out: $out"
+  case Yield.None(status, _) => s"nothing: $status"
+}
+
+describe(fruitful)
+describe(some)
+```
+
+Note that the generic extractor widens the evolution back to `Evolution`: when the narrower type matters, match on
+`Yield.Some.Fruitful` itself, whose extractor keeps `Evolution.Fruitful`.
 
 ## Accessing the Output
 

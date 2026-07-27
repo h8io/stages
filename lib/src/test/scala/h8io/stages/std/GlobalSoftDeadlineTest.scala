@@ -47,7 +47,7 @@ class GlobalSoftDeadlineTest
               val currentInterval = previousInterval + interval
               (now.apply _).expects().returns(currentTS)
               val expectedStatus = if (currentInterval < duration) Status.Success else Status.complete
-              stage(in) shouldBe Yield.Some(`in`, `expectedStatus`, stage)
+              stage(in) shouldBe Yield.Some.Fruitful(`in`, `expectedStatus`, stage)
               loop(currentTS, currentInterval, tail)
             case Nil =>
           }

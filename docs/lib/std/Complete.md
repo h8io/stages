@@ -7,7 +7,7 @@ It signals that the current unit of work is done. At the top level of a pipeline
 status; inside an enclosing alterator such as `Loop` or `Repeat` it ends the current cycle.
 The [`CompleteIfSome`](../operators/CompleteIfSome.md) operator uses `Complete` for exactly this purpose.
 
-`Complete` is a polymorphic singleton. Use `Complete[T]` to obtain a typed `Fruitful.Endo[T, Nothing]`.
+`Complete` is a polymorphic singleton. Use `Complete[T]` to obtain a typed `Stage.Fruitful.Endo[T, Nothing]`.
 
 ```scala mdoc
 import h8io.stages.*

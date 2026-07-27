@@ -1,27 +1,39 @@
 # Fruitful
 
-`Fruitful` expresses a weaker guarantee than [`Fn`](Fn.md): the stage always returns
-[`Yield.Some`](../../core/classes/Yield.md), but it is free to choose any status and any evolution. The return type
-of `apply` is narrowed to `Yield.Some[I, O, E]` so the compiler can track this guarantee statically, making
-`Fruitful` stages safe to use wherever an output value is always expected.
+`Fruitful` promises an output for **this** run: `apply` is narrowed to
+[`Yield.Some`](../../core/classes/Yield.md)`[I, O, E]`, but the status, the evolution and everything the stage
+evolves into are left free.
+
+That freedom is the difference from [`Stage.Fruitful`](../../core/classes/Stage.md) in the core, which narrows
+`skip` and the evolution as well and therefore carries the guarantee along the whole lineage. **Prefer
+`Stage.Fruitful`**: the compiler keeps the guarantee across generations instead of dropping it after the first run,
+and [`FruitfulSAMStage`](FruitfulSAMStage.md) makes it as cheap to implement as this trait.
+
+`Fruitful` remains for the stages that are fruitful now but may evolve into something that is not.
 
 ```scala mdoc
 import h8io.stages.*
 import h8io.stages.base.*
 ```
 
-```scala mdoc
-object Loudify extends Fruitful.Endo[String, Nothing] with SAMStage.Endo[String, Nothing] {
-  override def apply(in: String): Yield.Some[String, String, Nothing] =
-    Yield.Some(in.toUpperCase + "!", Status.Success, this)
-}
+`Cache` in the examples module is the motivating case: while it holds a cached value it replays it on every input,
+but a `Complete` status drops the cache and the next generation is a plain stage again. The guarantee is real for
+the current run and genuinely absent for the next one:
 
-Loudify("hello")
+```scala mdoc
+final class Replay[I, O, E](out: O, alterand: Stage[I, O, E]) extends Fruitful[I, O, E] {
+  override def apply(in: I): Yield.Some[I, O, E] = Yield.Some(out, Status.Success, skip())
+
+  override def skip(): Evolution[I, O, E] = new Evolution[I, O, E] {
+    override def evolve(status: Status[?]): Stage[I, O, E] = status match {
+      case Status.Success => new Replay(out, alterand)   // fruitful again
+      case _              => alterand                    // and here it is gone
+    }
+    override def dispose(): Unit = ()
+  }
+}
 ```
 
-`Fruitful` is useful for binary operators that need to guarantee both branches always produce output, or for stages
-that always yield a value but may still signal errors or transition to a different stage.
-
-For the common case of a static stage that always produces an output — like `Loudify` above —
-[`FruitfulStaticStage`](FruitfulStaticStage.md) removes the remaining boilerplate: implement a single `produce`
-method returning the output paired with its status.
+When the next generation is fruitful too — which is the common case — use
+[`FruitfulSAMStage`](FruitfulSAMStage.md) or, for a static stage whose status varies with the input,
+[`FruitfulStaticStage`](FruitfulStaticStage.md) instead.

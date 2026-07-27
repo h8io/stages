@@ -1,6 +1,6 @@
 package h8io.stages.std
 
-import h8io.stages.base.{Fruitful, SAMStage}
+import h8io.stages.base.FruitfulSAMStage
 import h8io.stages.{Evolution, Stage, Status, Yield}
 
 /** An endomorphic stage that passes its input through for exactly `n` invocations and then signals pipeline completion.
@@ -22,17 +22,17 @@ import h8io.stages.{Evolution, Stage, Status, Yield}
   * @tparam T
   *   the value type passed through unchanged
   */
-final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing] with SAMStage.Endo[T, Nothing] {
+final case class Countdown[T](i: Long, n: Long) extends FruitfulSAMStage.Endo[T, Nothing] {
   assume(n > 0, s"n must be positive, got n = $n")
   assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 
-  override def apply(in: T): Yield.Some[T, T, Nothing] =
-    if (i == 1) Yield.Some(in, Status.complete, Countdown(n, n))
-    else Yield.Some(
+  override def apply(in: T): Yield.Some.Fruitful[T, T, Nothing] =
+    if (i == 1) Yield.Some.Fruitful(in, Status.complete, Countdown(n, n))
+    else Yield.Some.Fruitful(
       in,
       Status.Success,
-      new Evolution.Endo[T, Nothing] {
-        override def evolve(status: Status[?]): Stage[T, T, Nothing] =
+      new Evolution.Fruitful.Endo[T, Nothing] {
+        override def evolve(status: Status[?]): Stage.Fruitful[T, T, Nothing] =
           status match {
             case Status.Success => Countdown(i - 1, n)
             case _ => Countdown(n, n)

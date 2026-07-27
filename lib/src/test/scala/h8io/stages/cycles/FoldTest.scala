@@ -11,13 +11,13 @@ class FoldTest extends AnyFlatSpec with Matchers with Inside with MockFactory wi
     val in = 5L
     val alterand = mock[Stage[Long, String, String]]("alterand")
     val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
-    val op = mock[Stage[(String, String), String, String]]("op")
-    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
+    val op = mock[Stage.Fruitful[(String, String), String, String]]("op")
+    val opEvolution = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution")
     val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val nextOp = mock[Stage[(String, String), String, String]]("next op")
+    val nextOp = mock[Stage.Fruitful[(String, String), String, String]]("next op")
     inSequence {
       (alterand.apply _).expects(in).returns(Yield.Some("a", Status.complete, alterandEvolution))
-      (op.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.Success, opEvolution))
+      (op.apply _).expects(("z", "a")).returns(Yield.Some.Fruitful("za", Status.Success, opEvolution))
       (opEvolution.evolve _).expects(Status.complete).returns(nextOp)
       (alterandEvolution.evolve _).expects(Status.complete).returns(nextAlterand)
       inside(Fold(alterand, op)(("z", in))) { case Yield.Some(out, Status.Success, evolution) =>
@@ -40,24 +40,24 @@ class FoldTest extends AnyFlatSpec with Matchers with Inside with MockFactory wi
     val alterand3 = mock[Stage[Long, String, String]]("alterand 3")
     val alterandEvolution3 = mock[Evolution[Long, String, String]]("alterand evolution 3")
     val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val op1 = mock[Stage[(String, String), String, String]]("op 1")
-    val opEvolution1 = mock[Evolution[(String, String), String, String]]("op evolution 1")
-    val op2 = mock[Stage[(String, String), String, String]]("op 2")
-    val opEvolution2 = mock[Evolution[(String, String), String, String]]("op evolution 2")
-    val op3 = mock[Stage[(String, String), String, String]]("op 3")
-    val opEvolution3 = mock[Evolution[(String, String), String, String]]("op evolution 3")
-    val nextOp = mock[Stage[(String, String), String, String]]("next op")
+    val op1 = mock[Stage.Fruitful[(String, String), String, String]]("op 1")
+    val opEvolution1 = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution 1")
+    val op2 = mock[Stage.Fruitful[(String, String), String, String]]("op 2")
+    val opEvolution2 = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution 2")
+    val op3 = mock[Stage.Fruitful[(String, String), String, String]]("op 3")
+    val opEvolution3 = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution 3")
+    val nextOp = mock[Stage.Fruitful[(String, String), String, String]]("next op")
     inSequence {
       (alterand1.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution1))
-      (op1.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.Success, opEvolution1))
+      (op1.apply _).expects(("z", "a")).returns(Yield.Some.Fruitful("za", Status.Success, opEvolution1))
       (opEvolution1.evolve _).expects(Status.Success).returns(op2)
       (alterandEvolution1.evolve _).expects(Status.Success).returns(alterand2)
       (alterand2.apply _).expects(in).returns(Yield.Some("b", Status.Success, alterandEvolution2))
-      (op2.apply _).expects(("za", "b")).returns(Yield.Some("zab", Status.Success, opEvolution2))
+      (op2.apply _).expects(("za", "b")).returns(Yield.Some.Fruitful("zab", Status.Success, opEvolution2))
       (opEvolution2.evolve _).expects(Status.Success).returns(op3)
       (alterandEvolution2.evolve _).expects(Status.Success).returns(alterand3)
       (alterand3.apply _).expects(in).returns(Yield.Some("c", complete, alterandEvolution3))
-      (op3.apply _).expects(("zab", "c")).returns(Yield.Some("zabc", Status.Success, opEvolution3))
+      (op3.apply _).expects(("zab", "c")).returns(Yield.Some.Fruitful("zabc", Status.Success, opEvolution3))
       (opEvolution3.evolve _).expects(complete).returns(nextOp)
       (alterandEvolution3.evolve _).expects(complete).returns(nextAlterand)
       inside(Fold(alterand1, op1)(("z", in))) { case Yield.Some(out, status, evolution) =>
@@ -71,43 +71,18 @@ class FoldTest extends AnyFlatSpec with Matchers with Inside with MockFactory wi
     }
   }
 
-  it should "keep the accumulator when op yields no output, but still combine its status" in {
-    val in = 5L
-    val alterand = mock[Stage[Long, String, String]]("alterand")
-    val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
-    val op = mock[Stage[(String, String), String, String]]("op")
-    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
-    val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val nextOp = mock[Stage[(String, String), String, String]]("next op")
-    val error = Status.error("op says no")
-    inSequence {
-      (alterand.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution))
-      (op.apply _).expects(("z", "a")).returns(Yield.None(error, opEvolution))
-      (opEvolution.evolve _).expects(error).returns(nextOp)
-      (alterandEvolution.evolve _).expects(error).returns(nextAlterand)
-      inside(Fold(alterand, op)(("z", in))) { case Yield.Some(out, status, evolution) =>
-        out shouldBe "z"
-        status shouldBe error
-        testConstEvolution(evolution, Fold(nextAlterand, nextOp))
-        (opEvolution.dispose _).expects()
-        (alterandEvolution.dispose _).expects()
-        noException should be thrownBy evolution.dispose()
-      }
-    }
-  }
-
   it should "combine the statuses of an iteration in pipeline order: alterand first, then op" in {
     val in = 2L
     val alterand = mock[Stage[Long, String, String]]("alterand")
     val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
-    val op = mock[Stage[(String, String), String, String]]("op")
-    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
+    val op = mock[Stage.Fruitful[(String, String), String, String]]("op")
+    val opEvolution = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution")
     val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val nextOp = mock[Stage[(String, String), String, String]]("next op")
+    val nextOp = mock[Stage.Fruitful[(String, String), String, String]]("next op")
     val combined = Status.error("alterand error", "op error")
     inSequence {
       (alterand.apply _).expects(in).returns(Yield.Some("a", Status.error("alterand error"), alterandEvolution))
-      (op.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.error("op error"), opEvolution))
+      (op.apply _).expects(("z", "a")).returns(Yield.Some.Fruitful("za", Status.error("op error"), opEvolution))
       (opEvolution.evolve _).expects(combined).returns(nextOp)
       (alterandEvolution.evolve _).expects(combined).returns(nextAlterand)
       inside(Fold(alterand, op)(("z", in))) { case Yield.Some(out, status, evolution) =>
@@ -130,16 +105,16 @@ class FoldTest extends AnyFlatSpec with Matchers with Inside with MockFactory wi
     val alterand3 = mock[Stage[Long, String, String]]("alterand 3")
     val alterandEvolution3 = mock[Evolution[Long, String, String]]("alterand evolution 3")
     val nextAlterand = mock[Stage[Long, String, String]]("next alterand")
-    val op1 = mock[Stage[(String, String), String, String]]("op 1")
-    val opEvolution1 = mock[Evolution[(String, String), String, String]]("op evolution 1")
-    val op2 = mock[Stage[(String, String), String, String]]("op 2")
-    val opEvolution2 = mock[Evolution[(String, String), String, String]]("op evolution 2")
-    val op3 = mock[Stage[(String, String), String, String]]("op 3")
-    val opEvolution3 = mock[Evolution[(String, String), String, String]]("op evolution 3")
-    val nextOp = mock[Stage[(String, String), String, String]]("next op")
+    val op1 = mock[Stage.Fruitful[(String, String), String, String]]("op 1")
+    val opEvolution1 = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution 1")
+    val op2 = mock[Stage.Fruitful[(String, String), String, String]]("op 2")
+    val opEvolution2 = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution 2")
+    val op3 = mock[Stage.Fruitful[(String, String), String, String]]("op 3")
+    val opEvolution3 = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution 3")
+    val nextOp = mock[Stage.Fruitful[(String, String), String, String]]("next op")
     inSequence {
       (alterand1.apply _).expects(in).returns(Yield.Some("a", Status.Success, alterandEvolution1))
-      (op1.apply _).expects(("z", "a")).returns(Yield.Some("za", Status.Success, opEvolution1))
+      (op1.apply _).expects(("z", "a")).returns(Yield.Some.Fruitful("za", Status.Success, opEvolution1))
       (opEvolution1.evolve _).expects(Status.Success).returns(op2)
       (alterandEvolution1.evolve _).expects(Status.Success).returns(alterand2)
       (alterand2.apply _).expects(in).returns(Yield.None(Status.Success, alterandEvolution2))
@@ -164,9 +139,9 @@ class FoldTest extends AnyFlatSpec with Matchers with Inside with MockFactory wi
     val alterand = mock[Stage[Long, String, String]]("alterand")
     val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
     val skippedAlterand = mock[Stage[Long, String, String]]("skipped alterand")
-    val op = mock[Stage[(String, String), String, String]]("op")
-    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
-    val skippedOp = mock[Stage[(String, String), String, String]]("skipped op")
+    val op = mock[Stage.Fruitful[(String, String), String, String]]("op")
+    val opEvolution = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution")
+    val skippedOp = mock[Stage.Fruitful[(String, String), String, String]]("skipped op")
     inSequence {
       (alterand.skip _).expects().returns(alterandEvolution)
       (op.skip _).expects().returns(opEvolution)
@@ -184,9 +159,9 @@ class FoldTest extends AnyFlatSpec with Matchers with Inside with MockFactory wi
     val alterand = mock[Stage[Long, String, String]]("alterand")
     val alterandEvolution = mock[Evolution[Long, String, String]]("alterand evolution")
     val skippedAlterand = mock[Stage[Long, String, String]]("skipped alterand")
-    val op = mock[Stage[(String, String), String, String]]("op")
-    val opEvolution = mock[Evolution[(String, String), String, String]]("op evolution")
-    val skippedOp = mock[Stage[(String, String), String, String]]("skipped op")
+    val op = mock[Stage.Fruitful[(String, String), String, String]]("op")
+    val opEvolution = mock[Evolution.Fruitful[(String, String), String, String]]("op evolution")
+    val skippedOp = mock[Stage.Fruitful[(String, String), String, String]]("skipped op")
     val primary = new RuntimeException("op dispose failure")
     val secondary = new RuntimeException("alterand dispose failure")
     inSequence {

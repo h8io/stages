@@ -57,8 +57,9 @@ Double.skip()
 
 ## Building Pipelines with ~>
 
-`~>` composes two stages into a `Stage.AndThen`: the output of the left stage becomes the input of the right stage.
-The result is itself a `Stage`, so further stages can be appended with additional `~>` calls:
+`~>` composes two stages: the output of the left stage becomes the input of the right stage. The composed node
+itself is internal to the core — what you get back is a `Stage`, so further stages can be appended with additional
+`~>` calls:
 
 ```scala mdoc
 object ToString extends Stage[Int, String, Nothing] {
@@ -99,6 +100,43 @@ pipeline(5)
 
 When the upstream stage produces `Yield.None`, the downstream stage is not applied; instead it is wired into the
 combined evolution so that it will be called when the next input arrives.
+
+## Always an Output: Stage.Fruitful
+
+Some stages produce an output for every input they are given. `Stage.Fruitful` is the refinement that says so in
+the type: `apply` returns [`Yield.Some.Fruitful`](Yield.md) rather than the broader `Yield`, and `skip` returns an
+`Evolution.Fruitful`.
+
+The second half is what makes the guarantee worth having. A stage that promises an output only for the current run
+loses the promise the moment the pipeline evolves — the next generation is typed as a plain `Stage` again.
+`Stage.Fruitful` carries the guarantee along the whole lineage: every generation it evolves into is fruitful too.
+That closure is not decoration; without it `fruitful ~> fruitful` would stop being fruitful after the first run.
+
+`~>` has an overload for it: composing two fruitful stages gives back a `Stage.Fruitful`, so the guarantee survives
+composition. Mixing a fruitful stage with an ordinary one falls back to a plain `Stage` — the composition can yield
+nothing whenever either side can.
+
+```scala mdoc
+object Triple extends Stage.Fruitful[Int, Int, Nothing] with Evolution.Fruitful[Int, Int, Nothing] {
+  override def apply(in: Int): Yield.Some.Fruitful[Int, Int, Nothing] =
+    Yield.Some.Fruitful(in * 3, Status.Success, this)
+
+  override def skip(): Evolution.Fruitful[Int, Int, Nothing] = this
+  override def evolve(status: Status[?]): Stage.Fruitful[Int, Int, Nothing] = this
+  override def dispose(): Unit = ()
+}
+
+val fruitful: Stage.Fruitful[Int, Int, Nothing] = Triple ~> Triple
+fruitful(2)
+fruitful(2).evolve()          // still a Stage.Fruitful
+val plain: Stage[Int, Int, Nothing] = Double ~> Triple
+```
+
+Implementing the refinement by hand is rarely necessary: the lib module's
+[`FruitfulSAMStage`](../../lib/base/FruitfulSAMStage.md) covers the stage that is its own evolution, and
+[`Fn`](../../lib/base/Fn.md) covers the pure-function case.
+
+`Stage.Fruitful.Endo[T, E]` is the usual alias for the endomorphic case.
 
 ## Terminal Execution
 

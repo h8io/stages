@@ -4,7 +4,8 @@
 evolution *and* always produces an output value. `apply` and `skip` are sealed; the single abstract method is
 `process(in: I): (O, Status[E])` — the output value paired with its status, no yield wrapping at all.
 
-`apply` carries the `Yield.Some` return type required by [`Fruitful`](Fruitful.md), so the always-an-output
+`apply` carries the `Yield.Some.Fruitful` return type required by [`Stage.Fruitful`](../../core/classes/Stage.md),
+which it gets through [`FruitfulSAMStage`](FruitfulSAMStage.md) — every generation is this same instance, so the
 guarantee is tracked statically.
 
 ```scala mdoc

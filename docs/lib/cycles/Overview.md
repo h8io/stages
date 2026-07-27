@@ -8,8 +8,14 @@ growing the stack — until the stage signals the end of the cycle with
 [`Loop`](Loop.md) feeds each output back as the next input; [`Repeat`](Repeat.md) re-applies the stage to the
 same input; [`Reduce`](Reduce.md) re-applies the stage to the same input like `Repeat` and folds every output
 into an accumulator with a binary operation stage; [`Fold`](Fold.md) does the same as `Reduce`, but seeded from
-the outer input, so — unlike `Reduce` — it always has a value to yield. All of them absorb an error-free
-`Complete` into a `Success` and preserve accumulated errors.
+the outer input, so — unlike `Reduce` — it always has a value to yield, which makes it a
+[`Stage.Fruitful`](../../core/classes/Stage.md). All of them absorb an error-free `Complete` into a `Success` and
+preserve accumulated errors.
+
+The two that take a binary operation require it to be a `Stage.Fruitful`: every fold has to yield the next
+accumulator, so there is no unfolded output to discard or to carry over. Filtering is expressed by returning the
+accumulator unchanged. [`Scan`](../std/Scan.md), the running-total counterpart outside this package, follows the
+same rule.
 
 The family shares one lifecycle contract:
 

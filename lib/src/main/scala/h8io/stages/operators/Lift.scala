@@ -1,6 +1,6 @@
 package h8io.stages.operators
 
-import h8io.stages.base.{Alterator, Fruitful}
+import h8io.stages.base.Alterator
 import h8io.stages.{Evolution, Stage, Yield}
 
 /** A decorator that wraps a stage's optional output into an `Option`, making the result always present.
@@ -10,9 +10,9 @@ import h8io.stages.{Evolution, Stage, Yield}
   *   - If the inner stage yields `h8io.stages.Yield.None``(...)`, `Lift` produces `h8io.stages.Yield.Some``(None,
   *     ...)`.
   *
-  * Because `Lift` always emits a value, it extends [[h8io.stages.base.Fruitful]]. The evolution of the result is mapped
+  * Because `Lift` always emits a value, it extends `h8io.stages.Stage.Fruitful`. The evolution of the result is mapped
   * so that every continuation stage is also wrapped in `Lift`, preserving the lifting semantics across the entire
-  * pipeline.
+  * pipeline — which is what lets the guarantee be stated for the whole lineage rather than for a single run.
   *
   * `Lift` is the inverse of [[h8io.stages.projections.Unlift]].
   *
@@ -26,12 +26,13 @@ import h8io.stages.{Evolution, Stage, Yield}
   *   the error type
   */
 final case class Lift[I, O, E](alterand: Stage[I, O, E])
-    extends Alterator[Stage[I, O, E], I, Option[O], E] with Fruitful[I, Option[O], E] {
-  override def apply(in: I): Yield.Some[I, Option[O], E] =
+    extends Alterator[Stage[I, O, E], I, Option[O], E] with Stage.Fruitful[I, Option[O], E] {
+  override def apply(in: I): Yield.Some.Fruitful[I, Option[O], E] =
     alterand(in) match {
-      case Yield.Some(out, status, evolution) => Yield.Some(Some(out), status, evolution.map(Lift(_)))
-      case Yield.None(status, evolution) => Yield.Some(None, status, evolution.map(Lift(_)))
+      case Yield.Some(out, status, evolution) =>
+        Yield.Some.Fruitful(Some(out), status, evolution.mapToFruitful(Lift(_)))
+      case Yield.None(status, evolution) => Yield.Some.Fruitful(None, status, evolution.mapToFruitful(Lift(_)))
     }
 
-  override def skip(): Evolution[I, Option[O], E] = alterand.skip().map(Lift(_))
+  override def skip(): Evolution.Fruitful[I, Option[O], E] = alterand.skip().mapToFruitful(Lift(_))
 }

@@ -10,6 +10,6 @@ class ConstTest extends AnyFlatSpec with Matchers with MockFactory with ScalaChe
   "Const" should "always return the same value" in
     forAll { (out: String) =>
       val stage = Const(out)
-      stage(mock[AnyRef]) shouldBe Yield.Some(`out`, Status.Success, stage)
+      stage(mock[AnyRef]) shouldBe Yield.Some.Fruitful(`out`, Status.Success, stage)
     }
 }

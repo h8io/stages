@@ -18,4 +18,12 @@ driver that runs a stage once, disposes the evolution, and returns a plain resul
 
 The most common class of stages is those that do not change between runs: a filter, a transformer, a pure mapping.
 None of these need to carry state from one invocation to the next; their evolution always returns the same stage.
-The `base` package captures this with a small hierarchy, each layer sealing more boilerplate.
+The `base` package captures this with a small hierarchy, each layer sealing more boilerplate:
+[`Stagnation`](Stagnation.md) fixes `evolve`, [`SAMStage`](SAMStage.md) adds `skip`, [`StaticStage`](StaticStage.md)
+reduces `apply` to a yield without an evolution.
+
+Stages that always produce an output have a parallel branch of the same shape:
+[`FruitfulSAMStage`](FruitfulSAMStage.md) and [`FruitfulStaticStage`](FruitfulStaticStage.md), ending at
+[`Fn`](Fn.md) for a pure function. They are narrowed to `Stage.Fruitful` from the core, so the guarantee holds for
+every generation — see [`Fruitful`](Fruitful.md) for the weaker, single-run variant and when it is still the right
+one.

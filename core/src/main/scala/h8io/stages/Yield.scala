@@ -1,17 +1,16 @@
 package h8io.stages
 
-/** The immediate result returned by a [[Stage]] when applied to an input value.
+/** What a [[Stage]] returns for one input: an optional output, the [[Status]] of that run, and the [[Evolution]] that
+  * picks the stage handling the next one.
   *
-  * A `Yield` carries three pieces of information:
-  *   - An optional output value (`O`), present only in [[Yield.Some]].
-  *   - A [[Status]] representing the outcome of this stage invocation.
-  *   - An [[Evolution]] that decides which stage to use when re-processing based on the status.
+  * `Yield` is the internal value flowing from stage to stage, not the answer the pipeline gives to the outside world —
+  * that is `h8io.stages.base.Outcome` in the lib module, produced once someone terminates the pipeline.
   *
-  * The type parameters follow the same variance rules as [[Stage]]: contravariant in `I` (the input consumed by the
-  * continuation stages stored in the evolution) and covariant in `O` and `E`.
+  * There are two variants, [[Yield.Some]] and [[Yield.None]], according to whether an output was produced. Match on
+  * them when the two cases are handled differently, on [[Yield]] itself when they are not.
   *
   * @tparam I
-  *   the input type consumed by the [[Evolution]] stages (contravariant)
+  *   the input type of the stages held by the [[evolution]] (contravariant)
   * @tparam O
   *   the output type (covariant)
   * @tparam E
@@ -19,96 +18,56 @@ package h8io.stages
   */
 sealed trait Yield[-I, +O, +E] {
 
-  /** Returns `scala.Some(out)` if this is a [[Yield.Some]], or `scala.None` if this is a [[Yield.None]].
-    *
-    * Prefer pattern-matching on [[Yield.Some]] / [[Yield.None]] when you also need the `status` or `evolution`. Use
-    * `outOption` when you only care about whether a value was produced.
+  /** The output as an `Option` — for when only its presence matters. Prefer matching on [[Yield.Some]] / [[Yield.None]]
+    * when the status or the evolution is needed too.
     */
   def outOption: Option[O]
 
-  /** The status produced by the stage that created this `Yield`. */
+  /** The status of the run that produced this yield. */
   val status: Status[E]
 
-  /** The evolution strategy that determines which stage to invoke next, depending on [[status]]. */
+  /** The continuation: which stage handles the next input, given [[status]]. */
   val evolution: Evolution[I, O, E]
 
-  /** Returns a new `Yield` with each component independently transformed.
-    *
-    * @param mapOut
-    *   maps the output value (only applied in [[Yield.Some]])
-    * @param mapStatus
-    *   maps the status
-    * @param mapEvolution
-    *   maps the evolution
-    * @tparam _I
-    *   the new input type for the evolution
-    * @tparam _O
-    *   the new output type
-    * @tparam _E
-    *   the new error type
-    * @return
-    *   a transformed `Yield`
+  /** Transforms all three components at once. `mapOut` is not called on a [[Yield.None]], which has no output to
+    * transform, but is still required so that the result type is the same for both variants.
     */
   def map[_I, _O, _E](
       mapOut: O => _O,
       mapStatus: Status[E] => Status[_E],
       mapEvolution: Evolution[I, O, E] => Evolution[_I, _O, _E]): Yield[_I, _O, _E]
 
-  /** Returns the next [[Stage]] to invoke when the pipeline is ready to re-process.
+  /** The stage that handles the next input: the continuation this yield's own [[status]] selects.
     *
-    * The stage returned depends on the current [[status]]: [[Status.Success]] yields the continuation for the normal
-    * path, [[Status.Complete]] for the finished path.
-    *
-    * @return
-    *   the next `Stage` to use for re-processing
+    * Going through the evolution directly is the exception, not the rule — the status a yield carries is the one its
+    * continuation must be chosen by, and this method is what pairs them.
     */
   def evolve(): Stage[I, O, E] = evolution.evolve(status)
 }
 
-/** Companion object containing the two concrete variants of [[Yield]]. */
 object Yield {
 
-  /** A [[Yield]] that carries an output value produced by the stage.
+  /** A yield carrying an output.
     *
-    * When composing two stages (see [[Stage.AndThen]]), if the first stage yields a `Some`, its output is passed as
-    * input to the second stage and the two results are merged via `compose`.
-    *
-    * @param out
-    *   the output value produced by the stage
-    * @param status
-    *   the execution status
-    * @param evolution
-    *   the evolution strategy for re-processing
-    * @tparam I
-    *   the input type for the evolution stages (contravariant)
-    * @tparam O
-    *   the output type (covariant)
-    * @tparam E
-    *   the error type (covariant)
+    * Sealed rather than concrete: [[Yield.Some.Fruitful]] is the variant a [[Stage.Fruitful]] returns. Build one with
+    * [[Yield.Some.apply]] and take it apart with [[Yield.Some.unapply]], which matches both forms.
     */
-  final case class Some[-I, +O, +E](out: O, status: Status[E], evolution: Evolution[I, O, E]) extends Yield[I, O, E] {
+  sealed trait Some[-I, +O, +E] extends Yield[I, O, E] {
+
+    /** The output value. */
+    val out: O
 
     def outOption: Option[O] = scala.Some(out)
 
-    /** Merges this `Some` with the [[Yield]] produced by the next stage in a pipeline.
-      *
-      * The statuses are combined with `combine` and the evolutions are composed. The resulting `Yield` type depends on
-      * whether `that` is a `Some` or `None`.
-      *
-      * @param that
-      *   the `Yield` produced by the downstream stage
-      * @tparam _O
-      *   the output type of `that`
-      * @tparam _E
-      *   the combined error type
-      * @return
-      *   the merged `Yield`
+    /** Merges this yield with the one the downstream stage produced for [[out]]: statuses combine, evolutions compose,
+      * and the output is the downstream's — or absent, if the downstream produced none.
       */
     private[stages] def compose[_O, _E >: E](that: Yield[O, _O, _E]): Yield[I, _O, _E] =
       that match {
-        case Yield.Some(out, status, evolution) =>
-          Yield.Some(out, this.status.combine(status), this.evolution.compose(evolution))
-        case Yield.None(status, evolution) => Yield.None(this.status.combine(status), this.evolution.compose(evolution))
+        case Yield.Some(thatOut, thatStatus, thatEvolution) =>
+          Yield.Some(thatOut, status.combine(thatStatus), evolution.compose(thatEvolution))
+        case Yield.None(thatStatus, thatEvolution) =>
+          Yield.None(status.combine(thatStatus), evolution.compose(thatEvolution))
       }
 
     override def map[_I, _O, _E](
@@ -118,44 +77,46 @@ object Yield {
       Yield.Some(mapOut(out), mapStatus(status), mapEvolution(evolution))
   }
 
-  /** A [[Yield]] that carries no output value.
-    *
-    * This can occur when a stage decides not to emit a value for the current input (e.g. a filter stage that drops
-    * items). The pipeline still carries a [[Status]] and an [[Evolution]] so that processing can resume or terminate
-    * correctly.
-    *
-    * When composing inside a [[Stage.AndThen]], a `None` from the first stage is forwarded without invoking the second
-    * stage; instead, the second stage is wired into the evolution so that it will be applied when the pipeline
-    * eventually resumes.
-    *
-    * @param status
-    *   the execution status
-    * @param evolution
-    *   the evolution strategy for re-processing
-    * @tparam I
-    *   the input type for the evolution stages (contravariant)
-    * @tparam O
-    *   the (phantom) output type (covariant)
-    * @tparam E
-    *   the error type (covariant)
+  object Some {
+
+    /** A yield carrying `out`, with no claim about the generations to come. */
+    def apply[I, O, E](out: O, status: Status[E], evolution: Evolution[I, O, E]): Yield.Some[I, O, E] =
+      Plain(out, status, evolution)
+
+    /** Matches any [[Yield.Some]], plain or [[Yield.Some.Fruitful]]. The `scala.Some` return type marks the extractor
+      * as irrefutable.
+      *
+      * Note that it widens the evolution to [[Evolution]]: when the narrower type matters, match on
+      * [[Yield.Some.Fruitful]] itself.
+      */
+    def unapply[I, O, E](yld: Yield.Some[I, O, E]): scala.Some[(O, Status[E], Evolution[I, O, E])] =
+      scala.Some((yld.out, yld.status, yld.evolution))
+
+    private final case class Plain[-I, +O, +E](out: O, status: Status[E], evolution: Evolution[I, O, E])
+        extends Yield.Some[I, O, E]
+
+    /** The yield of a [[Stage.Fruitful]]: an output is present, and the evolution is fruitful in turn, so the next
+      * generation yields an output as well.
+      */
+    final case class Fruitful[-I, +O, +E](out: O, status: Status[E], evolution: Evolution.Fruitful[I, O, E])
+        extends Yield.Some[I, O, E] {
+
+      override def evolve(): Stage.Fruitful[I, O, E] = evolution.evolve(status)
+
+      private[stages] def compose[_O, _E >: E](that: Yield.Some.Fruitful[O, _O, _E]): Yield.Some.Fruitful[I, _O, _E] =
+        Yield.Some.Fruitful(that.out, status.combine(that.status), evolution.compose(that.evolution))
+    }
+  }
+
+  /** A yield carrying no output — a filter dropping an input, a stage with nothing to report yet. The status and the
+    * evolution are still there, so the pipeline continues as usual.
     */
   final case class None[-I, +O, +E](status: Status[E], evolution: Evolution[I, O, E]) extends Yield[I, O, E] {
 
     override def outOption: Option[O] = scala.None
 
-    /** Composes this `None` with `downstream` by composing it into the evolution.
-      *
-      * Because no output was produced, `downstream` cannot be applied immediately; instead it becomes part of the
-      * evolution so that the entire composed stage is invoked when the pipeline resumes.
-      *
-      * @param downstream
-      *   the evolution of the next stage in the pipeline
-      * @tparam _O
-      *   the output type of `downstream`'s stages
-      * @tparam _E
-      *   the combined error type
-      * @return
-      *   a `None` with the composed evolution
+    /** Folds the skipped downstream into the evolution: with no output to feed it, the downstream cannot run now, so
+      * the whole composition runs when an input eventually arrives.
       */
     private[stages] def compose[_O, _E >: E](downstream: Evolution[O, _O, _E]): Yield.None[I, _O, _E] =
       Yield.None(status, evolution.compose(downstream))
@@ -167,8 +128,8 @@ object Yield {
       Yield.None(mapStatus(status), mapEvolution(evolution))
   }
 
-  /** Creates a [[Yield]] from an optional output: `scala.Some` becomes [[Yield.Some]], `scala.None` becomes
-    * [[Yield.None]].
+  /** Selects the variant by the optional output: `scala.Some` gives a [[Yield.Some]], `scala.None` a [[Yield.None]].
+    * For when the presence of an output is only known at runtime.
     */
   def apply[I, O, E](out: Option[O], status: Status[E], evolution: Evolution[I, O, E]): Yield[I, O, E] =
     out match {
@@ -176,13 +137,10 @@ object Yield {
       case scala.None => None(status, evolution)
     }
 
-  /** Extractor matching any [[Yield]] as `case Yield(out, status, evolution)`, where `out` is the optional output — the
-    * inverse of [[apply]]. The `scala.Some` return type marks the extractor as irrefutable: it always matches, and a
-    * single `case Yield(...)` is exhaustive.
+  /** Matches any yield as `Yield(out, status, evolution)` with the output optional — the inverse of [[apply]], for the
+    * cases where both variants are treated uniformly. The `scala.Some` return type marks the extractor as irrefutable:
+    * a single `case Yield(...)` is exhaustive.
     */
   def unapply[I, O, E](yld: Yield[I, O, E]): scala.Some[(Option[O], Status[E], Evolution[I, O, E])] =
-    yld match {
-      case Some(out, status, evolution) => scala.Some((scala.Some(out), status, evolution))
-      case None(status, evolution) => scala.Some((scala.None, status, evolution))
-    }
+    scala.Some((yld.outOption, yld.status, yld.evolution))
 }

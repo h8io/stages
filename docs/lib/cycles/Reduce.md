@@ -9,9 +9,9 @@ no output, or the output is the first one — `op` is skipped, so each iteration
 `apply`/`skip` on both inner stages, as the lifecycle contract requires. An iteration yielding no output with
 [`Status.Success`](../../core/classes/Status.md) keeps the cycle spinning, like `Repeat`.
 
-When `op` is applied but itself yields no output for a given fold — for example, it filters some outputs out —
-the accumulator is left unchanged rather than discarded, exactly as in [`Fold`](Fold.md). `op`'s status is still
-combined into the iteration's status in this case, since `op` was applied, not skipped, for that output.
+`op` is a `Stage.Fruitful`: every fold it is applied to yields the next accumulator, so there is no unfolded
+output to discard or to carry over, exactly as in [`Fold`](Fold.md). Filtering is expressed by returning the
+accumulator unchanged, not by yielding nothing.
 
 The cycle stops when the status of an iteration is [`Status.Complete`](../../core/classes/Status.md): an
 error-free `Complete` is reported to the enclosing pipeline as `Success`, a `Complete` with errors is preserved.
@@ -51,11 +51,10 @@ final class UpTo(i: Int, limit: Int) extends SAMStage[Unit, Int, Nothing] {
     else             Yield.Some(i, Status.Success, new UpTo(i + 1, limit).toEvolution)
 }
 
-object SumOnlyEven extends StaticStage[(Int, Int), Int, Nothing] {
-  override protected def process(in: (Int, Int)): StaticYield[Int, Nothing] = {
+object SumOnlyEven extends Fn[(Int, Int), Int] {
+  override protected def f(in: (Int, Int)): Int = {
     val (acc, out) = in
-    if (out % 2 == 0) StaticYield.Some(acc + out, Status.Success)
-    else              StaticYield.None(Status.Success)
+    if (out % 2 == 0) acc + out else acc
   }
 }
 
@@ -63,5 +62,5 @@ Reduce(new UpTo(1, 5), SumOnlyEven)(())
 ```
 
 `new UpTo(1, 5)` emits `1`, `2`, `3`, `4`, then `5` with `Complete`. The first output, `1`, seeds the accumulator.
-`SumOnlyEven` only folds even outputs, so `3` and the completing `5` leave the accumulator untouched instead of
-resetting it, and only `2` and `4` are added: `Reduce` returns `Some(7, Success, ...)`.
+`SumOnlyEven` only adds even outputs and returns the accumulator as is for the odd ones, so `3` and the completing
+`5` leave it untouched, and only `2` and `4` are added: `Reduce` returns `Some(7, Success, ...)`.

@@ -6,7 +6,9 @@ the running-total counterpart of [`Reduce`](../cycles/Reduce.md) and [`Fold`](..
 its own accumulator from one run to the next.
 
 The first input becomes the accumulator unchanged, without invoking `op`; each subsequent input is folded via
-`op((accumulator, input))`, and the result — the new running total — is emitted immediately.
+`op((accumulator, input))`, and the result — the new running total — is emitted immediately. `op` is a
+`Stage.Fruitful`, so every fold yields the next running total and `Scan` itself is fruitful: every run emits a
+value.
 
 ```scala mdoc
 import h8io.stages.*
@@ -27,15 +29,14 @@ val y3 = y2.evolve()(3)
 
 `1` seeds the accumulator; `2` and `3` are folded in, so each run reports the running total: `1`, `3`, `6`.
 
-When `op` is applied but itself yields no output — for example, it filters some inputs out — the accumulator is
-left unchanged rather than discarded, exactly as in `Reduce`/`Fold`, and `Scan` itself yields nothing for that run:
+Filtering is expressed by returning the accumulator unchanged rather than by yielding nothing, exactly as in
+`Reduce`/`Fold` — a declining fold has nothing else to hand back:
 
 ```scala mdoc
-object SumOnlyEven extends StaticStage[(Int, Int), Int, Nothing] {
-  override protected def process(in: (Int, Int)): StaticYield[Int, Nothing] = {
+object SumOnlyEven extends Fn[(Int, Int), Int] {
+  override protected def f(in: (Int, Int)): Int = {
     val (acc, out) = in
-    if (out % 2 == 0) StaticYield.Some(acc + out, Status.Success)
-    else              StaticYield.None(Status.Success)
+    if (out % 2 == 0) acc + out else acc
   }
 }
 
@@ -45,8 +46,8 @@ val z2 = z1.evolve()(3)
 val z3 = z2.evolve()(4)
 ```
 
-`10` seeds the accumulator. `3` is odd, so `SumOnlyEven` declines: `z2` is `None` and the accumulator stays `10`,
-untouched by the declined fold. `4` is even, so it folds against the still-`10` accumulator: `z3` is `Some(14, ...)`.
+`10` seeds the accumulator. `3` is odd, so `SumOnlyEven` hands the accumulator back untouched and `z2` re-emits
+`10`. `4` is even, so it folds against the still-`10` accumulator: `z3` is `Some(14, ...)`.
 
 Whenever a run's status is [`Status.Complete`](../../core/classes/Status.md), the next generation resets to a fresh,
 unseeded `Scan` instead of continuing to accumulate — mirroring how [`Countdown`](Countdown.md) resets on any
@@ -54,16 +55,13 @@ non-`Success` status. `Complete` marks one logical unit of work as finished, so 
 scratch rather than folding into whatever was accumulated before:
 
 ```scala mdoc
-final class SumUntil(limit: Int) extends Stage[(Int, Int), Int, Nothing] with Evolution[(Int, Int), Int, Nothing] {
-  override def apply(in: (Int, Int)): Yield[(Int, Int), Int, Nothing] = {
+final class SumUntil(limit: Int) extends FruitfulSAMStage[(Int, Int), Int, Nothing] {
+  override def apply(in: (Int, Int)): Yield.Some.Fruitful[(Int, Int), Int, Nothing] = {
     val (acc, out) = in
     val sum = acc + out
     val status: Status[Nothing] = if (sum >= limit) Status.complete else Status.Success
-    Yield.Some(sum, status, this)
+    Yield.Some.Fruitful(sum, status, this)
   }
-  override def skip(): Evolution[(Int, Int), Int, Nothing] = this
-  override def evolve(status: Status[?]): Stage[(Int, Int), Int, Nothing] = this
-  override def dispose(): Unit = ()
 }
 
 val bounded = Scan(new SumUntil(10))

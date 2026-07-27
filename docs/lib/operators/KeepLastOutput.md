@@ -8,7 +8,9 @@ The decorator has two states:
 - **Initial state** (no value seen yet): [`Yield.None`](../../core/classes/Yield.md) is forwarded unchanged;
   `Yield.Some` is forwarded and transitions to the remembered state.
 - **Remembered state**: the wrapper always emits a value. A new `Yield.Some` from the inner stage is forwarded
-  as is and updates the remembered value; on `Yield.None` the remembered value is emitted instead.
+  as is and updates the remembered value; on `Yield.None` the remembered value is emitted instead. Since every
+  continuation stays in this state, it is a [`Stage.Fruitful`](../../core/classes/Stage.md); the initial state is
+  not, and cannot be — it has nothing to emit until the inner stage produces something.
 
 The factory `KeepLastOutput(stage)` always starts in the initial state.
 

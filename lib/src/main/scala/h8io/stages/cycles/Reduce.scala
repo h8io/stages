@@ -15,9 +15,8 @@ import scala.annotation.tailrec
   * `h8io.stages.Status.Success` keeps the cycle spinning, like [[Repeat]]. The cycle is `@tailrec` and does not grow
   * the stack.
   *
-  * When `op` is applied but itself yields no output for a given fold — e.g. it filters some outputs out — the
-  * accumulator is left unchanged rather than discarded, exactly as in [[Fold]]. `op`'s status is still combined into
-  * the iteration's status in this case, since `op` was applied, not skipped, for that output.
+  * `op` is a `h8io.stages.Stage.Fruitful`: every fold it is applied to yields the next accumulator, so there is no
+  * unfolded output to discard or to carry over, exactly as in [[Fold]].
   *
   * The cycle stops when the status of an iteration is `h8io.stages.Status.Complete`: an error-free `Complete` is
   * reported to the enclosing pipeline as `Success`, a `Complete` with errors is preserved. The value accumulated so
@@ -40,7 +39,7 @@ import scala.annotation.tailrec
   * @param alterand
   *   the inner stage whose outputs are reduced
   * @param op
-  *   the binary operation stage folding two values into one
+  *   the binary operation stage folding two values into one; fruitful, since every fold must yield the next accumulator
   * @tparam I
   *   the input type (contravariant)
   * @tparam O
@@ -48,22 +47,26 @@ import scala.annotation.tailrec
   * @tparam E
   *   the error type (covariant)
   */
-final case class Reduce[-I, O, +E](alterand: Stage[I, O, E], op: Stage[(O, O), O, E]) extends Decorator[I, O, E] {
+final case class Reduce[-I, O, +E](alterand: Stage[I, O, E], op: Stage.Fruitful[(O, O), O, E])
+    extends Decorator[I, O, E] {
   override def apply(in: I): Yield[I, O, E] = Reduce.execute(in, None, alterand, op)
 
   override def skip(): Evolution[I, O, E] = Reduce.evolve(Status.Success, alterand.skip(), op.skip())
 }
 
 object Reduce {
-  @tailrec private def execute[I, O, E](in: I, optValue: Option[O], alterand: Stage[I, O, E], op: Stage[(O, O), O, E])
-      : Yield[I, O, E] = {
+  @tailrec private def execute[I, O, E](
+      in: I,
+      optValue: Option[O],
+      alterand: Stage[I, O, E],
+      op: Stage.Fruitful[(O, O), O, E]): Yield[I, O, E] = {
     val Yield(optAlterandOut, alterandStatus, alterandEvolution) = alterand(in)
     val (result, status, opEvolution) = optAlterandOut match {
       case Some(alterandOut) =>
         optValue match {
           case Some(value) =>
-            val Yield(out, opStatus, opEvolution) = op((value, alterandOut))
-            (out orElse optValue, alterandStatus.combine(opStatus), opEvolution)
+            val Yield.Some.Fruitful(out, opStatus, opEvolution) = op((value, alterandOut))
+            (Some(out), alterandStatus.combine(opStatus), opEvolution)
           case None => (optAlterandOut, alterandStatus, op.skip())
         }
       case None => (optValue, alterandStatus, op.skip())
@@ -82,7 +85,7 @@ object Reduce {
   private def evolve[I, O, E](
       status: Status[E],
       alterandEvolution: Evolution[I, O, E],
-      opEvolution: Evolution[(O, O), O, E]): Evolution[I, O, E] = {
+      opEvolution: Evolution.Fruitful[(O, O), O, E]): Evolution[I, O, E] = {
     val evolvedOp = opEvolution.evolve(status)
     val evolvedAlterand = alterandEvolution.evolve(status)
     Reduce(evolvedAlterand, evolvedOp).toEvolution(() => Evolution.dispose(opEvolution, alterandEvolution))

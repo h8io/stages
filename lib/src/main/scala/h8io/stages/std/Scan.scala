@@ -12,8 +12,10 @@ import h8io.stages.{Stage, Status, Yield}
   * of a single seed value); each subsequent input is folded via `op((accumulator, input))` and the result — the new
   * running total — is emitted immediately, ready for the next run.
   *
-  * When `op` is applied but itself yields no output — e.g. it filters some inputs out — the accumulator is left
-  * unchanged rather than discarded, exactly as in `Reduce`/`Fold`, and `Scan` itself yields nothing for that run.
+  * `op` is a `h8io.stages.Stage.Fruitful`, exactly as in `Reduce`/`Fold`: every fold yields the next running total, so
+  * there is no unfolded input to discard or to carry over. That makes `Scan` itself a `h8io.stages.Stage.Fruitful` —
+  * the seeding run emits its input unchanged and every later run emits what `op` folded — and it is why filtering is
+  * expressed by returning the accumulator unchanged rather than by yielding nothing.
   *
   * Since `Scan` has no separate alterand, the status of a run is simply the status `op` produced (or `Success`, for the
   * seeding run in which `op` is skipped) — there is nothing else to combine it with. Whenever that status is
@@ -22,16 +24,18 @@ import h8io.stages.{Stage, Status, Yield}
   * logical unit of work as finished, and the next external input starts a new one, seeding from scratch.
   *
   * @param op
-  *   the binary operation stage folding the accumulator and a new input into the next accumulator
+  *   the binary operation stage folding the accumulator and a new input into the next accumulator; fruitful, since
+  *   every fold must yield the next running total
   * @tparam T
   *   the accumulator and input type (invariant: threaded through as both input and output of `op`)
   * @tparam E
   *   the error type (covariant)
   */
-final case class Scan[T, +E](op: Stage[(T, T), T, E]) extends Stage.Endo[T, E] {
-  override def apply(in: T): Yield[T, T, E] = Yield.Some(in, Status.Success, Scan.Evolution(in, op.skip()))
+final case class Scan[T, +E](op: Stage.Fruitful[(T, T), T, E]) extends Stage.Fruitful.Endo[T, E] {
+  override def apply(in: T): Yield.Some.Fruitful[T, T, E] =
+    Yield.Some.Fruitful(in, Status.Success, Scan.Evolution(in, op.skip()))
 
-  override def skip(): stages.Evolution[T, T, E] = op.skip().map(Scan(_))
+  override def skip(): stages.Evolution.Fruitful[T, T, E] = Scan.Unseeded(op.skip())
 }
 
 object Scan {
@@ -40,9 +44,9 @@ object Scan {
     * into the next `Initialized` generation; on `Status.Complete` it discards `value` and resets to a fresh, unseeded
     * `Scan`, ready to be seeded again from whatever input the next run supplies.
     */
-  private case class Evolution[T, +E](value: T, opEvolution: stages.Evolution[(T, T), T, E])
-      extends stages.Evolution.Endo[T, E] {
-    override def evolve(status: Status[?]): Stage[T, T, E] =
+  private case class Evolution[T, +E](value: T, opEvolution: stages.Evolution.Fruitful[(T, T), T, E])
+      extends stages.Evolution.Fruitful.Endo[T, E] {
+    override def evolve(status: Status[?]): Stage.Fruitful[T, T, E] =
       status match {
         case Status.Success => Initialized(value, opEvolution.evolve(status))
         case _: Status.Complete[?] => Scan(opEvolution.evolve(status))
@@ -51,13 +55,22 @@ object Scan {
     override def dispose(): Unit = opEvolution.dispose()
   }
 
-  private case class Initialized[T, E](value: T, op: Stage[(T, T), T, E]) extends Stage.Endo[T, E] {
-    override def apply(in: T): Yield[T, T, E] =
-      op((value, in)) match {
-        case Yield.Some(out, status, opEvolution) => Yield.Some(out, status, Evolution(out, opEvolution))
-        case Yield.None(status, opEvolution) => Yield.None(status, Evolution(value, opEvolution))
-      }
+  /** The evolution of a `Scan` that has no accumulator to carry — a skipped one: whatever the status, the next
+    * generation is a fresh, unseeded `Scan` over the evolved `op`.
+    */
+  private case class Unseeded[T, +E](opEvolution: stages.Evolution.Fruitful[(T, T), T, E])
+      extends stages.Evolution.Fruitful.Endo[T, E] {
+    override def evolve(status: Status[?]): Stage.Fruitful[T, T, E] = Scan(opEvolution.evolve(status))
 
-    override def skip(): stages.Evolution[T, T, E] = Evolution(value, op.skip())
+    override def dispose(): Unit = opEvolution.dispose()
+  }
+
+  private case class Initialized[T, E](value: T, op: Stage.Fruitful[(T, T), T, E]) extends Stage.Fruitful.Endo[T, E] {
+    override def apply(in: T): Yield.Some.Fruitful[T, T, E] = {
+      val Yield.Some.Fruitful(out, status, opEvolution) = op((value, in))
+      Yield.Some.Fruitful(out, status, Evolution(out, opEvolution))
+    }
+
+    override def skip(): stages.Evolution.Fruitful[T, T, E] = Evolution(value, op.skip())
   }
 }

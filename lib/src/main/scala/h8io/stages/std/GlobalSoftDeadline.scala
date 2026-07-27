@@ -1,7 +1,7 @@
 package h8io.stages.std
 
 import h8io.stages.*
-import h8io.stages.base.{Fruitful, FruitfulStaticStage}
+import h8io.stages.base.FruitfulStaticStage
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
@@ -55,7 +55,7 @@ object GlobalSoftDeadline {
     * @tparam T
     *   the value type
     */
-  def apply[T](duration: FiniteDuration): Fruitful.Endo[T, Nothing] =
+  def apply[T](duration: FiniteDuration): Stage.Fruitful.Endo[T, Nothing] =
     GlobalSoftDeadline(System.nanoTime _, duration.toNanos)
 
   /** Creates a [[GlobalSoftDeadline]] with a `java.time.Duration` and `System.nanoTime` as the clock.
@@ -65,5 +65,6 @@ object GlobalSoftDeadline {
     * @tparam T
     *   the value type
     */
-  def apply[T](duration: Duration): Fruitful.Endo[T, Nothing] = GlobalSoftDeadline(System.nanoTime _, duration.toNanos)
+  def apply[T](duration: Duration): Stage.Fruitful.Endo[T, Nothing] =
+    GlobalSoftDeadline(System.nanoTime _, duration.toNanos)
 }

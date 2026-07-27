@@ -15,7 +15,7 @@ class FruitfulStaticStageTest
     forAll(Gen.zip(Gen.long, Gen.uuid, arbStatus[String].arbitrary)) { case (in: Long, out: UUID, status) =>
       val stage = mock[FruitfulStaticStagePublicMorozov[Long, UUID, String]]
       (stage.process _).expects(in).returns((out, status))
-      stage(in) shouldBe Yield.Some(out, status, stage)
+      stage(in) shouldBe Yield.Some.Fruitful(out, status, stage)
     }
 }
 

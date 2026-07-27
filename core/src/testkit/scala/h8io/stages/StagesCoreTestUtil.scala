@@ -6,73 +6,25 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.annotation.nowarn
 
-/** Test utilities for specs that exercise the core `stages` abstractions.
+/** Assertions for the recurring shapes of [[Evolution]] found in operators, so that a suite only spells out what is
+  * specific to the operator under test.
   *
-  * Mix this trait into a ScalaTest suite (alongside `MockFactory` and `Matchers`, which are already extended here) to
-  * get access to helpers that set up mock expectations on `Evolution` instances.
-  *
-  * {{{
-  * class MySpec extends AnyFunSuite with StagesCoreTestUtil {
-  *   test("evolution selects stage by status") {
-  *     val evo   = mock[Evolution[String, Int, String]]
-  *     val stage = mock[Stage[String, Int, String]]
-  *     evolutionMock(evo, Status.Success, stage)
-  *     // ... invoke code under test that calls evo(Status.Success) ...
-  *   }
-  * }
-  * }}}
+  * Each helper drives the evolution through both status branches — `Status.Success` and a `Complete` — since that
+  * choice is exactly what an evolution exists to make. Mix it into a suite alongside its own `MockFactory` usage; it is
+  * shared with the other modules through the `core % "test->testkit"` dependency.
   */
 trait StagesCoreTestUtil extends MockFactory with Matchers {
   self: TestSuite =>
 
-  /** Sets up a ScalaMock expectation on `evolution` so that `evolve(status)` is expected to be called exactly once and
-    * will return `stage`.
-    *
-    * @param evolution
-    *   the mock `Evolution` on which the expectation is registered
-    * @param status
-    *   the `Status` that the expectation matches
-    * @param stage
-    *   the `Stage` that the expected call should return
-    * @tparam I
-    *   the stage input type
-    * @tparam O
-    *   the stage output type
-    * @tparam E
-    *   the error type
-    */
+  /** Expects `evolution` to be evolved exactly once, on `status`, and to answer with `stage`. */
   def evolutionMock[I, O, E](evolution: Evolution[I, O, E], status: Status[E], stage: Stage[I, O, E]): Unit =
     (evolution.evolve(_: Status[E])).expects(status).returns(stage)
 
-  /** Asserts that `evolution` correctly composes `leftEvolution` and `rightEvolution` for all status values.
+  /** Asserts that `composition` evolves both sides on the status it is given and recombines their continuations with
+    * `compose`, and that disposing it disposes both.
     *
-    * Tests `evolve(Status.Success)` and `evolve` with a `Status.Complete` value (via [[mockComplete]]), verifying that
-    * each result equals `compose(leftStage, rightStage)` where each sub-evolution is called with the same status.
-    *
-    * All calls are ordered with `inSequence` to ensure deterministic expectation matching.
-    *
-    * @param composition
-    *   the composed evolution under test
-    * @param leftEvolution
-    *   the mock left evolution whose continuations supply the left continuation stages
-    * @param rightEvolution
-    *   the mock right evolution whose continuations supply the right continuation stages
-    * @param compose
-    *   the function that reconstructs the expected composed stage from its two halves
-    * @tparam LI
-    *   the left evolution input type
-    * @tparam LO
-    *   the left evolution output type
-    * @tparam RI
-    *   the right evolution input type
-    * @tparam RO
-    *   the right evolution output type
-    * @tparam I
-    *   the composed evolution input type
-    * @tparam O
-    *   the composed evolution output type
-    * @tparam E
-    *   the error type
+    * The expectations are ordered: `rightEvolution` before `leftEvolution`, the order every composed evolution in the
+    * library releases and evolves its halves in.
     */
   def testEvolutionComposition[LI, LO, RI, RO, I, O, E](
       composition: Evolution[I, O, E],
@@ -98,31 +50,8 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       noException should be thrownBy composition.dispose()
     }
 
-  /** Asserts that `altered` correctly maps every continuation of `evolution` through `f`, and that disposal delegates.
-    *
-    * Tests `evolve(Status.Success)` and `evolve` with a `Status.Complete` value (via [[mockComplete]]), verifying that
-    * each result equals `f(mockStage)` where `mockStage` is the stage returned by the inner `evolution`.
-    *
-    * Also verifies that `altered.dispose()` delegates to `evolution.dispose()`.
-    *
-    * @param altered
-    *   the evolution under test (wraps `evolution` via `f`)
-    * @param evolution
-    *   the mock inner evolution
-    * @param f
-    *   the transformation expected to be applied to each continuation's stage
-    * @tparam MI
-    *   input type of the inner stages
-    * @tparam MO
-    *   output type of the inner stages
-    * @tparam ME
-    *   error type of the inner stages
-    * @tparam I
-    *   input type of the altered stages
-    * @tparam O
-    *   output type of the altered stages
-    * @tparam E
-    *   error type of the altered stages
+  /** Asserts that `altered` passes every continuation of `evolution` through `f` and delegates disposal to it —
+    * the contract of [[Evolution.map]] and of the operators built on it.
     */
   def testMappedEvolution[MI, MO, ME, I, O, E](
       altered: Evolution[I, O, E],
@@ -142,15 +71,16 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
       noException should be thrownBy altered.dispose()
     }
 
+  /** Asserts that `evolution` answers `stage` whatever the status — the barrier the `cycles` operators put between
+    * the enclosing pipeline's status and their inner stage.
+    */
   def testConstEvolution[I, O, E](evolution: Evolution[I, O, E], stage: Stage[I, O, E]): Unit = {
     evolution.evolve(Status.Success) shouldBe stage
     evolution.evolve(mockComplete()) shouldBe stage
   }
 
-  /** Creates a `Status.Complete` whose `errors` sequence is a ScalaMock mock.
-    *
-    * Used in tests to produce a `Complete` value that can be matched by exact reference in mock expectations, without
-    * constructing real error values.
+  /** A `Complete` whose errors are a mock: it matches by reference in expectations, so a test can tell one `Complete`
+    * from another without inventing error values.
     */
   def mockComplete(): Status.Complete[?] =
     Status.Complete(mock[Seq[Any]]: @nowarn("cat=deprecation&msg=.*stringPrefix.*"))

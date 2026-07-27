@@ -31,7 +31,7 @@ class CacheTest
       (stage.apply _).expects(in).returns(yld)
       val cacheYield = cache(in)
       inside((yld, cacheYield)) {
-        case (Yield.Some(out, status, _), Yield.Some(cacheOut, cacheStatus, cacheEvolution)) =>
+        case (Yield.Some(out, _, _), Yield.Some(cacheOut, cacheStatus, cacheEvolution)) =>
           cacheOut shouldBe out
           cacheStatus shouldBe status
 
@@ -52,7 +52,7 @@ class CacheTest
             noException should be thrownBy cacheEvolution.dispose()
           }
 
-        case (Yield.None(status, _), Yield.None(cacheStatus, cacheEvolution)) =>
+        case (Yield.None(_, _), Yield.None(cacheStatus, cacheEvolution)) =>
           cacheStatus shouldBe status
           testMappedEvolution(cacheEvolution, evolution, Cache[UUID, String, Exception])
       }

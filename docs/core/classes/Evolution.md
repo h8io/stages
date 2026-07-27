@@ -123,21 +123,26 @@ pipeline.execute("hello")
 
 ## Composing Evolutions
 
-When `Stage.AndThen` composes two stages via `~>`, it also composes their `Evolution` values using `compose`.
-The result is an `Evolution.AndThen` whose continuation for any status `s` is the sequential composition of the
-corresponding continuations of both evolutions:
+When `~>` composes two stages, it also composes their `Evolution` values using `compose`. The result is an
+evolution whose continuation for any status `s` is the sequential composition of the corresponding continuations of
+both evolutions:
 
 ```
 composed(s) == self(s) ~> that(s)
 ```
 
-All `Evolution` method calls in `Evolution.AndThen` follow the same order: pipeline-downstream first, then
-pipeline-upstream — the reverse of the order in which stages are applied.
+The composed evolution calls both halves in the same order: pipeline-downstream first, then pipeline-upstream — the
+reverse of the order in which stages are applied.
 This applies equally to `evolve` and `dispose()`, since both may release or transition resources held by the
 producing stage.  
 The [Diagram](../Diagram.md) section on finalization walks through a concrete example of why this matters.
 
-`compose` is an implementation detail of `Stage.AndThen` and is not part of the typical application-level API.
+`compose` is an implementation detail of composition and is not part of the typical application-level API; the
+evolution classes it builds are internal to the core.
+
+`Evolution.Fruitful` — the evolution every generation of which is a
+[`Stage.Fruitful`](Stage.md) — overloads `compose` with the fruitful counterpart: composing two fruitful evolutions
+gives back an `Evolution.Fruitful`, mirroring what `~>` does for the stages themselves.
 
 ## Adapting Stages with map
 
@@ -145,6 +150,14 @@ The [Diagram](../Diagram.md) section on finalization walks through a concrete ex
 evolution would have returned.  
 Disposal is delegated unchanged to the wrapped evolution.
 
-This is used internally when a `Yield.None` propagates through `Stage.AndThen`: because no output was produced,
+This is used internally when a `Yield.None` propagates through a composed stage: because no output was produced,
 the downstream stage cannot be invoked immediately, so it is folded into the evolution via `map` so that the entire
 composed pipeline will be applied when the next input arrives.
+
+`mapToFruitful` is the same transformation with a fruitful result: when the function returns a
+[`Stage.Fruitful`](Stage.md), the mapped evolution is an `Evolution.Fruitful`. Fruitfulness here comes from the
+function alone — the evolution being mapped need not be fruitful itself — which is exactly the shape of a decorator
+that always emits a value while wrapping an inner stage that does not, such as
+[`Lift`](../../lib/operators/Lift.md). It is a separate name rather than an overload of `map` because two `map`
+alternatives taking a function would leave Scala 2 unable to infer the parameter type of a lambda, breaking every
+`evolution.map(Decorator(_))` call site.
