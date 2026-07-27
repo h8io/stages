@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.annotation.nowarn
 
-/** Assertions for the recurring shapes of [[Evolution]] found in operators, so that a suite only spells out what is
+/** Assertions for the recurring shapes of `Evolution` found in operators, so that a suite only spells out what is
   * specific to the operator under test.
   *
   * Each helper drives the evolution through both status branches — `Status.Success` and a `Complete` — since that
@@ -51,7 +51,7 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
     }
 
   /** Asserts that `altered` passes every continuation of `evolution` through `f` and delegates disposal to it —
-    * the contract of [[Evolution.map]] and of the operators built on it.
+    * the contract of `Evolution.map` and of the operators built on it.
     */
   def testMappedEvolution[MI, MO, ME, I, O, E](
       altered: Evolution[I, O, E],
