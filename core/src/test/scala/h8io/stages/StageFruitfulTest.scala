@@ -1,9 +1,10 @@
 package h8io.stages
 
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class StageFruitfulTest extends AnyFlatSpec with Matchers {
+class StageFruitfulTest extends AnyFlatSpec with Matchers with MockFactory {
 
   /** Passes its input through unchanged, forever. */
   private final class Echo[T] extends Stage.Fruitful[T, T, Nothing] with Evolution.Fruitful[T, T, Nothing] {
@@ -39,6 +40,16 @@ class StageFruitfulTest extends AnyFlatSpec with Matchers {
     val composed: Stage.Fruitful[Int, Int, Nothing] = new Echo[Int] ~> new Echo[Int]
     val skipped: Evolution.Fruitful[Int, Int, Nothing] = composed.skip()
     skipped.evolve(Status.Success)(3).out shouldBe 3
+  }
+
+  it should "dispose both sides of its evolution, the pipeline-downstream one first" in {
+    val upstream = mock[Evolution.Fruitful[Int, Int, Nothing]]("upstream evolution")
+    val downstream = mock[Evolution.Fruitful[Int, Int, Nothing]]("downstream evolution")
+    inSequence {
+      (downstream.dispose _).expects()
+      (upstream.dispose _).expects()
+      noException should be thrownBy upstream.compose(downstream).dispose()
+    }
   }
 
   "mapToFruitful" should "make a fruitful evolution out of an unclassified one" in {

@@ -36,8 +36,4 @@ object ConstEvolution {
     override def evolve(status: Status[?]): Stage.Fruitful[I, O, E] = stage
     override def dispose(): Unit = _dispose()
   }
-
-  object Fruitful {
-    def apply[I, O, E](stage: Stage.Fruitful[I, O, E]): Fruitful[I, O, E] = new Fruitful(stage, () => ())
-  }
 }

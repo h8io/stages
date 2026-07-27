@@ -31,5 +31,5 @@ on disposal rather than ignoring it — useful when the lifted stage holds resou
 `ConstEvolution.Fruitful` is the counterpart for a constant [`Stage.Fruitful`](../../core/classes/Stage.md): since
 the constant stage is fruitful, every generation the evolution returns is fruitful too, and the evolution itself is
 an `Evolution.Fruitful`. [`Fold`](../cycles/Fold.md) uses it to stay fruitful across generations. It is constructed
-directly — `ConstEvolution.Fruitful(stage)` or `ConstEvolution.Fruitful(stage, dispose)` — rather than through
-`toEvolution`, which always produces the plain form.
+directly — `ConstEvolution.Fruitful(stage, dispose)` — rather than through `toEvolution`, which always produces the
+plain form.
