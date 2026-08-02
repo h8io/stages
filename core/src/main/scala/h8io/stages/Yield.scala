@@ -128,10 +128,10 @@ object Yield {
   /** Matches any yield as `Yield(out, status, evolution)` with the output optional — the inverse of [[apply]], for the
     * cases where both variants are treated uniformly. The `scala.Some` return type marks the extractor as irrefutable:
     * a single `case Yield(...)` is exhaustive.
+    *
+    * The components are read off the yield directly: `outOption` is exactly the optional output this extractor is for,
+    * and both variants carry the status and the evolution alike.
     */
   def unapply[I, O, E](yld: Yield[I, O, E]): scala.Some[(Option[O], Status[E], Evolution[I, O, E])] =
-    yld match {
-      case Some(out, status, evolution) => scala.Some((scala.Some(out), status, evolution))
-      case None(status, evolution) => scala.Some((scala.None, status, evolution))
-    }
+    scala.Some((yld.outOption, yld.status, yld.evolution))
 }
