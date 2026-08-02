@@ -38,6 +38,11 @@ ThisBuild / scalacOptions ++=
     case _ => Nil
   })
 
+ThisBuild / coverageSummaryStmtLowThreshold := 100
+ThisBuild / coverageSummaryStmtHighThreshold := 100
+ThisBuild / coverageSummaryBranchLowThreshold := 100
+ThisBuild / coverageSummaryBranchHighThreshold := 100
+
 ThisBuild / libraryDependencies ++= TestBundle % Test
 
 val core = (project in file("core"))
