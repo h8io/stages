@@ -86,9 +86,9 @@ object Evolution {
     * The first non-fatal exception becomes the primary one: the rest are disposed all the same, further non-fatal
     * exceptions are attached to the primary as suppressed, and the primary is rethrown at the end.
     *
-    * This is the single disposal discipline for everything owning several evolutions at once — [[AndThen]] here, the
-    * binary operators and the `h8io.stages.cycles` family in the lib module. The parameter list is positional on
-    * purpose: each caller maps its own roles onto the order it wants them released in.
+    * This is the single disposal discipline for everything owning several evolutions at once — the composed evolution
+    * here, the binary operators and the `h8io.stages.cycles` family in the lib module. The parameter list is positional
+    * on purpose: each caller maps its own roles onto the order it wants them released in.
     *
     * @param evolutions
     *   the evolutions to dispose, in order, even if earlier disposals fail
@@ -109,11 +109,12 @@ object Evolution {
       }
     }.foreach(throw _)
 
-  /** The continuation of a composed pipeline, built by [[Evolution.compose]].
+  /** The continuation of a composed pipeline, built by [[Evolution.compose]]. Internal to the library, like the
+    * `Stage.AndThen` it continues.
     *
     * ==Field names==
     *
-    * They are deliberately the reverse of [[Stage.AndThen]]'s. There, `upstream` processes `I → OI` and `downstream`
+    * They are deliberately the reverse of `Stage.AndThen`'s. There, `upstream` processes `I → OI` and `downstream`
     * `OI → O`; here it is the other way round:
     *
     *   - `downstream: Evolution[I, OI, E]` — the continuation of the pipeline's ''upstream'' stage;
@@ -145,7 +146,9 @@ object Evolution {
     * @tparam E
     *   the error type
     */
-  final case class AndThen[-I, OI, +O, +E](upstream: Evolution[OI, O, E], downstream: Evolution[I, OI, E])
+  private[stages] final case class AndThen[-I, OI, +O, +E](
+      upstream: Evolution[OI, O, E],
+      downstream: Evolution[I, OI, E])
       extends Evolution[I, O, E] {
 
     override def evolve(status: Status[?]): Stage[I, O, E] = upstream.evolve(status) <~ downstream.evolve(status)
@@ -154,7 +157,7 @@ object Evolution {
   }
 
   /** The evolution built by [[Evolution.map]]: every continuation goes through `f`, disposal goes to the wrapped
-    * evolution untouched.
+    * evolution untouched. Internal to the library.
     *
     * @param evolution
     *   the inner evolution whose continuations are transformed
@@ -173,7 +176,7 @@ object Evolution {
     * @tparam OE
     *   the error type of the resulting stages (covariant)
     */
-  final case class Mapped[II, IO, IE, -OI, +OO, +OE](
+  private[stages] final case class Mapped[II, IO, IE, -OI, +OO, +OE](
       evolution: Evolution[II, IO, IE],
       f: Stage[II, IO, IE] => Stage[OI, OO, OE])
       extends Evolution[OI, OO, OE] {

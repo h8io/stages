@@ -57,8 +57,9 @@ Double.skip()
 
 ## Building Pipelines with ~>
 
-`~>` composes two stages into a `Stage.AndThen`: the output of the left stage becomes the input of the right stage.
-The result is itself a `Stage`, so further stages can be appended with additional `~>` calls:
+`~>` composes two stages: the output of the left stage becomes the input of the right stage. The composed node
+itself is internal to the core — what you get back is a `Stage`, so further stages can be appended with additional
+`~>` calls:
 
 ```scala mdoc
 object ToString extends Stage[Int, String, Nothing] {

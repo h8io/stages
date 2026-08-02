@@ -73,9 +73,10 @@ object Yield {
       */
     private[stages] def compose[_O, _E >: E](that: Yield[O, _O, _E]): Yield[I, _O, _E] =
       that match {
-        case Yield.Some(out, status, evolution) =>
-          Yield.Some(out, this.status.combine(status), this.evolution.compose(evolution))
-        case Yield.None(status, evolution) => Yield.None(this.status.combine(status), this.evolution.compose(evolution))
+        case Yield.Some(thatOut, thatStatus, thatEvolution) =>
+          Yield.Some(thatOut, status.combine(thatStatus), evolution.compose(thatEvolution))
+        case Yield.None(thatStatus, thatEvolution) =>
+          Yield.None(status.combine(thatStatus), evolution.compose(thatEvolution))
       }
 
     override def map[_I, _O, _E](
