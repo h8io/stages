@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `stages` is an experimental Scala library for building pipelines out of steps ("stages") that can evolve as they run.
 Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1.x on `main`; an sbt 2.0.0 migration
-lives on the `update/sbt-2.0.0` branch.
+lives on the `update/sbt-2.0.0` branch, blocked because `sbt-typelevel-site` (Laika) has no sbt 2 support. That block
+is why `.github/workflows/release.yaml` is pinned to `h8io/gha@v3` while the other two workflows are on `@v5`: from
+v4 the release workflow runs `sbt cleanFull`, an sbt 2.0-only command.
 
 ## Commands
 
@@ -18,7 +20,7 @@ sbt "lib/testOnly *LoopTest -- -z \"substring of test name\""  # single test cas
 sbt +test                         # tests across both Scala versions (2.13 and 2.12)
 sbt scalafmtAll scalafmtSbt       # format code and build files
 sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
-./test.sh                         # full CI check: format check, cross-build, coverage, docs, site
+./test.sh                         # full CI check: format check, cross-build, coverage gate, docs, unidoc, site
 ./pages.sh                        # build the documentation site into target/pages
 ```
 
@@ -55,9 +57,12 @@ A `Stage[-I, +O, +E]` maps an input to a `Yield[I, O, E]`, which carries three t
   permanently unusable. A stage that throws from `apply` must release its own resources before propagating — core
   takes no other part in exception handling (`execute` capturing dispose failures and the varargs `Evolution.dispose`
   helper — the shared disposal discipline with suppression — are the only exception-aware spots).
-- Composition is `a ~> b` (`Stage.AndThen`). When the upstream yields `None`, the downstream is not applied but its
-  `skip()` evolution is still composed in. Note `Evolution.AndThen` deliberately names its fields in the reverse of
-  `Stage.AndThen` — see its scaladoc before modifying.
+- Composition is `a ~> b`. When the upstream yields `None`, the downstream is not applied but its `skip()` evolution
+  is still composed in. The nodes this builds — `Stage.AndThen`, `Evolution.AndThen`, `Evolution.Mapped` — are
+  `private[stages]`: `~>`, `compose` and `map` all return the plain trait, so the representation is not API and stays
+  free to change. Core's own tests construct them directly, which works because they are in package `h8io.stages`.
+  Note `Evolution.AndThen` deliberately names its fields in the reverse of `Stage.AndThen` — see its scaladoc before
+  modifying.
 - `stage.execute(in)` is the terminal operation (an extension method from `h8io.stages.base`, not part of core): it
   runs once, disposes the evolution, and returns an `Outcome` (dispose failures are captured in
   `Outcome.disposeFailure`, not thrown).
@@ -75,3 +80,7 @@ A `Stage[-I, +O, +E]` maps an input to a `Yield[I, O, E]`, which carries three t
 - Warnings are fatal (compiler and scalafmt), including unused-symbol warnings; run `sbt scalafmtAll` before committing.
 - Scaladoc is extensive and normative in core — the comments document behavioral contracts (lifecycle, disposal order,
   variance), so keep them in sync with code changes.
+- Prefer backticks over `[[...]]` for anything an implementor might overload, and always for `private[stages]` targets,
+  which scaladoc cannot resolve. A link that is unambiguous per module can still fail under `+pages/unidoc`, where the
+  comment is inherited into a subclass with its own overloads — `[[apply]]` on `Stage.skip` broke the site build that
+  way, via `object Swap`.
