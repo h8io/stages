@@ -42,7 +42,7 @@ val none = Yield.None[Int, String, String](Status.error("filtered out"), new Evo
 none.status
 ```
 
-When a `Yield.None` reaches a `Stage.AndThen`, the downstream stage is not applied to the current input.  
+When a `Yield.None` reaches a composed stage, the downstream stage is not applied to the current input.  
 Instead it is wired into the evolution so that the full composed stage will be called when a value eventually
 arrives.
 

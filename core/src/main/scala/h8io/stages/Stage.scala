@@ -55,7 +55,7 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
     */
   @inline final def ~>[_O, _E >: E](that: Stage[O, _O, _E]): Stage[I, _O, _E] = Stage.AndThen(this, that)
 
-  /** Reverse composition, equivalent to `that ~> this`. Internal: it exists so [[Evolution.AndThen]] can compose its
+  /** Reverse composition, equivalent to `that ~> this`. Internal: it exists so the composed evolution can compose its
     * continuations in the order its fields are named.
     */
   @inline private[stages] final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
@@ -74,6 +74,9 @@ object Stage {
     * When `upstream` yields an output, it becomes `downstream`'s input and the two yields are merged; when it yields
     * nothing, `downstream` is skipped and only its evolution is composed in.
     *
+    * Internal to the library: the composition is reached through `~>`, whose result type is a plain [[Stage]], so this
+    * representation stays free to change.
+    *
     * @param upstream
     *   the stage processing the pipeline's input
     * @param downstream
@@ -87,7 +90,7 @@ object Stage {
     * @tparam E
     *   the error type
     */
-  final case class AndThen[-I, OI, +O, +E](upstream: Stage[I, OI, E], downstream: Stage[OI, O, E])
+  private[stages] final case class AndThen[-I, OI, +O, +E](upstream: Stage[I, OI, E], downstream: Stage[OI, O, E])
       extends Stage[I, O, E] {
     override def apply(in: I): Yield[I, O, E] =
       upstream(in) match {

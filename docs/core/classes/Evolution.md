@@ -123,21 +123,22 @@ pipeline.execute("hello")
 
 ## Composing Evolutions
 
-When `Stage.AndThen` composes two stages via `~>`, it also composes their `Evolution` values using `compose`.
-The result is an `Evolution.AndThen` whose continuation for any status `s` is the sequential composition of the
-corresponding continuations of both evolutions:
+When `~>` composes two stages, it also composes their `Evolution` values using `compose`. The result is an
+evolution whose continuation for any status `s` is the sequential composition of the corresponding continuations of
+both evolutions:
 
 ```
 composed(s) == self(s) ~> that(s)
 ```
 
-All `Evolution` method calls in `Evolution.AndThen` follow the same order: pipeline-downstream first, then
-pipeline-upstream — the reverse of the order in which stages are applied.
+The composed evolution calls both halves in the same order: pipeline-downstream first, then pipeline-upstream — the
+reverse of the order in which stages are applied.
 This applies equally to `evolve` and `dispose()`, since both may release or transition resources held by the
 producing stage.  
 The [Diagram](../Diagram.md) section on finalization walks through a concrete example of why this matters.
 
-`compose` is an implementation detail of `Stage.AndThen` and is not part of the typical application-level API.
+`compose` is an implementation detail of composition and is not part of the typical application-level API; the
+evolution classes it builds are internal to the core.
 
 ## Adapting Stages with map
 
@@ -145,6 +146,6 @@ The [Diagram](../Diagram.md) section on finalization walks through a concrete ex
 evolution would have returned.  
 Disposal is delegated unchanged to the wrapped evolution.
 
-This is used internally when a `Yield.None` propagates through `Stage.AndThen`: because no output was produced,
+This is used internally when a `Yield.None` propagates through a composed stage: because no output was produced,
 the downstream stage cannot be invoked immediately, so it is folded into the evolution via `map` so that the entire
 composed pipeline will be applied when the next input arrives.

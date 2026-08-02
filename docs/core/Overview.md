@@ -58,7 +58,7 @@ Endomorphic stages — `Stage[T, T, E]` — form a monoid under `~>`:
 - **Identity**: the passthrough stage `t => Yield.Some(t, Status.Success, identity_evolution)`.
 - **Operation**: sequential composition `s1 ~> s2`.
 
-Associativity follows from the definition of `Stage.AndThen`: `(a ~> b) ~> c` and `a ~> (b ~> c)` produce the
+Associativity follows from the definition of composition: `(a ~> b) ~> c` and `a ~> (b ~> c)` produce the
 same observable behaviour for every input. This monoid is verified against the cats `MonoidTests` laws in the test
 suite.
 
