@@ -43,10 +43,10 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   /** Returns this stage's [[Evolution]] without consuming an input.
     *
-    * Called instead of [[apply]] whenever the stage takes part in a run but has nothing to process: the upstream
-    * yielded no output, or a binary operator excluded this branch. The evolution must be the one the stage would have
-    * returned had it run. Like `apply`, `skip()` may perform side effects — a decorator, for instance, may advance or
-    * release the inner stage it owns.
+    * Called instead of `apply` whenever the stage takes part in a run but has nothing to process: the upstream yielded
+    * no output, or a binary operator excluded this branch. The evolution must be the one the stage would have returned
+    * had it run. Like `apply`, `skip()` may perform side effects — a decorator, for instance, may advance or release
+    * the inner stage it owns.
     */
   def skip(): Evolution[I, O, E]
 
