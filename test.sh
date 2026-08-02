@@ -4,5 +4,5 @@ set -euxo pipefail
 
 sbt scalafmtSbtCheck scalafmtCheckAll \
     +clean +coverage +test \
-    +coverageSummary +coverageAggregate \
+    +coverageSummary +coverageAggregate +coverageSummaryCheck \
     +doc +packagedArtifacts pages/clean pages/tlSite
