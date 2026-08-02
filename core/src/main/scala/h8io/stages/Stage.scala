@@ -1,35 +1,30 @@
 package h8io.stages
 
-/** A single processing unit in a pipeline that transforms input values into [[Yield]] results.
-  *
-  * A `Stage` produces a [[Yield]] that carries an optional output of type `O`, a [[Status]], and an [[Evolution]]
-  * strategy describing how to continue processing.
-  *
-  * Stages are contravariant in `I` and covariant in both `O` and `E`, which allows them to be composed safely in a
-  * pipeline via the [[~>]] operator.
+/** A single processing unit of a pipeline: a function from an input value to a [[Yield]] — an optional output, a
+  * [[Status]], and an [[Evolution]] that decides what the pipeline looks like for the next run.
   *
   * ==Lifecycle==
   *
-  * Every `Stage` instance participates in exactly one of these lifecycle paths during a pipeline run:
+  * Every stage instance takes exactly one of three paths per pipeline run:
   *
-  *   - '''Active''': [[apply]] is called with an input value. The stage processes it and returns a [[Yield]].
-  *   - '''Skipped''': [[skip]] is called when the stage is bypassed — for example, because an upstream stage produced
-  *     no output, or because of a non-inclusive binary operation. The stage must return its [[Evolution]] without
-  *     performing any processing.
-  *   - '''Failed''': [[apply]] throws. No [[Yield]] — and therefore no [[Evolution]] — is produced, so nobody can
-  *     release the stage's resources from the outside: the stage must release them itself before the exception escapes,
-  *     and is permanently unusable afterwards. The core takes no other part in exception handling.
+  *   - '''applied''' — [[apply]] receives an input value and returns a [[Yield]]. It may perform side effects and
+  *     produce any output, status and evolution it likes.
+  *   - '''skipped''' — [[skip]] returns the evolution the stage would have returned had it run, without consuming an
+  *     input. Any stage that takes part in a run but does not process the current input takes this path.
+  *   - '''failed''' — `apply` throws. No `Yield`, and therefore no `Evolution`, reaches the caller.
   *
-  * Exactly one of [[apply]] or [[skip]] is called per pipeline run. Resource cleanup is the responsibility of the
-  * [[Evolution]] returned from either call: [[Evolution.dispose]] releases the resources held by this stage, and after
-  * that call the stage must be considered unusable. Fatal exceptions are not accounted for by this contract.
+  * Resource cleanup belongs to the [[Evolution]] returned by either of the first two: [[Evolution.dispose]] is the
+  * exclusive release point, and the stage is permanently unusable afterwards. The failed path is the one case where
+  * nobody outside can release anything — there is no evolution to dispose — so a stage that throws must release its own
+  * resources before letting the exception escape. The core takes no other part in exception handling; the lib module
+  * offers `h8io.stages.operators.Safe` as a crutch for the simplest, stateless cases. Fatal exceptions are outside this
+  * contract.
   *
-  * Example — building a pipeline:
-  * {{{
-  * val parse: Stage[String, Int, String]  = ...
-  * val double: Stage[Int, Int, String]    = ...
-  * val pipeline: Stage[String, Int, String] = parse ~> double
-  * }}}
+  * ==Composition==
+  *
+  * [[~>]] builds a pipeline out of two stages. When the upstream yields an output, it becomes the downstream's input
+  * and the two yields are merged; when it yields nothing, the downstream is not applied for this input — it is skipped
+  * and its evolution composed in, so it still evolves in step with the rest of the pipeline.
   *
   * @tparam I
   *   the input type (contravariant)
@@ -40,82 +35,57 @@ package h8io.stages
   */
 trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
-  /** Applies this stage to the given input, producing a [[Yield]].
+  /** Processes `in` and returns the [[Yield]] carrying the optional output, the status and the continuation.
     *
-    * @param in
-    *   the input value
-    * @return
-    *   a [[Yield]] containing the optional output, status, and evolution
+    * A stage that throws from here must have released its own resources first — see the ''Lifecycle'' section above.
     */
   def apply(in: I): Yield[I, O, E]
 
-  /** Returns the [[Evolution]] for this stage without processing any input.
+  /** Returns this stage's [[Evolution]] without consuming an input.
     *
-    * Any stage that participates in a pipeline run but does not process the current input must call `skip()` instead of
-    * `apply`. Common triggers: an upstream stage produced no output ([[Yield.None]]), or a non-inclusive binary
-    * operation excluded this branch. The stage must return its [[Evolution]] as it would have appeared had it run,
-    * without consuming any input. Like `apply`, `skip()` may perform side effects — e.g. advancing internal state or
-    * releasing resources that a decorator owns on behalf of an inner stage.
-    *
-    * See the ''Lifecycle'' section in [[Stage]] for the full contract.
-    *
-    * @return
-    *   the [[Evolution]] representing how the pipeline should continue from this stage
+    * Called instead of [[apply]] whenever the stage takes part in a run but has nothing to process: the upstream
+    * yielded no output, or a binary operator excluded this branch. The evolution must be the one the stage would have
+    * returned had it run. Like `apply`, `skip()` may perform side effects — a decorator, for instance, may advance or
+    * release the inner stage it owns.
     */
   def skip(): Evolution[I, O, E]
 
-  /** Composes this stage with `that`, producing a new stage that feeds the output of this stage into `that`.
-    *
-    * The resulting [[Stage.AndThen]] feeds the output of this stage into `that`. If this stage produces an output, the
-    * statuses and evolutions of both stages are merged; if it produces no output, only the evolutions are composed and
-    * `that` is not invoked for the current input.
-    *
-    * @param that
-    *   the stage to execute after this one
-    * @tparam _O
-    *   the output type of the composed pipeline
-    * @tparam _E
-    *   the combined error type (must be a supertype of `E`)
-    * @return
-    *   a composed stage `this ~> that`
+  /** Composes this stage with `that`, feeding this stage's output into it. See the ''Composition'' section above for
+    * what happens when there is no output to feed.
     */
   @inline final def ~>[_O, _E >: E](that: Stage[O, _O, _E]): Stage[I, _O, _E] = Stage.AndThen(this, that)
 
-  /** Internal reverse-composition: equivalent to `that ~> this`.
-    *
-    * Used inside [[Evolution]] to compose continuations without exposing the operator publicly.
+  /** Reverse composition, equivalent to `that ~> this`. Internal: it exists so [[Evolution.AndThen]] can compose its
+    * continuations in the order its fields are named.
     */
   @inline private[stages] final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
 }
 
-/** Companion object for [[Stage]], containing type aliases and the [[AndThen]] implementation. */
 object Stage {
 
-  /** A stage whose input and output types are the same — an endomorphism on `T`. */
+  /** A stage whose input and output types coincide — an endomorphism on `T`. */
   type Endo[T, +E] = Stage[T, T, E]
 
-  /** An existential alias for a stage with unknown type parameters, useful as a common supertype. */
+  /** Any stage, whatever its type parameters. Useful as a common supertype. */
   type Any = Stage[?, ?, ?]
 
-  /** A [[Stage]] composed of two sequential stages.
+  /** The pipeline built by [[Stage.~>]]: `upstream` processes the input, `downstream` processes what it yielded.
     *
-    * When applied to an input:
-    *   - If `upstream` produces a [[Yield.Some]], the output is passed to `downstream`.
-    *   - If `upstream` produces a [[Yield.None]], the evolution is composed with `downstream` so that it is applied
-    *     when the pipeline resumes.
+    * When `upstream` yields an output, it becomes `downstream`'s input and the two yields are merged; when it yields
+    * nothing, `downstream` is skipped and only its evolution is composed in.
     *
     * @param upstream
-    *   the first stage in the sequence
+    *   the stage processing the pipeline's input
     * @param downstream
-    *   the second stage in the sequence
+    *   the stage processing what `upstream` yielded
     * @tparam I
-    *   input type of the pipeline
+    *   the input type of the pipeline
     * @tparam OI
-    *   intermediate type between the two stages
+    *   the intermediate type between the two stages
     * @tparam O
-    *   output type of the pipeline
+    *   the output type of the pipeline
     * @tparam E
-    *   error type
+    *   the error type
     */
   final case class AndThen[-I, OI, +O, +E](upstream: Stage[I, OI, E], downstream: Stage[OI, O, E])
       extends Stage[I, O, E] {

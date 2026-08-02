@@ -2,120 +2,93 @@ package h8io.stages
 
 import scala.util.control.NonFatal
 
-/** A strategy that selects the next [[Stage]] to use when the pipeline is ready to re-process, based on the [[Status]]
-  * carried by the [[Yield]] returned from the most recent stage application. In a composed pipeline, this refers to the
-  * combined `Yield` produced for the current input.
+/** The continuation of a [[Stage]]: which stage handles the next input, chosen by the [[Status]] of the run that just
+  * finished. This is what makes a pipeline able to change as it runs — every [[Yield]] carries one.
   *
-  * Every [[Yield]] carries an `Evolution` whose `evolve` method selects the next stage based on the current [[Status]].
-  * The appropriate stage is selected based on the [[Yield.status]] — callers use `[[Yield.evolve]]` rather than
-  * dispatching on the status directly.
+  * An `Evolution` is also the exclusive owner of cleanup for the stage that produced it: see [[dispose]].
   *
-  * `Evolution` is contravariant in `I` and covariant in `O` and `E`, mirroring the variance of the [[Stage]] values it
-  * returns.
+  * The status to select on is the one carried alongside the evolution in the same yield, which is why callers normally
+  * go through [[Yield.evolve]] rather than dispatching on a status themselves. In a composed pipeline that status is
+  * the combined one of the whole run, never a single stage's own.
   *
   * @tparam I
-  *   the input type consumed by the returned stages (contravariant)
+  *   the input type of the stages returned (contravariant)
   * @tparam O
-  *   the output type produced by the returned stages (covariant)
+  *   their output type (covariant)
   * @tparam E
   *   the error type (covariant)
   */
 trait Evolution[-I, +O, +E] {
 
-  /** Returns the next [[Stage]] based on the given `status`.
+  /** The next stage, for the given status.
     *
-    * May release resources that are specific to this evolution instance and will not be reused by subsequent
-    * generations (i.e. resources not needed by the returned stage or its own evolution).
+    * May release what belongs to this generation alone — anything the returned stage and its own evolution will not
+    * reuse.
     *
-    * By default at most one of `evolve` and [[dispose]] is called on any evolution instance: a terminal driver (such as
-    * `execute` in the lib module) only disposes, and a pipeline that continues only evolves, dropping the previous
-    * evolution. The two calls are not mutually exclusive, though: a caller that has obtained the continuation via
-    * `evolve` may still call [[dispose]] on the same instance later. Operators that own their inner stage (e.g. `Loop`
-    * and `Repeat` in the lib module) do exactly that — they evolve the inner evolution eagerly and keep its `dispose`
-    * as the terminal cleanup handle for the generation just constructed.
-    *
-    * @param status
-    *   the status that determines the continuation stage
+    * `evolve` and [[dispose]] are not mutually exclusive. Usually only one of them is called on an instance: a terminal
+    * driver disposes, a continuing pipeline evolves and drops the previous evolution. But a caller may do both, and
+    * operators owning their inner stage (`Loop`, `Repeat` and the rest of `h8io.stages.cycles` in the lib module) do
+    * exactly that — they evolve eagerly and keep the inner `dispose` as the cleanup handle of the generation they just
+    * built.
     */
   def evolve(status: Status[?]): Stage[I, O, E]
 
-  /** Releases all resources held by the [[Stage]] that produced this evolution.
+  /** Releases everything held by the [[Stage]] that produced this evolution. That stage is permanently unusable
+    * afterwards — neither applied nor skipped again — and this is the only place its resources are released.
     *
-    * After this call the producing stage must be considered permanently unusable — it must not be applied or skipped
-    * again. This is the exclusive cleanup point for resources owned by the producing stage.
+    * Whoever terminates a pipeline is responsible for disposing the evolution of the final [[Yield]], so that the
+    * continuation is released at once instead of being carried around. The reference terminal driver is the `execute`
+    * extension method of `h8io.stages.base` in the lib module.
     *
-    * Called when the producing stage is permanently shut down: whoever terminates a pipeline must dispose the evolution
-    * of the final [[Yield]], so the continuation is released immediately rather than carried forward. The reference
-    * terminal driver is the `execute` extension method in the lib module (`h8io.stages.base`).
+    * `dispose()` stays valid after [[evolve]] has been called on the same instance, and must then release everything
+    * still alive, including whatever building the continuation acquired. `evolve` hands over no ownership: this
+    * evolution remains the cleanup point for its lineage until the continuation has run and produced an evolution of
+    * its own, which takes the role over from that moment.
     *
-    * `dispose()` must stay valid after [[evolve]] has been called on the same instance, and must then release
-    * everything still alive — including resources acquired while constructing the continuation. `evolve` transfers no
-    * ownership: this evolution remains the cleanup point for its lineage until the continuation has run and produced an
-    * evolution of its own, which takes over as the terminal handle from that moment on.
+    * Exceptions are not part of this contract: a stage whose `apply` throws produces no yield and therefore no
+    * evolution, so there is nothing to dispose — it must clean up after itself (see the ''Lifecycle'' section in
+    * [[Stage]]).
     *
-    * Exception handling is not part of the core model: a stage whose `apply` throws produces no [[Yield]] and therefore
-    * no `Evolution` — there is nothing the caller could dispose. Such a stage must release its own resources before
-    * letting the exception escape (see the ''Lifecycle'' section in [[Stage]]).
-    *
-    * Implementations that hold no external resources may leave this as a no-op.
+    * A no-op is a fine implementation for a stage holding nothing external.
     */
   def dispose(): Unit
 
-  /** Composes this evolution with another, creating a new evolution whose continuation for any status is the sequential
-    * composition of the corresponding continuations of both evolutions.
-    *
-    * Specifically:
+  /** Composes this evolution with the one downstream of it, so that for every status
     * {{{
     *   composed(s) == self(s) ~> that(s)
     * }}}
     *
-    * Used internally when merging evolutions during [[Yield]] composition inside [[Stage.AndThen]].
-    *
-    * @param that
-    *   the downstream evolution to compose with
-    * @tparam _O
-    *   the output type of the resulting stages
-    * @tparam _E
-    *   the combined error type
-    * @return
-    *   a new evolution representing `self` followed by `that`
+    * This is how [[Yield]] composition carries both continuations of a pipeline forward; application code rarely calls
+    * it directly.
     */
   @inline final def compose[_O, _E >: E](that: Evolution[O, _O, _E]): Evolution[I, _O, _E] =
     Evolution.AndThen(that, this)
 
-  /** Transforms every continuation of this evolution by applying `f` to the stage it returns.
+  /** Applies `f` to every stage this evolution would return, leaving disposal delegated to it unchanged.
     *
-    * This is the public API for adapting an `Evolution` to a different stage type without exposing internal composition
-    * details.
-    *
-    * @param f
-    *   a function that transforms each continuation stage
-    * @tparam _I
-    *   the input type of the resulting stages
-    * @tparam _O
-    *   the output type of the resulting stages
-    * @tparam _E
-    *   the error type of the resulting stages
-    * @return
-    *   a new evolution with all continuations mapped by `f`
+    * The way an operator keeps its wrapping in place across generations: the continuation comes back wrapped the same
+    * way the current stage is.
     */
   @inline final def map[_I, _O, _E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Evolution[_I, _O, _E] =
     Evolution.Mapped(this, f)
 }
 
 object Evolution {
+
+  /** An evolution over stages whose input and output types coincide. */
   type Endo[T, +E] = Evolution[T, T, E]
 
+  /** Any evolution, whatever its type parameters — the type [[Evolution.dispose]] collects. */
   type Any = Evolution[?, ?, ?]
 
-  /** Disposes the evolutions in argument order, ensuring every one is attempted.
+  /** Disposes every evolution given, in argument order, whatever any of them throws.
     *
-    * The first non-fatal exception becomes the primary one: the remaining evolutions are still disposed, any further
-    * non-fatal exception is added as suppressed to the primary, and the primary is re-thrown at the end.
+    * The first non-fatal exception becomes the primary one: the rest are disposed all the same, further non-fatal
+    * exceptions are attached to the primary as suppressed, and the primary is rethrown at the end.
     *
-    * This is the single disposal discipline for every evolution that owns several inner evolutions (e.g. [[AndThen]],
-    * or `BaseBinaryOperator.Evolution` and `Reduce` in the lib module); the parameter list is deliberately positional —
-    * each call site maps its own domain roles onto the disposal order.
+    * This is the single disposal discipline for everything owning several evolutions at once — [[AndThen]] here, the
+    * binary operators and the `h8io.stages.cycles` family in the lib module. The parameter list is positional on
+    * purpose: each caller maps its own roles onto the order it wants them released in.
     *
     * @param evolutions
     *   the evolutions to dispose, in order, even if earlier disposals fail
@@ -136,83 +109,69 @@ object Evolution {
       }
     }.foreach(throw _)
 
-  /** An [[Evolution]] composed of two sequential evolutions.
+  /** The continuation of a composed pipeline, built by [[Evolution.compose]].
     *
-    * ==Parameter naming==
+    * ==Field names==
     *
-    * The field names are intentionally the reverse of [[Stage.AndThen]]. In `Stage.AndThen`, `upstream` processes
-    * `I → OI` and `downstream` processes `OI → O`. Here it is the other way around:
-    *   - `downstream: Evolution[I, OI, E]` — holds the evolution of the pipeline's upstream stage (`I → OI`).
-    *   - `upstream: Evolution[OI, O, E]` — holds the evolution of the pipeline's downstream stage (`OI → O`).
+    * They are deliberately the reverse of [[Stage.AndThen]]'s. There, `upstream` processes `I → OI` and `downstream`
+    * `OI → O`; here it is the other way round:
     *
-    * The inversion follows from how `<~` routes data: `upstream(s) <~ downstream(s)` feeds `downstream`'s stage first,
-    * so the `I → OI` evolution occupies `downstream` and `OI → O` occupies `upstream`. `compose` stores its receiver as
-    * `downstream` and its argument as `upstream`:
+    *   - `downstream: Evolution[I, OI, E]` — the continuation of the pipeline's ''upstream'' stage;
+    *   - `upstream: Evolution[OI, O, E]` — the continuation of the pipeline's ''downstream'' stage.
+    *
+    * The inversion follows the data flow of `Stage.<~`, which feeds its argument first, and `compose` storing its
+    * receiver as `downstream`:
     * {{{
     *   pipelineUpstream.skip().compose(pipelineDownstream.skip())
-    *   // == Evolution.AndThen(upstream = pipelineDownstream.skip(),
-    *   //                      downstream = pipelineUpstream.skip())
+    *   // == Evolution.AndThen(upstream = pipelineDownstream.skip(), downstream = pipelineUpstream.skip())
     * }}}
     *
-    * ==Continuation composition==
+    * ==Order==
     *
-    * For any status `s`:
-    * {{{
-    *   composed(s) == upstream(s) <~ downstream(s)
-    *   // data flow: I → downstream's stage → OI → upstream's stage → O
-    * }}}
-    *
-    * ==Disposal==
-    *
-    * Both evolutions are disposed in the order `upstream` then `downstream` (i.e. pipeline-downstream first, then
-    * pipeline-upstream), matching the reverse-order convention used in [[Stage.AndThen]] before disposal was moved to
-    * `Evolution`.
+    * Both `evolve` and `dispose()` run the pipeline-downstream side first, then the pipeline-upstream one — the reverse
+    * of the order the stages were applied in, so that a downstream stage can still reach whatever the upstream provides
+    * until the moment the upstream is torn down.
     *
     * @param upstream
-    *   the evolution of the pipeline's downstream stage (`OI → O`)
+    *   the continuation of the pipeline's downstream stage (`OI → O`)
     * @param downstream
-    *   the evolution of the pipeline's upstream stage (`I → OI`)
+    *   the continuation of the pipeline's upstream stage (`I → OI`)
     * @tparam I
-    *   input type of the composed pipeline
+    *   the input type of the composed pipeline
     * @tparam OI
-    *   intermediate type between the two stages
+    *   the intermediate type between the two stages
     * @tparam O
-    *   output type of the composed pipeline
+    *   the output type of the composed pipeline
     * @tparam E
-    *   error type
+    *   the error type
     */
   final case class AndThen[-I, OI, +O, +E](upstream: Evolution[OI, O, E], downstream: Evolution[I, OI, E])
       extends Evolution[I, O, E] {
 
     override def evolve(status: Status[?]): Stage[I, O, E] = upstream.evolve(status) <~ downstream.evolve(status)
 
-    /** Releases resources held by both composed evolutions via [[Evolution.dispose]], disposing `upstream` first, then
-      * `downstream`.
-      */
     override def dispose(): Unit = Evolution.dispose(upstream, downstream)
   }
 
-  /** An [[Evolution]] whose continuations are produced by applying `f` to the corresponding continuations of
-    * `evolution`.
-    *
-    * Created by [[Evolution#map]]. Disposal is delegated to the wrapped `evolution`.
+  /** The evolution built by [[Evolution.map]]: every continuation goes through `f`, disposal goes to the wrapped
+    * evolution untouched.
     *
     * @param evolution
     *   the inner evolution whose continuations are transformed
     * @param f
     *   the function applied to each continuation stage
     * @tparam II
-    *   input type of the inner stages
+    *   the input type of the inner stages
     * @tparam IO
-    *   output type of the inner stages
+    *   the output type of the inner stages
     * @tparam IE
-    *   error type of the inner stages
+    *   the error type of the inner stages
     * @tparam OI
-    *   input type of the resulting stages (contravariant)
+    *   the input type of the resulting stages (contravariant)
     * @tparam OO
-    *   output type of the resulting stages (covariant)
+    *   the output type of the resulting stages (covariant)
     * @tparam OE
-    *   error type of the resulting stages (covariant)
+    *   the error type of the resulting stages (covariant)
     */
   final case class Mapped[II, IO, IE, -OI, +OO, +OE](
       evolution: Evolution[II, IO, IE],
