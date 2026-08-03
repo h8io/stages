@@ -8,10 +8,14 @@ import h8io.stages.Stage
   * stage. Resource disposal is the responsibility of the `h8io.stages.Evolution` returned by `apply` or `skip` —
   * concrete subclasses must ensure their evolution delegates `dispose` to [[alterand]]'s evolution.
   *
-  * '''Do not mix `Alterator` with traits that introduce independent state or their own `apply`/evolution logic''' (e.g.
-  * [[SAMStage]] or similar mixins). `Alterator` assumes that [[alterand]] owns all resources: if a co-mixed trait
-  * provides its own `skip` or evolution without coordinating with [[alterand]], those resources will not be released
-  * and the evolution transitions will be ignored.
+  * '''Do not mix `Alterator` with traits that supply the stage's own continuation''' — its `skip`, `evolve` or
+  * `dispose` (e.g. [[SAMStage]], [[Stagnation]]). An alterator's evolution has to be built from [[alterand]]'s: a mixin
+  * that answers `this` instead — and both of those seal it that way — leaves [[alterand]] neither evolved nor disposed,
+  * with nothing to signal it.
+  *
+  * Traits that only shape `apply` are safe to mix in, since they leave the continuation to the alterator itself:
+  * [[SafeStage]] and [[Fruitful]] are both used that way here (see [[h8io.stages.operators.Safe]] and
+  * [[h8io.stages.operators.Lift]]).
   *
   * @tparam S
   *   the concrete type of the wrapped stage (covariant)
