@@ -7,10 +7,14 @@ concrete alterator must make sure its evolution delegates `dispose` to the alter
 The type parameter `S` is covariant and bounded to `Stage.Any`, preserving the concrete type of the alterand in the
 wrapper's static type without information loss.
 
-**Do not mix `Alterator` with traits that introduce independent state or their own evolution logic** — for example,
-[`SAMStage`](SAMStage.md) or [`Stagnation`](Stagnation.md). `Alterator` assumes that `alterand` owns all resources and
-controls all evolution. A co-mixed trait that adds its own resources or overrides evolution without coordinating with
-the alterand breaks that contract silently: its resources will not be released and its transitions will be ignored.
+**Do not mix `Alterator` with traits that supply the stage's own continuation** — its `skip`, `evolve` or `dispose`,
+as [`SAMStage`](SAMStage.md) and [`Stagnation`](Stagnation.md) do. An alterator's evolution has to be built from the
+alterand's; a mixin that answers `this` instead — and both of those seal it that way — leaves the alterand neither
+evolved nor disposed, and nothing signals it.
+
+Traits that only shape `apply` are safe to mix in, because they leave the continuation to the alterator itself.
+[`SafeStage`](SafeStage.md) and [`Fruitful`](Fruitful.md) are both used that way in this library, by
+[`Safe`](../operators/Safe.md) and [`Lift`](../operators/Lift.md) respectively.
 
 The `base` package provides four type aliases for wrapping stages. The first two name the wrapper itself and are
 built on `Alterator`; the other two name the function that produces one:
