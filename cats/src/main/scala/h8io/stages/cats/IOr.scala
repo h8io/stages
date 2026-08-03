@@ -64,7 +64,7 @@ object IOr {
         : Stage[_I, Ior[LO, RO], _E] = IOr(leftStage, rightStage)
   }
 
-  /** Extracts the left value from an `cats.data.Ior`, yielding it when present in both `Ior.Left` and `Ior.Both`.
+  /** Extracts the left value from a `cats.data.Ior`, yielding it when present in both `Ior.Left` and `Ior.Both`.
     *
     *   - `Ior.Left(l)` → `Yield.Some(l, ...)`
     *   - `Ior.Both(l, _)` → `Yield.Some(l, ...)`
@@ -77,7 +77,7 @@ object IOr {
       in.fold(out => some(out), _ => none, (out, _) => some(out))
   }
 
-  /** Extracts the right value from an `cats.data.Ior`, yielding it when present in both `Ior.Right` and `Ior.Both`.
+  /** Extracts the right value from a `cats.data.Ior`, yielding it when present in both `Ior.Right` and `Ior.Both`.
     *
     *   - `Ior.Right(r)` → `Yield.Some(r, ...)`
     *   - `Ior.Both(_, r)` → `Yield.Some(r, ...)`

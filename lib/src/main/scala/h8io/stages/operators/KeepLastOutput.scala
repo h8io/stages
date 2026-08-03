@@ -17,16 +17,8 @@ import h8io.stages.{Evolution, Stage, Yield}
   * In both states the evolution is mapped so that continuations remain wrapped in the appropriate `KeepLastOutput`
   * variant, preserving the last-value semantics.
   *
-  * The `apply` factory method always starts in the `None` state.
-  *
-  * @param stage
-  *   the inner stage to wrap
-  * @tparam I
-  *   the input type
-  * @tparam O
-  *   the output type
-  * @tparam E
-  *   the error type
+  * Both variants are internal to the package: the decorator is reached through the `KeepLastOutput.apply` factory,
+  * which always starts in the `None` state, and the state it is in afterwards is not part of the API.
   */
 object KeepLastOutput {
   private[operators] final case class None[-I, +O, +E](alterand: Stage[I, O, E]) extends Decorator[I, O, E] {

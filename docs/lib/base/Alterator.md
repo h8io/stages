@@ -12,7 +12,8 @@ wrapper's static type without information loss.
 controls all evolution. A co-mixed trait that adds its own resources or overrides evolution without coordinating with
 the alterand breaks that contract silently: its resources will not be released and its transitions will be ignored.
 
-The `base` package provides four type aliases built on `Alterator`:
+The `base` package provides four type aliases for wrapping stages. The first two name the wrapper itself and are
+built on `Alterator`; the other two name the function that produces one:
 
 | Alias | Meaning |
 |---|---|

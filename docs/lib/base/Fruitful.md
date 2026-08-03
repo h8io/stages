@@ -23,5 +23,5 @@ Loudify("hello")
 that always yield a value but may still signal errors or transition to a different stage.
 
 For the common case of a static stage that always produces an output — like `Loudify` above —
-[`FruitfulStaticStage`](FruitfulStaticStage.md) removes the remaining boilerplate: implement a single `produce`
+[`FruitfulStaticStage`](FruitfulStaticStage.md) removes the remaining boilerplate: implement a single `process`
 method returning the output paired with its status.

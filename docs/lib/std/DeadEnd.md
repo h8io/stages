@@ -3,7 +3,9 @@
 `DeadEnd` is a terminal stage that never produces an output value. Every invocation returns
 `Yield.None(Status.Complete)`, immediately signalling that the pipeline is finished.
 
-`DeadEnd` is the natural end-of-stream marker. It is also returned by [`Countdown`](Countdown.md)`(n)` when `n ≤ 0`.
+`DeadEnd` is the natural end-of-stream marker. It is also what the factories return when they are asked for a stage
+with nothing left to do: [`Countdown`](Countdown.md)`(n)` when `n ≤ 0`, and
+[`LocalSoftDeadline`](../operators/LocalSoftDeadline.md) when the duration is non-positive.
 
 An optional disposal hook can be supplied at construction via `DeadEnd(_dispose)`. The companion object
 `DeadEnd` is a default no-op instance.

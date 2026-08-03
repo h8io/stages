@@ -7,8 +7,8 @@ import h8io.stages.base.Fn
   * `Swap` is a singleton [[h8io.stages.base.Fn]]: given `(a, b)`, it returns `(b, a)`. It always succeeds
   * (`h8io.stages.Status.Success`) and never changes state.
   *
-  * The singleton operates on `Any` and can be safely cast to any specific pair type via the `apply[L, R]` method,
-  * avoiding allocation on every use.
+  * The singleton operates on `(Any, Any)` and can be safely cast to any specific pair type via the `apply[L, R]`
+  * method, avoiding allocation on every use.
   *
   * `h8io.stages.cycles.Reduce` and `h8io.stages.cycles.Fold` both call `op` in the "left" convention,
   * `op((accumulator, output))`. Composing `Swap[R, O] ~> op` in front of an `op` written in the opposite convention —

@@ -29,4 +29,4 @@ SafeParseInt("not-a-number")
 ```
 
 `SafeStage` composes well with [`SAMStage`](SAMStage.md): mix both when the stage is stateless and only the error
-recovery behavior differs from the normal path.
+recovery behaviour differs from the normal path.

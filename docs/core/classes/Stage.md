@@ -15,7 +15,7 @@ import h8io.stages.*
 
 ## The Lifecycle: apply and skip
 
-Every `Stage` participates in exactly one of two paths during a pipeline run.
+Every `Stage` takes exactly one of three paths during a pipeline run.
 
 **apply** — the active path. The stage receives a real input value and returns a `Yield`. It is free to perform
 side effects, update internal state, and produce any output it likes.
@@ -90,7 +90,8 @@ val pipeline = Double ~> ToString ~> Shout
 ```
 
 The static type of `pipeline` is `Stage[Int, String, Nothing]`: it accepts the input of the first stage and
-produces the output of the last one. The intermediate type `Int → String` is erased at the pipeline boundary.
+produces the output of the last one. The intermediate types — `Int` between the first two stages, `String` between
+the last two — do not appear in the type of the pipeline at all.
 
 Running the pipeline produces a single `Yield` that combines the status and evolution of all three stages:
 

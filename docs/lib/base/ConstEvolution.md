@@ -21,9 +21,11 @@ evo.evolve(Status.Success)
 evo.evolve(Status.complete)
 ```
 
-Both calls return `DoubleInt`. Use `ConstEvolution` inside operators like [`Loop`](../cycles/Loop.md) or
-[`Repeat`](../cycles/Repeat.md) where a fixed stage should always be the continuation, regardless of what happened
-in the previous run.
+Both calls return `DoubleInt`. Use `ConstEvolution` inside operators where a fixed stage should always be the
+continuation, regardless of what happened in the previous run — the whole [`cycles`](../cycles/Overview.md) family
+([`Loop`](../cycles/Loop.md), [`Repeat`](../cycles/Repeat.md), [`Reduce`](../cycles/Reduce.md) and
+[`Fold`](../cycles/Fold.md)) returns one outwards, precisely to keep the enclosing pipeline's status from reaching
+the inner stage.
 
 The overload `stage.toEvolution(dispose: () => Unit)` produces a `ConstEvolution` that calls the supplied function
 on disposal rather than ignoring it — useful when the lifted stage holds resources that need to be released.
