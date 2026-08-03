@@ -15,7 +15,7 @@ v4 the release workflow runs `sbt cleanFull`, an sbt 2.0-only command.
 ```bash
 sbt test                          # run all tests (all modules)
 sbt lib/test                      # run tests for one module (core / lib / cats / examples)
-sbt "lib/testOnly h8io.stages.operators.LoopTest"          # single test suite
+sbt "lib/testOnly h8io.stages.cycles.LoopTest"             # single test suite
 sbt "lib/testOnly *LoopTest -- -z \"substring of test name\""  # single test case
 sbt +test                         # tests across both Scala versions (2.13 and 2.12)
 sbt scalafmtAll scalafmtSbt       # format code and build files
@@ -31,7 +31,8 @@ sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
   `ConstEvolution`, `Alterator`/`BinaryOperator`, the `execute` terminal driver with its `Outcome` result type, and
   type aliases like `Decorator`/`Alteration`), `operators` (combinators wrapping stages: `And`, `Or`, `Lift`, `Safe`,
   `CompleteIfNone`, deadlines…), `cycles` (operators that drive a whole cycle of the inner stage per outer run:
-  `Loop`, `Repeat`), `std` (leaf stages: `Const`, `Identity`, `Countdown`, `Coalesce`…), `projections`.
+  `Loop`, `Repeat`, `Reduce`, `Fold`), `std` (stages that wrap nothing: `Const`, `Identity`, `Countdown`, `Scan`…),
+  `projections`.
 - **cats** — cats-core integration (`Validated`, `IOr`, `Monoid`/typeclass instances for `Status`).
 - **examples** — runnable examples used by docs and tests; not published.
 - **pages** — Typelevel-site documentation project (sources in `docs/`); not aggregated in root, built via
