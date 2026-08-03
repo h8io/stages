@@ -13,8 +13,8 @@ import h8io.stages.base.Fn
   * }}}
   */
 object Coalesce extends Fn[Either[Any, Any], Any] {
-  override def f(input: Either[Any, Any]): Any =
-    input match {
+  override protected def f(in: Either[Any, Any]): Any =
+    in match {
       case Left(value) => value
       case Right(value) => value
     }

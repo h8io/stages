@@ -8,8 +8,9 @@ Two things can be signalled:
 
 - that the stage completed normally, with no special signal;
 - that a unit of work has finished — either cleanly or with accumulated errors. This is passed to
-  [`Evolution`](Evolution.md) when selecting the next continuation stage, and intercepted by enclosing alterators
-  such as `Loop` and `Repeat` as the cue to end the current cycle.
+  [`Evolution`](Evolution.md) when selecting the next continuation stage, and intercepted by the enclosing
+  [`cycles`](../../lib/cycles/Overview.md) operators — `Loop`, `Repeat`, `Reduce`, `Fold` — as the cue to end the
+  current cycle.
 
 ```scala mdoc
 import h8io.stages.*
@@ -21,8 +22,8 @@ import h8io.stages.*
 
 `Status.Complete` signals that a unit of work has finished. When its `errors` sequence is empty this represents clean
 completion; when `errors` is non-empty one or more errors were accumulated. The signal is passed to
-`Evolution.evolve`, which may select a different continuation stage than it would for `Success`. Enclosing alterators
-such as `Loop` and `Repeat` use it as the cue to stop looping and reset for the next cycle.
+`Evolution.evolve`, which may select a different continuation stage than it would for `Success`. The enclosing
+[`cycles`](../../lib/cycles/Overview.md) operators use it as the cue to stop looping and reset for the next cycle.
 
 Two convenience values cover the common cases:
 

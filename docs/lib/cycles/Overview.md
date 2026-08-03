@@ -11,6 +11,10 @@ into an accumulator with a binary operation stage; [`Fold`](Fold.md) does the sa
 the outer input, so — unlike `Reduce` — it always has a value to yield. All of them absorb an error-free
 `Complete` into a `Success` and preserve accumulated errors.
 
+Feeding the output back gives `Loop` one more way out of the cycle: an iteration that produces no output leaves it
+with nothing to feed, so the cycle ends there too. For the other three the status alone decides — an iteration
+yielding nothing with `Success` keeps them spinning.
+
 The family shares one lifecycle contract:
 
 - **Status isolation.** The continuation of the inner stage is always selected on the status the inner stage

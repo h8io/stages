@@ -65,11 +65,11 @@ immediately rather than carried forward. The reference terminal driver — the `
 By default at most one of `evolve` and `dispose()` is called on any evolution instance: `execute` only disposes,
 and a pipeline that continues only evolves, dropping the previous evolution. The two calls are not mutually
 exclusive, though: a caller that has obtained the continuation via `evolve` may still call `dispose()` on the same
-instance later. Operators that own their inner stage — [`Loop`](../../lib/cycles/Loop.md) and
-[`Repeat`](../../lib/cycles/Repeat.md) — do exactly that: they evolve the inner evolution eagerly and keep its
-`dispose` as the terminal cleanup handle for the generation just constructed. `dispose()` must therefore stay valid
-after `evolve` and release everything still alive — including resources acquired while constructing the
-continuation. `evolve` transfers no ownership: the evolution remains the cleanup point for its lineage until the
+instance later. Operators that own their inner stage — [`Loop`](../../lib/cycles/Loop.md),
+[`Repeat`](../../lib/cycles/Repeat.md) and the rest of the [`cycles`](../../lib/cycles/Overview.md) family — do
+exactly that: they evolve the inner evolution eagerly and keep its `dispose` as the terminal cleanup handle for the
+generation just constructed. `dispose()` must therefore stay valid after `evolve` and release everything still
+alive — including resources acquired while constructing the continuation. `evolve` transfers no ownership: the evolution remains the cleanup point for its lineage until the
 continuation has run and produced an evolution of its own, which takes over as the terminal handle from that moment
 on.
 
@@ -146,6 +146,12 @@ evolution classes it builds are internal to the core.
 evolution would have returned.  
 Disposal is delegated unchanged to the wrapped evolution.
 
-This is used internally when a `Yield.None` propagates through a composed stage: because no output was produced,
-the downstream stage cannot be invoked immediately, so it is folded into the evolution via `map` so that the entire
-composed pipeline will be applied when the next input arrives.
+This is how an operator keeps its wrapping in place across generations: a decorator such as
+[`Lift`](../../lib/operators/Lift.md), [`Safe`](../../lib/operators/Safe.md) or
+[`CompleteIfNone`](../../lib/operators/CompleteIfNone.md) maps the inner evolution with its own constructor, so the
+continuation comes back wrapped exactly the way the current stage is. The core never calls `map` itself — it is the
+tool the lib module builds its decorators on.
+
+This is not what happens when a `Yield.None` propagates through a composed stage. There the downstream stage cannot
+be invoked immediately, so it is skipped instead, and the evolution its `skip()` returns is folded in with `compose`
+— so that the whole composed pipeline is applied when the next input arrives.

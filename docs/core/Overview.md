@@ -1,6 +1,6 @@
 # Overview
 
-The `core` module defines the minimal algebra on which the rest of the library is built: five types and a single
+The `core` module defines the minimal algebra on which the rest of the library is built: four types and a single
 composition operator. The module carries no library dependencies.
 
 ## Motivation
@@ -26,7 +26,8 @@ The `I` parameter is contravariant because the enclosed `Evolution` will eventua
 [`Status`](classes/Status.md)`[+E]` is the completion signal attached to every [`Yield`](classes/Yield.md):
 `Success` for ordinary processing, or `Complete[E]` when a unit of work has finished — cleanly or with accumulated
 errors. `Complete` is passed to [`Evolution`](classes/Evolution.md) when selecting the next continuation stage, and
-is intercepted by enclosing alterators such as `Loop` and `Repeat` as the cue to end the current cycle.
+is intercepted by the enclosing [`cycles`](../lib/cycles/Overview.md) operators — `Loop`, `Repeat`, `Reduce`,
+`Fold` — as the cue to end the current cycle.
 
 [`Evolution`](classes/Evolution.md)`[-I, +O, +E]` is a continuation: given a [`Status`](classes/Status.md), it returns
 the next stage to use for re-processing. It also owns disposal of the resources held by the stage that produced it.

@@ -13,10 +13,12 @@ other status is left unchanged. If `duration ≤ 0`, the factory returns [`DeadE
 This contrasts with [`GlobalSoftDeadline`](../std/GlobalSoftDeadline.md), whose deadline is fixed at
 construction and never resets.
 
-The factory has two overloads:
+The factory has four overloads — both duration types in both shapes:
 
-- `LocalSoftDeadline(duration: FiniteDuration, stage)` — wraps a single stage;
-- `LocalSoftDeadline(duration: FiniteDuration)` — returns a `Decoration` to apply to multiple stages.
+- `LocalSoftDeadline(duration: FiniteDuration, stage)` and `LocalSoftDeadline(duration: java.time.Duration, stage)` —
+  wrap a single stage;
+- `LocalSoftDeadline(duration: FiniteDuration)` and `LocalSoftDeadline(duration: java.time.Duration)` — return a
+  `Decoration` to apply to multiple stages.
 
 ```scala mdoc
 import h8io.stages.*

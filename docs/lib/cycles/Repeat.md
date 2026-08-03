@@ -4,6 +4,11 @@
 transitions, until the stage signals completion. On an error-free [`Status.Complete`](../../core/classes/Status.md)
 the status is converted back to `Success`; if the `Complete` carries errors, those are preserved.
 
+Only the status ends the cycle. An iteration that yields [`Yield.None`](../../core/classes/Yield.md) with `Success`
+keeps `Repeat` spinning — deliberately so: unlike [`Loop`](Loop.md), `Repeat` never feeds an output anywhere, so the
+absence of one says nothing about whether the work is done. A stage that has to stop the cycle without producing a
+value must say so with `Complete`.
+
 As in [`Loop`](Loop.md), the continuation of the inner stage is selected on the status the inner stage itself
 produced — never on the status `Repeat` reports to the enclosing pipeline (an error-free `Complete` is absorbed into a
 `Success`), and never on the status that pipeline later evolves `Repeat` with. A skipped `Repeat` skips its inner stage

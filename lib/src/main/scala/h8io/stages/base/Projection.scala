@@ -28,8 +28,8 @@ trait Projection[-I, O] extends StaticStage[I, O, Nothing] {
 
 /** A [[Projection]] for the left side of a covariant binary type constructor `C[+_, +_]`.
   *
-  * The singleton instance operates on `C[Any, ?]` and can be safely cast to any specific `Projection[C[T, ?], T]` via
-  * the `apply[T]` method.
+  * Instances operate on the widened `C[Any, ?]` and can be safely cast to any specific `Projection[C[T, ?], T]` via the
+  * `apply[T]` method.
   *
   * @tparam C
   *   the binary type constructor (must be covariant in both type parameters)

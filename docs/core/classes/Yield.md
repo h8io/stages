@@ -78,7 +78,7 @@ Yield(lookup(-1), Status.Success, lookupEvolution)
 
 ## Matching Without Naming the Variant
 
-The mirror `unapply` makes `Yield` itself usable as an extractor: a single case binds the optional output, the
+The companion's `unapply` makes `Yield` itself usable as an extractor: a single case binds the optional output, the
 status and the evolution, whichever variant the value is. It is the inverse of `apply`; because it returns
 `scala.Some`, the compiler knows the extractor always matches, and a single `case Yield(...)` is exhaustive:
 

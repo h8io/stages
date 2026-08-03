@@ -9,11 +9,12 @@ import scala.annotation.nowarn
   *
   *   - [[Status.Success]] — the stage completed normally and processing may continue.
   *   - [[Status.Complete]] — a unit of work has finished. Passed to [[Evolution]] when selecting the next continuation
-  *     stage; enclosing alterators such as `Loop` or `Repeat` use it to end the current cycle. When `errors` is empty
-  *     this represents clean completion; when `errors` is non-empty it carries one or more accumulated errors.
+  *     stage; the enclosing cycle operators (`Loop`, `Repeat` and the rest of `h8io.stages.cycles` in the lib module)
+  *     use it to end the current cycle. When `errors` is empty this represents clean completion; when `errors` is
+  *     non-empty it carries one or more accumulated errors.
   *
-  * Statuses form a semigroup under `combine`, used when merging the results of composed stages: `Success` is the
-  * identity element and `Complete` accumulates errors on combination.
+  * Statuses form a monoid under `combine`, used when merging the results of composed stages: `Success` is the identity
+  * element and `Complete` accumulates errors on combination.
   *
   * @tparam E
   *   the error type (covariant)
@@ -60,8 +61,8 @@ object Status {
     *
     * When `errors` is empty (i.e., `this == complete`) this represents clean completion. When `errors` is non-empty one
     * or more errors were accumulated. The signal is passed to [[Evolution.evolve]], which may select a different
-    * continuation stage than it would for [[Success]]. Enclosing alterators such as `Loop` or `Repeat` intercept it as
-    * the cue to stop looping and reset for the next cycle.
+    * continuation stage than it would for [[Success]]. The enclosing cycle operators (`Loop`, `Repeat` and the rest of
+    * `h8io.stages.cycles` in the lib module) intercept it as the cue to stop looping and reset for the next cycle.
     *
     * `Complete` dominates [[Success]] in composition. Two `Complete` statuses are merged by concatenating their error
     * sequences.
