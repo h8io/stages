@@ -6,9 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `stages` is an experimental Scala library for building pipelines out of steps ("stages") that can evolve as they run.
 Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1.x on `main`; an sbt 2.0.0 migration
-lives on the `update/sbt-2.0.0` branch, blocked because `sbt-typelevel-site` (Laika) has no sbt 2 support. That block
-is why `.github/workflows/release.yaml` is pinned to `h8io/gha@v3` while the other two workflows are on `@v5`: from
-v4 the release workflow runs `sbt cleanFull`, an sbt 2.0-only command.
+lives on the `update/sbt-2.0.0` branch, blocked because `sbt-typelevel-site` (Laika) has no sbt 2 support.
+
+CI is `h8io/gha@v6` in all three workflows, and from that series it holds no build commands: each one runs a script
+from this repository named after it — `test.sh`, `release.sh`, `snapshot.sh`. Nothing about the sbt version leaks
+into shared CI any more, which is what used to pin the release workflow to an older series of `gha`.
 
 ## Commands
 
@@ -21,8 +23,18 @@ sbt +test                         # tests across both Scala versions (2.13 and 2
 sbt scalafmtAll scalafmtSbt       # format code and build files
 sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
 ./test.sh                         # full CI check: format check, cross-build, coverage gate, docs, unidoc, site
-./pages.sh                        # build the documentation site into target/pages
+sbt pages/tlSite                  # build the documentation site alone, into pages/target/docs/site
 ```
+
+`release.sh` and `snapshot.sh` are the other two entry points, but they publish to Maven Central and are meant to be
+run by CI rather than by hand. `release.sh` builds the site as part of the same sbt run and assembles it under
+`target/pages`, which is what the release workflow uploads and deploys. The site is built *before* `ci-release`, so
+that anything still able to fail does so while the release can still be retried on the same tag.
+
+Documentation is deployed only by a successful release: the site is unversioned, so it must never describe a version
+that failed to reach Maven Central. There is no way to publish it separately, and no workflow to do so. If a release
+succeeded and only the deployment failed, re-run the `pages` job of that run — the built site is kept as a workflow
+artifact for a week.
 
 ## Modules
 

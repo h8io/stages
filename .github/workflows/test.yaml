@@ -12,6 +12,6 @@ on:
 jobs:
   test:
     secrets: inherit
-    uses: h8io/gha/.github/workflows/test.yaml@v5
+    uses: h8io/gha/.github/workflows/test.yaml@v6
     with:
       timeout-minutes: 5
