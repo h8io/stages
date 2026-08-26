@@ -72,7 +72,7 @@ class EndoStageMonoidTest
     loop(stage :: Nil, Nil)
   }
 
-  private def toTuple[IO, E](evolution: Evolution[IO, IO, E]): (List[Stage.Any], List[Stage.Any]) =
+  private def toTuple[T, E](evolution: Evolution.Endo[T, E]): (List[Stage.Any], List[Stage.Any]) =
     (toList(evolution.evolve(Status.Success)), toList(evolution.evolve(mockComplete())))
 
   private def toTuple[T, E](yld: Yield[T, T, E]): Product =

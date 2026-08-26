@@ -163,24 +163,24 @@ object Evolution {
     *   the inner evolution whose continuations are transformed
     * @param f
     *   the function applied to each continuation stage
-    * @tparam II
+    * @tparam MI
     *   the input type of the inner stages
-    * @tparam IO
+    * @tparam MO
     *   the output type of the inner stages
-    * @tparam IE
+    * @tparam ME
     *   the error type of the inner stages
-    * @tparam OI
+    * @tparam I
     *   the input type of the resulting stages (contravariant)
-    * @tparam OO
+    * @tparam O
     *   the output type of the resulting stages (covariant)
-    * @tparam OE
+    * @tparam E
     *   the error type of the resulting stages (covariant)
     */
-  private[stages] final case class Mapped[II, IO, IE, -OI, +OO, +OE](
-      evolution: Evolution[II, IO, IE],
-      f: Stage[II, IO, IE] => Stage[OI, OO, OE])
-      extends Evolution[OI, OO, OE] {
-    override def evolve(status: Status[?]): Stage[OI, OO, OE] = f(evolution.evolve(status))
+  private[stages] final case class Mapped[MI, MO, ME, -I, +O, +E](
+      evolution: Evolution[MI, MO, ME],
+      f: Stage[MI, MO, ME] => Stage[I, O, E])
+      extends Evolution[I, O, E] {
+    override def evolve(status: Status[?]): Stage[I, O, E] = f(evolution.evolve(status))
     override def dispose(): Unit = evolution.dispose()
   }
 }
