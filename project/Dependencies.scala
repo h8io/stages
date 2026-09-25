@@ -9,7 +9,7 @@ object Dependencies {
   val TestBundle: Seq[ModuleID] =
     Seq(
       "org.scalatest" %% "scalatest" % "3.2.20",
-      "org.scalamock" %% "scalamock" % "7.6.0",
+      "org.scalamock" %% "scalamock-scalatest" % "7.6.0",
       "org.typelevel" %% "cats-laws" % CatsVersion,
       "org.typelevel" %% "discipline-scalatest" % "2.3.0",
       "org.scalatestplus" %% "scalacheck-1-19" % "3.2.20.0",
