@@ -5,8 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 `stages` is an experimental Scala library for building pipelines out of steps ("stages") that can evolve as they run.
-Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1.x on `main`; an sbt 2.0.0 migration
-lives on the `update/sbt-2.0.0` branch, blocked because `sbt-typelevel-site` (Laika) has no sbt 2 support.
+Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1.x on `main`; an sbt 2 migration
+lives on the `update/sbt-2.0.7` branch. Its blocker was `sbt-typelevel-site` (Laika), which had no sbt 2 support and has
+since been replaced by mdoc + Docusaurus.
 
 CI is `h8io/gha@v6` in all three workflows, and from that series it holds no build commands: each one runs a script
 from this repository named after it — `test.sh`, `release.sh`, `snapshot.sh`. Nothing about the sbt version leaks
@@ -23,11 +24,13 @@ sbt +test                         # tests across both Scala versions (2.13 and 2
 sbt scalafmtAll scalafmtSbt       # format code and build files
 sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
 ./test.sh                         # full CI check: format check, cross-build, coverage gate, docs, unidoc, site
-sbt pages/tlSite                  # build the documentation site alone, into pages/target/docs/site
+sbt pages/mdoc                    # compile the docs' `scala mdoc` blocks, into pages/target/mdoc
+(cd pages && npm ci && npm run build)  # render pages/target/mdoc with Docusaurus, into pages/target/site
+(cd pages && npm start)           # live preview; pair with `sbt "pages/mdoc --watch"`
 ```
 
 `release.sh` and `snapshot.sh` are the other two entry points, but they publish to Maven Central and are meant to be
-run by CI rather than by hand. `release.sh` builds the site as part of the same sbt run and assembles it under
+run by CI rather than by hand. `release.sh` builds the site between two sbt runs and assembles it under
 `target/pages`, which is what the release workflow uploads and deploys. The site is built *before* `ci-release`, so
 that anything still able to fail does so while the release can still be retried on the same tag.
 
@@ -47,8 +50,10 @@ artifact for a week.
   `projections`.
 - **cats** — cats-core integration (`Validated`, `IOr`, `Monoid`/typeclass instances for `Status`).
 - **examples** — runnable examples used by docs and tests; not published.
-- **pages** — Typelevel-site documentation project (sources in `docs/`); not aggregated in root, built via
-  `pages/tlSite`.
+- **pages** — documentation site (sources in `docs/`); not aggregated in root. Two halves: sbt runs mdoc and unidoc,
+  then Docusaurus (`pages/package.json`, Node ≥ 20) renders mdoc's output. The navigation is `pages/sidebars.js` — a new
+  page must be listed there. Docs are CommonMark, not MDX (`markdown.format: 'detect'`), and broken links fail the
+  build.
 
 Dependency chain: `cats`/`examples` → `lib` → `core`.
 
