@@ -5,4 +5,5 @@ set -euxo pipefail
 sbt scalafmtSbtCheck scalafmtCheckAll \
     +clean +coverage +test \
     +coverageSummary +coverageAggregate +coverageSummaryCheck \
-    +doc +packagedArtifacts pages/clean +pages/unidoc pages/tlSite
+    +doc +packagedArtifacts pages/clean +pages/unidoc pages/mdoc
+(cd pages && npm ci && npm run build)
