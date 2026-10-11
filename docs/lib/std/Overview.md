@@ -20,7 +20,7 @@ unless their whole purpose is to carry some.
 The first four never fail and never change: they are [`Fn`](../base/Fn.md) stages. Four of them —
 [`Identity`](Identity.md), [`Swap`](Swap.md), [`Coalesce`](Coalesce.md) and [`Complete`](Complete.md) — hold no
 value at all, so each is a single instance defined over `Any` and cast to what the use site needs by a typed
-`apply[T]`, rather than allocated afresh.
+`apply[T]`, rather than allocated afresh — see [Polymorphic Singletons](../Overview.md#polymorphic-singletons).
 
 The last two carry something between runs. [`Countdown`](Countdown.md) counts, and
 [`Scan`](Scan.md) accumulates — both by evolving into the next generation of themselves rather than by mutating,
