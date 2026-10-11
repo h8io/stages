@@ -22,18 +22,38 @@ versionScheme := Some("semver-spec")
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-scalacOptions ++=
-  (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, minor)) =>
-      Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
-        "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings") ++
-        (if (minor == 13) Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
-         else Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification"))
-    case _ =>
-      // Scala 2 needs the trailing `_` to eta-expand a method without an expected function type, Scala 3 does not
-      Seq("-deprecation", "-feature", "-unchecked", "-Wunused:all", "-Werror",
-        "-Wconf:msg=eta-expansion is unnecessary:s")
-  })
+scalacOptions ++= {
+  val scala2 = Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
+    "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings")
+  CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 13)) => scala2 ++ Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
+    case Some((2, 12)) =>
+      scala2 ++ Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
+    case Some((3, _)) =>
+      Seq(
+        "-deprecation",
+        "-feature",
+        "-unchecked",
+        // The -Xlint of Scala 3 is -Wall, less -Wvalue-discard and -Wnonunit-statement, which -Xlint does not include
+        "-Wunused:all",
+        "-Wimplausible-patterns",
+        "-Winfer-union",
+        "-Wrecurse-with-default",
+        "-Wshadow:all",
+        "-Wsafe-init",
+        "-Wtostring-interpolated",
+        "-Wenum-comment-discard",
+        "-Wwrong-arrow",
+        "-Werror",
+        "-explain",
+        "-opt",
+        "-Wopt:at-inline-failed-summary",
+        // Scala 2 needs the trailing `_` to eta-expand a method without an expected function type, Scala 3 does not
+        "-Wconf:msg=eta-expansion is unnecessary:s"
+      )
+    case _ => throw new MessageOnlyException(s"Unsupported Scala version ${scalaVersion.value}")
+  }
+}
 
 coverageSummaryStmtLowThreshold := 100
 coverageSummaryStmtHighThreshold := 100
@@ -42,16 +62,23 @@ coverageSummaryBranchHighThreshold := 100
 
 libraryDependencies ++= TestBundle % Test
 
+// Scala 3 scaladoc documents the members testkit traits inherit from ScalaTest and ScalaMock, and warns about every
+// link in their docs that it cannot resolve
+val testKitDocScalacOptions = TestKit / doc / scalacOptions ++=
+  (if (scalaBinaryVersion.value == "3") Seq("-nowarn") else Nil)
+
 val core = (project in file("core"))
   .settings(
     name := "stages-core",
-    libraryDependencies ++= TestBundle % TestKit)
+    libraryDependencies ++= TestBundle % TestKit,
+    testKitDocScalacOptions)
   .enablePlugins(TestKitPlugin)
 
 val lib = (project in file("lib"))
   .settings(
     name := "stages-lib",
-    libraryDependencies ++= TestBundle % TestKit)
+    libraryDependencies ++= TestBundle % TestKit,
+    testKitDocScalacOptions)
   .enablePlugins(TestKitPlugin)
   .dependsOn(core, core % "test->testkit")
 

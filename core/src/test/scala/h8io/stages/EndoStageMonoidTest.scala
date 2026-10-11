@@ -57,7 +57,7 @@ class EndoStageMonoidTest
           override def dispose(): Unit = {}
         }
 
-        override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
+        override def toString(): String = s"Stage.Endo: ${prefix.toString} + _ + ${suffix.toString}"
       }
     }
 
