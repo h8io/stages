@@ -5,9 +5,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 `stages` is an experimental Scala library for building pipelines out of steps ("stages") that can evolve as they run.
-Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1.x on `main`; an sbt 2 migration
-lives on the `update/sbt-2.0.7` branch. Its blocker was `sbt-typelevel-site` (Laika), which had no sbt 2 support and has
-since been replaced by mdoc + Docusaurus.
+Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`, built with sbt 2. Cross-building still goes
+through `crossScalaVersions` and `+`, not `projectMatrix`.
+
+sbt 2 differs from sbt 1 in ways that matter here:
+- `sbt` starts a thin client that keeps a server running in the background. The client takes one command line, so
+  several commands as separate arguments fail to parse; scripts run `sbt --server`, which works like sbt 1.
+- `test` is incremental: it skips suites that passed before and have not changed since, even after `clean`. `testFull`
+  runs everything.
+- Task results, compilation included, are cached on disk machine-wide (`~/.cache/sbt`). A cached compilation bypasses
+  the scoverage compiler plugin, so its instrumentation data is never written; `cleanFull` empties that cache (and
+  `target`) and is how `test.sh` starts. CI starts with an empty cache anyway.
+- Bare settings in `build.sbt` apply to every project, which is what `ThisBuild` used to be for. sbt-dynver's keys are
+  the exception: the plugin reads them from `ThisBuild`.
+- Every project's `target` lives under the root's `target/out`. `pages` writes mdoc and unidoc output to
+  `pages/target` instead, where Docusaurus and `release.sh` read it; `pages/clean` empties it, `cleanFull` does not.
 
 CI is `h8io/gha@v7` in all three workflows. Since v6 it holds no build commands: each one runs a script from this
 repository named after it — `test.sh`, `release.sh`, `snapshot.sh`. Nothing about the sbt version leaks into shared CI
@@ -17,13 +29,13 @@ to the test and release workflows, which the Docusaurus build needs.
 ## Commands
 
 ```bash
-sbt test                          # run all tests (all modules)
-sbt lib/test                      # run tests for one module (core / lib / cats / examples)
+sbt testFull                      # run all tests (all modules); plain `test` skips what already passed
+sbt lib/testFull                  # run tests for one module (core / lib / cats / examples)
 sbt "lib/testOnly h8io.stages.cycles.LoopTest"             # single test suite
 sbt "lib/testOnly *LoopTest -- -z \"substring of test name\""  # single test case
-sbt +test                         # tests across both Scala versions (2.13 and 2.12)
-sbt scalafmtAll scalafmtSbt       # format code and build files
-sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
+sbt +testFull                     # tests across both Scala versions (2.13 and 2.12)
+sbt "scalafmtAll; scalafmtSbt"    # format code and build files
+sbt "scalafmtCheckAll; scalafmtSbtCheck"  # check formatting (CI-style)
 ./test.sh                         # full CI check: format check, cross-build, coverage gate, docs, unidoc, site
 sbt pages/mdoc                    # compile the docs' `scala mdoc` blocks, into pages/target/mdoc
 (cd pages && npm ci && npm run build)  # render pages/target/mdoc with Docusaurus, into pages/target/site
