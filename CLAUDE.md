@@ -10,9 +10,11 @@ Scala 2.13, cross-built to 2.12 and to Scala 3.9 (LTS), built with sbt 2. Cross-
 current Spark. All three share one source tree, written in Scala 2 style that Scala 3 also accepts; idiomatic Scala 3
 (`enum`, `extension`, no package objects) is planned for later, with version-specific source directories. Warnings
 are fatal on every version (`-Xfatal-warnings` on 2.x, `-Werror` on 3), except Scala 3's notice that a trailing `_`
-for eta-expansion is unnecessary — Scala 2 needs it. The main code is also held to discarded values
-(`-Wvalue-discard`, `-Wnonunit-statement`; `-Ywarn-value-discard` on 2.12, with `-Wall` complete on 3); tests and testkit
-are not, since a ScalaMock expectation or a ScalaTest assertion is routinely a statement whose value is dropped. The site and its API docs are built for 2.12 and 2.13 only.
+for eta-expansion is unnecessary — Scala 2 needs it. Scala 3 takes `-Wall`, and Scala 2 its counterparts,
+including discarded values (`-Wvalue-discard`, `-Wnonunit-statement`; `-Ywarn-value-discard` on 2.12). Tests, testkit
+and the docs' mdoc snippets silence those two through `-Wconf` (`lenientScalacOptions` in `build.sbt`): a ScalaMock
+expectation, a ScalaTest assertion or an expression shown with its result is a statement whose value is dropped on
+purpose. Every branch on the Scala version lists the versions it knows and ends in `unsupportedScala`. The site and its API docs are built for 2.12 and 2.13 only.
 
 Under Scala 3 a direct call of an untyped polymorphic singleton, such as `Identity(x)` or `Either.Left(in)`, is an
 ambiguous overload (see "Polymorphic Singletons" in `docs/lib/Overview.md`); tests name the type: `Identity[Int](x)`.

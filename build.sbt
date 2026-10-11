@@ -27,27 +27,21 @@ ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
 scalacOptions ++= {
-  val scala2 = Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
-    "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings")
+  val scala2 = Seq("-Xsource:3", "--deprecation", "--feature", "--unchecked", "-Xlint:_", "-Xfatal-warnings",
+    "-opt:l:inline", "-opt-warnings")
   CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 13)) => scala2 ++ Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
+    case Some((2, 13)) =>
+      scala2 ++ Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code", "-Wvalue-discard",
+        "-Wnonunit-statement")
     case Some((2, 12)) =>
-      scala2 ++ Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
+      scala2 ++ Seq("-language:higherKinds", "-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn",
+        "-Ywarn-value-discard", "-Ypartial-unification")
     case Some((3, 9)) =>
       Seq(
         "-deprecation",
         "-feature",
         "-unchecked",
-        // -Wall, less -Wvalue-discard and -Wnonunit-statement, which the main code adds below
-        "-Wunused:all",
-        "-Wimplausible-patterns",
-        "-Winfer-union",
-        "-Wrecurse-with-default",
-        "-Wshadow:all",
-        "-Wsafe-init",
-        "-Wtostring-interpolated",
-        "-Wenum-comment-discard",
-        "-Wwrong-arrow",
+        "-Wall",
         "-Werror",
         "-explain",
         "-opt",
@@ -59,13 +53,19 @@ scalacOptions ++= {
   }
 }
 
-// Main code only: a test statement is routinely a ScalaMock expectation or a ScalaTest assertion whose value is dropped
-Compile / compile / scalacOptions ++=
-  (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 13)) | Some((3, 9)) => Seq("-Wvalue-discard", "-Wnonunit-statement")
-    case Some((2, 12)) => Seq("-Ywarn-value-discard")
-    case _ => unsupportedScala(scalaVersion.value)
-  })
+// For code whose statements are values on purpose: a ScalaMock expectation or a ScalaTest assertion in tests and
+// testkit, an expression shown with its result in the docs. Those are spared the warnings about discarded values. On
+// 2.13 the category of -Wnonunit-statement is shared with the warning about a pure expression in statement position,
+// which they lose as well.
+def lenientScalacOptions(scalaVersion: String): Seq[String] =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, 13)) => Seq("-Wconf:cat=w-flag-value-discard:s,cat=other-pure-statement:s")
+    case Some((2, 12)) => Seq("-Wconf:cat=w-flag-value-discard:s")
+    case Some((3, 9)) => Seq("-Wconf:name=ValueDiscarding:s,name=UnusedNonUnitValue:s")
+    case _ => unsupportedScala(scalaVersion)
+  }
+
+Test / scalacOptions ++= lenientScalacOptions(scalaVersion.value)
 
 coverageSummaryStmtLowThreshold := 100
 coverageSummaryStmtHighThreshold := 100
@@ -74,27 +74,30 @@ coverageSummaryBranchHighThreshold := 100
 
 libraryDependencies ++= TestBundle % Test
 
-// Scala 3 scaladoc documents the members testkit traits inherit from ScalaTest and ScalaMock, and warns about every
-// link in their docs that it cannot resolve
-val testKitDocScalacOptions = TestKit / doc / scalacOptions ++=
-  (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 13)) | Some((2, 12)) => Nil
-    case Some((3, 9)) => Seq("-nowarn")
-    case _ => unsupportedScala(scalaVersion.value)
-  })
+val testKitSettings = Seq(
+  TestKit / scalacOptions ++= lenientScalacOptions(scalaVersion.value),
+  // Scala 3 scaladoc documents the members testkit traits inherit from ScalaTest and ScalaMock, and warns about every
+  // link in their docs that it cannot resolve
+  TestKit / doc / scalacOptions ++=
+    (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 13)) | Some((2, 12)) => Nil
+      case Some((3, 9)) => Seq("-nowarn")
+      case _ => unsupportedScala(scalaVersion.value)
+    })
+)
 
 val core = (project in file("core"))
   .settings(
     name := "stages-core",
     libraryDependencies ++= TestBundle % TestKit,
-    testKitDocScalacOptions)
+    testKitSettings)
   .enablePlugins(TestKitPlugin)
 
 val lib = (project in file("lib"))
   .settings(
     name := "stages-lib",
     libraryDependencies ++= TestBundle % TestKit,
-    testKitDocScalacOptions)
+    testKitSettings)
   .enablePlugins(TestKitPlugin)
   .dependsOn(core, core % "test->testkit")
 
@@ -127,6 +130,7 @@ val pages = (project in file("pages"))
     name := "stages-pages",
     publish / skip := true,
     publishLocal / skip := true,
+    scalacOptions ++= lenientScalacOptions(scalaVersion.value),
     // The sources are shared, so the Scala 2 API docs cover Scala 3 as well
     crossScalaVersions := crossScalaVersions.value.filter { version =>
       CrossVersion.partialVersion(version) match {
