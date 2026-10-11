@@ -4,6 +4,10 @@ import h8io.sbt.dependencies.*
 val ProjectName = "stages"
 val SiteRoot = s"https://stages.h8.io/"
 
+// Every branch on the Scala version lists the versions it knows and ends here, so that a new one fails the build until
+// each of them has been looked at
+def unsupportedScala(version: String): Nothing = throw new MessageOnlyException(s"Unsupported Scala version $version")
+
 organization := "io.h8"
 organizationName := "H8IO"
 organizationHomepage := Some(uri("https://github.com/h8io/"))
@@ -29,7 +33,7 @@ scalacOptions ++= {
     case Some((2, 13)) => scala2 ++ Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
     case Some((2, 12)) =>
       scala2 ++ Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
-    case Some((3, _)) =>
+    case Some((3, 9)) =>
       Seq(
         "-deprecation",
         "-feature",
@@ -51,15 +55,16 @@ scalacOptions ++= {
         // Scala 2 needs the trailing `_` to eta-expand a method without an expected function type, Scala 3 does not
         "-Wconf:msg=eta-expansion is unnecessary:s"
       )
-    case _ => throw new MessageOnlyException(s"Unsupported Scala version ${scalaVersion.value}")
+    case _ => unsupportedScala(scalaVersion.value)
   }
 }
 
 // Main code only: a test statement is routinely a ScalaMock expectation or a ScalaTest assertion whose value is dropped
 Compile / compile / scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 13)) | Some((3, 9)) => Seq("-Wvalue-discard", "-Wnonunit-statement")
     case Some((2, 12)) => Seq("-Ywarn-value-discard")
-    case _ => Seq("-Wvalue-discard", "-Wnonunit-statement")
+    case _ => unsupportedScala(scalaVersion.value)
   })
 
 coverageSummaryStmtLowThreshold := 100
@@ -72,7 +77,11 @@ libraryDependencies ++= TestBundle % Test
 // Scala 3 scaladoc documents the members testkit traits inherit from ScalaTest and ScalaMock, and warns about every
 // link in their docs that it cannot resolve
 val testKitDocScalacOptions = TestKit / doc / scalacOptions ++=
-  (if (scalaBinaryVersion.value == "3") Seq("-nowarn") else Nil)
+  (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 13)) | Some((2, 12)) => Nil
+    case Some((3, 9)) => Seq("-nowarn")
+    case _ => unsupportedScala(scalaVersion.value)
+  })
 
 val core = (project in file("core"))
   .settings(
@@ -119,7 +128,13 @@ val pages = (project in file("pages"))
     publish / skip := true,
     publishLocal / skip := true,
     // The sources are shared, so the Scala 2 API docs cover Scala 3 as well
-    crossScalaVersions := crossScalaVersions.value.filterNot(_.startsWith("3.")),
+    crossScalaVersions := crossScalaVersions.value.filter { version =>
+      CrossVersion.partialVersion(version) match {
+        case Some((2, 13)) | Some((2, 12)) => true
+        case Some((3, 9)) => false
+        case _ => unsupportedScala(version)
+      }
+    },
     // sbt 2 moves every target under the root's target/out; npm and release.sh expect the site's inputs here
     cleanFiles += baseDirectory.value / "target",
     ScalaUnidoc / unidoc / target := baseDirectory.value / "target" / s"scala-${scalaBinaryVersion.value}" / "unidoc",
