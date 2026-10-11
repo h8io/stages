@@ -20,4 +20,6 @@ The projections for the cats types — `cats.data.Ior` and `cats.data.Validated`
 
 All of them are singletons built on [`Projection`](../base/Projection.md), which supplies the `some`/`none` helpers.
 The two-sided ones go through `LeftProjection`/`RightProjection`, which add the typed `apply[T]` view of the single
-instance; `Unlift`, having one side only, defines that view itself.
+instance; `Unlift`, having one side only, defines that view itself. See
+[Polymorphic Singletons](../Overview.md#polymorphic-singletons) for how a direct call of the untyped object reads
+under Scala 3.

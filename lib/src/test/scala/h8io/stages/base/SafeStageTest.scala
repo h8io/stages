@@ -37,7 +37,7 @@ class SafeStageTest
   it should "rethrow fatal exceptions" in {
     val e = new InterruptedException
     val stage = mock[SafeStage[AnyRef, Int, Long]]
-    val in = mock[AnyRef]
+    val in = new AnyRef
     (stage.body _).expects(in).throws(e)
     an[InterruptedException] should be thrownBy stage(in)
   }

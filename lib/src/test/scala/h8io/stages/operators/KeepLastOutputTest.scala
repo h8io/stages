@@ -71,7 +71,7 @@ class KeepLastOutputTest
     }
 
   it should "call the alterand.skip() method" in {
-    val out = mock[AnyRef]
+    val out = new AnyRef
     val stage = mock[Stage[UUID, AnyRef, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, AnyRef, Exception]]("evolution")
     (stage.skip _).expects().returns(evolution)

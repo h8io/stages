@@ -51,8 +51,8 @@ class LocalSoftDeadlineTest
     forAll(
       Gen.zip(
         Gen.long,
-        Gen.choose(1L, Int.MaxValue),
-        Gen.choose(1L, Int.MaxValue),
+        Gen.choose(1L, Int.MaxValue.toLong),
+        Gen.choose(1L, Int.MaxValue.toLong),
         Gen.uuid,
         arbEvolutionToYield[UUID, Instant, Long].arbitrary)) {
       case (ts, duration, overdue, in, yieldSupplier) =>
@@ -88,8 +88,8 @@ class LocalSoftDeadlineTest
     forAll(
       Gen.zip(
         Gen.long,
-        Gen.choose(1L, Int.MaxValue),
-        Gen.choose(1L, Int.MaxValue),
+        Gen.choose(1L, Int.MaxValue.toLong),
+        Gen.choose(1L, Int.MaxValue.toLong),
         Arbitrary.arbitrary[ZoneId],
         arbEvolutionToYield[ZoneId, ZonedDateTime, Exception].arbitrary
       )) {

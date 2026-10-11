@@ -5,29 +5,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 `stages` is an experimental Scala library for building pipelines out of steps ("stages") that can evolve as they run.
-Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1.x on `main`; an sbt 2.0.0 migration
-lives on the `update/sbt-2.0.0` branch, blocked because `sbt-typelevel-site` (Laika) has no sbt 2 support.
+Scala 2.13, cross-built to 2.12 and to Scala 3.9 (LTS), built with sbt 2. Cross-building still goes through
+`crossScalaVersions` and `+`, not `projectMatrix`. 2.13 is the main version and the priority, being the one native to
+current Spark. All three share one source tree, written in Scala 2 style that Scala 3 also accepts; idiomatic Scala 3
+(`enum`, `extension`, no package objects) is planned for later, with version-specific source directories. Warnings
+are fatal on every version (`-Xfatal-warnings` on 2.x, `-Werror` on 3), except Scala 3's notice that a trailing `_`
+for eta-expansion is unnecessary — Scala 2 needs it. The site and its API docs are built for 2.12 and 2.13 only.
 
-CI is `h8io/gha@v6` in all three workflows, and from that series it holds no build commands: each one runs a script
-from this repository named after it — `test.sh`, `release.sh`, `snapshot.sh`. Nothing about the sbt version leaks
-into shared CI any more, which is what used to pin the release workflow to an older series of `gha`.
+Under Scala 3 a direct call of an untyped polymorphic singleton, such as `Identity(x)` or `Either.Left(in)`, is an
+ambiguous overload (see "Polymorphic Singletons" in `docs/lib/Overview.md`); tests name the type: `Identity[Int](x)`.
+ScalaMock cannot mock Java classes under Scala 3, so tests use `new AnyRef` for opaque values, not `mock[AnyRef]`.
+
+sbt 2 differs from sbt 1 in ways that matter here:
+- `sbt` starts a thin client that keeps a server running in the background. The client takes one command line, so
+  several commands as separate arguments fail to parse; scripts run `sbt --server`, which works like sbt 1.
+- `test` is incremental: it skips suites that passed before and have not changed since, even after `clean`. `testFull`
+  runs everything.
+- Task results, compilation included, are cached on disk machine-wide (`~/.cache/sbt`). A cached compilation bypasses
+  the scoverage compiler plugin, so its instrumentation data is never written; `cleanFull` empties that cache (and
+  `target`) and is how `test.sh` starts. CI starts with an empty cache anyway.
+- Bare settings in `build.sbt` apply to every project, which is what `ThisBuild` used to be for. sbt-dynver's keys are
+  the exception: the plugin reads them from `ThisBuild`.
+- Every project's `target` lives under the root's `target/out`. `pages` writes mdoc and unidoc output to
+  `pages/target` instead, where Docusaurus and `release.sh` read it; `pages/clean` empties it, `cleanFull` does not.
+
+CI is `h8io/gha@v7` in all three workflows. Since v6 it holds no build commands: each one runs a script from this
+repository named after it — `test.sh`, `release.sh`, `snapshot.sh`. Nothing about the sbt version leaks into shared CI
+any more, which is what used to pin the release workflow to an older series of `gha`. v7 adds the latest Node.js LTS
+to the test and release workflows, which the Docusaurus build needs.
 
 ## Commands
 
 ```bash
-sbt test                          # run all tests (all modules)
-sbt lib/test                      # run tests for one module (core / lib / cats / examples)
+sbt testFull                      # run all tests (all modules); plain `test` skips what already passed
+sbt lib/testFull                  # run tests for one module (core / lib / cats / examples)
 sbt "lib/testOnly h8io.stages.cycles.LoopTest"             # single test suite
 sbt "lib/testOnly *LoopTest -- -z \"substring of test name\""  # single test case
-sbt +test                         # tests across both Scala versions (2.13 and 2.12)
-sbt scalafmtAll scalafmtSbt       # format code and build files
-sbt scalafmtCheckAll scalafmtSbtCheck  # check formatting (CI-style)
+sbt +testFull                     # tests across all Scala versions (2.13, 2.12, 3.9)
+sbt "scalafmtAll; scalafmtSbt"    # format code and build files
+sbt "scalafmtCheckAll; scalafmtSbtCheck"  # check formatting (CI-style)
 ./test.sh                         # full CI check: format check, cross-build, coverage gate, docs, unidoc, site
-sbt pages/tlSite                  # build the documentation site alone, into pages/target/docs/site
+sbt pages/mdoc                    # compile the docs' `scala mdoc` blocks, into pages/target/mdoc
+(cd pages && npm ci && npm run build)  # render pages/target/mdoc with Docusaurus, into pages/target/site
+(cd pages && npm start)           # live preview; pair with `sbt "pages/mdoc --watch"`
 ```
 
 `release.sh` and `snapshot.sh` are the other two entry points, but they publish to Maven Central and are meant to be
-run by CI rather than by hand. `release.sh` builds the site as part of the same sbt run and assembles it under
+run by CI rather than by hand. `release.sh` builds the site between two sbt runs and assembles it under
 `target/pages`, which is what the release workflow uploads and deploys. The site is built *before* `ci-release`, so
 that anything still able to fail does so while the release can still be retried on the same tag.
 
@@ -47,8 +71,10 @@ artifact for a week.
   `projections`.
 - **cats** — cats-core integration (`Validated`, `IOr`, `Monoid`/typeclass instances for `Status`).
 - **examples** — runnable examples used by docs and tests; not published.
-- **pages** — Typelevel-site documentation project (sources in `docs/`); not aggregated in root, built via
-  `pages/tlSite`.
+- **pages** — documentation site (sources in `docs/`); not aggregated in root. Two halves: sbt runs mdoc and unidoc,
+  then Docusaurus (`pages/package.json`, Node ≥ 20) renders mdoc's output. The navigation is `pages/sidebars.js` — a new
+  page must be listed there. Docs are CommonMark, not MDX (`markdown.format: 'detect'`), and broken links fail the
+  build.
 
 Dependency chain: `cats`/`examples` → `lib` → `core`.
 

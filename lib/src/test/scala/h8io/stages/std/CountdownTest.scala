@@ -14,16 +14,16 @@ class CountdownTest
 
   it should "create a DeadEnd object if n <= 0" in {
     Countdown(0) shouldBe DeadEnd
-    forAll(Gen.choose(Long.MinValue, -1))(n => Countdown(n) shouldBe DeadEnd)
+    forAll(Gen.choose(Long.MinValue, -1L))(n => Countdown(n) shouldBe DeadEnd)
   }
 
   it should "return a yield with status Complete when i == 1" in
-    forAll(Gen.zip(Gen.choose(1, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
+    forAll(Gen.zip(Gen.choose(1L, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
       Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Status.complete, Countdown[Short](n, n))
     }
 
   it should "return a yield with status Success if i > 1" in
-    forAll(Gen.zip(Gen.choose(2, Long.MaxValue), Arbitrary.arbitrary[String])) { case (n, in) =>
+    forAll(Gen.zip(Gen.choose(2L, Long.MaxValue), Arbitrary.arbitrary[String])) { case (n, in) =>
       def test(i: Long): Assertion =
         inside(Countdown(i, n)(in)) { case Yield.Some(`in`, Status.Success, evolution) =>
           evolution.evolve(Status.Success) shouldBe Countdown(i - 1, n)
@@ -32,7 +32,7 @@ class CountdownTest
         }
       test(2)
       test(n)
-      forAll(Gen.choose(2, n))(i => test(i))
+      forAll(Gen.choose(2L, n))(i => test(i))
     }
 
   "Countdown constructor" should "fail if n == 0" in {

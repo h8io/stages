@@ -10,6 +10,6 @@ class DeadEndTest extends AnyFlatSpec with Matchers with MockFactory with ScalaC
   "DeadEnd" should "return None for any argument" in {
     val dispose = mock[() => Unit]
     val stage = DeadEnd(dispose)
-    stage(mock[AnyRef]) shouldBe Yield.None(Status.complete, stage)
+    stage(new AnyRef) shouldBe Yield.None(Status.complete, stage)
   }
 }

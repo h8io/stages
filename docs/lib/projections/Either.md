@@ -4,8 +4,8 @@
 Each extracts one side of an `Either` and passes it downstream, or produces no output when the `Either` holds
 the other side. In both cases the status is `Status.Success`, so the pipeline continues.
 
-Use `Either.Left[T]` and `Either.Right[T]` to obtain a typed [`Projection`](../base/Projection.md)`[Either[T, ?], T]` or
-`Projection[Either[?, T], T]` respectively.
+Use `Either.Left[T]` and `Either.Right[T]` to obtain a typed [`Projection`](../base/Projection.md)`[Either[T, Any], T]` or
+`Projection[Either[Any, T], T]` respectively.
 
 ```scala mdoc
 import h8io.stages.projections.*

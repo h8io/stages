@@ -30,7 +30,7 @@ class CacheTest
       val cache = Cache(stage)
       (stage.apply _).expects(in).returns(yld)
       val cacheYield = cache(in)
-      inside((yld, cacheYield)) {
+      inside[(Yield[UUID, String, Exception], Yield[UUID, String, Exception]), Unit]((yld, cacheYield)) {
         case (Yield.Some(out, status, _), Yield.Some(cacheOut, cacheStatus, cacheEvolution)) =>
           cacheOut shouldBe out
           cacheStatus shouldBe status
@@ -97,7 +97,7 @@ class CacheTest
     }
 
   it should "call the alterand.skip() method" in {
-    val out = mock[AnyRef]
+    val out = new AnyRef
     val stage = mock[Stage[UUID, AnyRef, Exception]]("alterand")
     val evolution = mock[Evolution[UUID, AnyRef, Exception]]("evolution")
     val cached = Cached(out, stage)
