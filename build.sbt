@@ -34,7 +34,7 @@ scalacOptions ++= {
         "-deprecation",
         "-feature",
         "-unchecked",
-        // The -Xlint of Scala 3 is -Wall, less -Wvalue-discard and -Wnonunit-statement, which -Xlint does not include
+        // -Wall, less -Wvalue-discard and -Wnonunit-statement, which the main code adds below
         "-Wunused:all",
         "-Wimplausible-patterns",
         "-Winfer-union",
@@ -54,6 +54,13 @@ scalacOptions ++= {
     case _ => throw new MessageOnlyException(s"Unsupported Scala version ${scalaVersion.value}")
   }
 }
+
+// Main code only: a test statement is routinely a ScalaMock expectation or a ScalaTest assertion whose value is dropped
+Compile / compile / scalacOptions ++=
+  (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 12)) => Seq("-Ywarn-value-discard")
+    case _ => Seq("-Wvalue-discard", "-Wnonunit-statement")
+  })
 
 coverageSummaryStmtLowThreshold := 100
 coverageSummaryStmtHighThreshold := 100
