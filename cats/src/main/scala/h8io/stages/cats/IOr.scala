@@ -70,10 +70,10 @@ object IOr {
     *   - `Ior.Both(l, _)` → `Yield.Some(l, ...)`
     *   - `Ior.Right(_)` → `Yield.None(...)`
     *
-    * Use `IOr.Left[T]` to get a typed `Projection[Ior[T, ?], T]`.
+    * Use `IOr.Left[T]` to get a typed `Projection[Ior[T, Any], T]`.
     */
   object Left extends LeftProjection[Ior] {
-    override def process(in: Ior[Any, ?]): StaticYield[Any, Nothing] =
+    override def process(in: Ior[Any, Any]): StaticYield[Any, Nothing] =
       in.fold(out => some(out), _ => none, (out, _) => some(out))
   }
 
@@ -83,10 +83,10 @@ object IOr {
     *   - `Ior.Both(_, r)` → `Yield.Some(r, ...)`
     *   - `Ior.Left(_)` → `Yield.None(...)`
     *
-    * Use `IOr.Right[T]` to get a typed `Projection[Ior[?, T], T]`.
+    * Use `IOr.Right[T]` to get a typed `Projection[Ior[Any, T], T]`.
     */
   object Right extends RightProjection[Ior] {
-    override def process(in: Ior[?, Any]): StaticYield[Any, Nothing] =
+    override def process(in: Ior[Any, Any]): StaticYield[Any, Nothing] =
       in.fold(_ => none, out => some(out), (_, out) => some(out))
   }
 }

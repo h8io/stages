@@ -13,8 +13,8 @@ import h8io.stages.base.{LeftProjection, RightProjection, StaticYield}
   * {{{
   * import h8io.stages.cats.Validated
   *
-  * val validStage   = Validated.Valid[String]    // Stage[cats.data.Validated[?, String], String, Nothing]
-  * val invalidStage = Validated.Invalid[String]  // Stage[cats.data.Validated[String, ?], String, Nothing]
+  * val validStage   = Validated.Valid[String]    // Stage[cats.data.Validated[Any, String], String, Nothing]
+  * val invalidStage = Validated.Invalid[String]  // Stage[cats.data.Validated[String, Any], String, Nothing]
   * }}}
   */
 object Validated {
@@ -22,17 +22,17 @@ object Validated {
 
   /** Extracts the `Invalid` (left/error) value, yielding nothing for `Valid` values.
     *
-    * Use `Validated.Invalid[T]` to get a typed `Projection[Validated[T, ?], T]`.
+    * Use `Validated.Invalid[T]` to get a typed `Projection[Validated[T, Any], T]`.
     */
   object Invalid extends LeftProjection[Validated] {
-    override def process(in: Validated[Any, ?]): StaticYield[Any, Nothing] = in.fold(some, _ => none)
+    override def process(in: Validated[Any, Any]): StaticYield[Any, Nothing] = in.fold(some, _ => none)
   }
 
   /** Extracts the `Valid` (right/success) value, yielding nothing for `Invalid` values.
     *
-    * Use `Validated.Valid[T]` to get a typed `Projection[Validated[?, T], T]`.
+    * Use `Validated.Valid[T]` to get a typed `Projection[Validated[Any, T], T]`.
     */
   object Valid extends RightProjection[Validated] {
-    override def process(in: Validated[?, Any]): StaticYield[Any, Nothing] = in.fold(_ => none, some)
+    override def process(in: Validated[Any, Any]): StaticYield[Any, Nothing] = in.fold(_ => none, some)
   }
 }
