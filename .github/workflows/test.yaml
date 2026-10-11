@@ -12,4 +12,4 @@ on:
 jobs:
   test:
     secrets: inherit
-    uses: h8io/gha/.github/workflows/test.yaml@v6
+    uses: h8io/gha/.github/workflows/test.yaml@v7
