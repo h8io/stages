@@ -109,19 +109,19 @@ class YieldTest
   }
 
   it should "return Some(out) for Some Yield" in {
-    val out = mock[AnyRef]
+    val out = new AnyRef
     Yield.Some(out, Status.Success, mock[Evolution[Instant, LocalDateTime, Long]]("evolution")).outOption shouldBe
       Some(out)
   }
 
   "apply" should "create Yield.Some from a Some output and a Success status" in {
-    val out = mock[AnyRef]("out")
+    val out = new AnyRef
     val evolution = mock[Evolution[Any, Any, Any]]("evolution")
     Yield(Some(out), Status.Success, evolution) shouldBe Yield.Some(out, Status.Success, evolution)
   }
 
   it should "create Yield.Some from a Some output and a Complete status" in {
-    val out = mock[AnyRef]("out")
+    val out = new AnyRef
     val status = Status.Complete(mock[Seq[AnyRef]]("errors"): @nowarn("msg=Override className instead"))
     val evolution = mock[Evolution[Any, Any, Any]]("evolution")
     Yield(Some(out), status, evolution) shouldBe Yield.Some(out, status, evolution)
@@ -139,7 +139,7 @@ class YieldTest
   }
 
   "unapply" should "extract a Some output and a Success status from Yield.Some" in {
-    val out = mock[AnyRef]("out")
+    val out = new AnyRef
     val evolution = mock[Evolution[Any, Any, Any]]("evolution")
     val yld = Yield.Some(out, Status.Success, evolution)
     val Yield(extractedOut, extractedStatus, extractedEvolution) = yld
@@ -150,7 +150,7 @@ class YieldTest
   }
 
   it should "extract a Some output and a Complete status from Yield.Some" in {
-    val out = mock[AnyRef]("out")
+    val out = new AnyRef
     val status = Status.Complete(mock[Seq[AnyRef]]("errors"): @nowarn("msg=Override className instead"))
     val evolution = mock[Evolution[Any, Any, Any]]("evolution")
     val yld = Yield.Some(out, status, evolution)

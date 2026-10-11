@@ -7,20 +7,20 @@ import org.scalatest.matchers.should.Matchers
 
 class EitherTest extends AnyFlatSpec with Matchers with MockFactory {
   "Left" should "return Yield.Some if the input is scala.util.Left" in {
-    val value = mock[AnyRef]
-    Either.Left(Left(value)) shouldBe Yield.Some(value, Status.Success, Either.Left)
+    val value = new AnyRef
+    Either.Left[AnyRef](Left(value)) shouldBe Yield.Some(value, Status.Success, Either.Left)
   }
 
   it should "return Yield.None if the input is scala.util.Right" in {
-    Either.Left[AnyRef].apply(Right(mock[AnyRef])) shouldBe Yield.None(Status.Success, Either.Left)
+    Either.Left[AnyRef](Right(new AnyRef)) shouldBe Yield.None(Status.Success, Either.Left)
   }
 
   "Right" should "return Yield.None if the input is scala.util.Left" in {
-    Either.Right[AnyRef].apply(Left(mock[AnyRef])) shouldBe Yield.None(Status.Success, Either.Right)
+    Either.Right[AnyRef](Left(new AnyRef)) shouldBe Yield.None(Status.Success, Either.Right)
   }
 
   it should "return Yield.Some if the input is scala.util.Right" in {
-    val value = mock[AnyRef]
-    Either.Right(Right(value)) shouldBe Yield.Some(value, Status.Success, Either.Right)
+    val value = new AnyRef
+    Either.Right[AnyRef](Right(value)) shouldBe Yield.Some(value, Status.Success, Either.Right)
   }
 }

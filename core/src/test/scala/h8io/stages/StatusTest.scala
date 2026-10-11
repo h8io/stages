@@ -65,12 +65,12 @@ class StatusTest
     }
 
   "Complete.apply" should "create a Complete status from a sequence of errors" in {
-    val error = mock[AnyRef]
+    val error = new AnyRef
     Status.Complete(Seq(error)).errors shouldBe Seq(error)
   }
 
   "error" should "create a Complete from a single error" in {
-    val e = mock[AnyRef]
+    val e = new AnyRef
     Status.error(e) shouldBe Status.Complete(Seq(e))
   }
 
