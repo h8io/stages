@@ -128,30 +128,30 @@ class IOrTest
   }
 
   "Left" should "return Yield.Some if the input is cats.data.Ior.Left" in {
-    val value = mock[AnyRef]
-    IOr.Left(Ior.Left(value)) shouldBe Yield.Some(value, Status.Success, IOr.Left)
+    val value = new AnyRef
+    IOr.Left[AnyRef](Ior.Left(value)) shouldBe Yield.Some(value, Status.Success, IOr.Left)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Both" in {
-    val value = mock[AnyRef]
-    IOr.Left(Ior.Both(value, mock[AnyRef])) shouldBe Yield.Some(value, Status.Success, IOr.Left)
+    val value = new AnyRef
+    IOr.Left[AnyRef](Ior.Both(value, new AnyRef)) shouldBe Yield.Some(value, Status.Success, IOr.Left)
   }
 
   it should "return Yield.None if the input is cats.data.Ior.Right" in {
-    IOr.Left[AnyRef].apply(Ior.Right(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Left)
+    IOr.Left[AnyRef](Ior.Right(new AnyRef)) shouldBe Yield.None(Status.Success, IOr.Left)
   }
 
   "Right" should "return Yield.None if the input is cats.data.Ior.Left" in {
-    IOr.Right[AnyRef].apply(Ior.Left(mock[AnyRef])) shouldBe Yield.None(Status.Success, IOr.Right)
+    IOr.Right[AnyRef](Ior.Left(new AnyRef)) shouldBe Yield.None(Status.Success, IOr.Right)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Both" in {
-    val value = mock[AnyRef]
-    IOr.Right(Ior.Both(mock[AnyRef], value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
+    val value = new AnyRef
+    IOr.Right[AnyRef](Ior.Both(new AnyRef, value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
   }
 
   it should "return Yield.Some if the input is cats.data.Ior.Right" in {
-    val value = mock[AnyRef]
-    IOr.Right(Ior.Right(value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
+    val value = new AnyRef
+    IOr.Right[AnyRef](Ior.Right(value)) shouldBe Yield.Some(value, Status.Success, IOr.Right)
   }
 }

@@ -21,7 +21,7 @@ class GlobalSoftDeadlineTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries {
   "apply" should "create a GlobalSoftDeadline object from a duration" in
-    forAll(Gen.choose(0, Long.MaxValue)) { nanos =>
+    forAll(Gen.choose(0L, Long.MaxValue)) { nanos =>
       inside(GlobalSoftDeadline(Duration.fromNanos(nanos))) { case GlobalSoftDeadline(now, `nanos`) =>
         now() should be < now()
       }
@@ -33,7 +33,7 @@ class GlobalSoftDeadlineTest
   "GlobalSoftDeadline" should "return Complete status when overdue" in
     forAll(Gen.zip(Gen.long, Gen.listOf(Gen.zip(Gen.choose(0L, 1000L), Gen.uuid)))) { case (ts, parameters) =>
       val maxDuration = parameters.iterator.map(_._1).sum
-      forAll(Gen.choose(0, maxDuration)) { duration =>
+      forAll(Gen.choose(0L, maxDuration)) { duration =>
         val now = mock[() => Long]
         (now.apply _).expects().returns(ts)
         val stage = GlobalSoftDeadline[UUID](now, duration)

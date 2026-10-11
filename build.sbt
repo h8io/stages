@@ -14,7 +14,7 @@ developers := List(
   Developer(id = "eshu", name = "Pavel", email = "tjano.xibalba@gmail.com", url = uri("https://github.com/eshu/")))
 
 scalaVersion := "2.13.18"
-crossScalaVersions += "2.12.21"
+crossScalaVersions ++= Seq("2.12.21", "3.9.0")
 javacOptions ++= Seq("--release", "11")
 
 versionScheme := Some("semver-spec")
@@ -23,13 +23,16 @@ ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
 scalacOptions ++=
-  Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
-    "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings")
-scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 13)) => Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
-    case Some((2, 12)) => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
-    case _ => Nil
+    case Some((2, minor)) =>
+      Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
+        "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings") ++
+        (if (minor == 13) Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
+         else Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification"))
+    case _ =>
+      // Scala 2 needs the trailing `_` to eta-expand a method without an expected function type, Scala 3 does not
+      Seq("-deprecation", "-feature", "-unchecked", "-Wunused:all", "-Werror",
+        "-Wconf:msg=eta-expansion is unnecessary:s")
   })
 
 coverageSummaryStmtLowThreshold := 100
@@ -81,6 +84,8 @@ val pages = (project in file("pages"))
     name := "stages-pages",
     publish / skip := true,
     publishLocal / skip := true,
+    // The sources are shared, so the Scala 2 API docs cover Scala 3 as well
+    crossScalaVersions := crossScalaVersions.value.filterNot(_.startsWith("3.")),
     // sbt 2 moves every target under the root's target/out; npm and release.sh expect the site's inputs here
     cleanFiles += baseDirectory.value / "target",
     ScalaUnidoc / unidoc / target := baseDirectory.value / "target" / s"scala-${scalaBinaryVersion.value}" / "unidoc",
@@ -92,5 +97,4 @@ val pages = (project in file("pages"))
       Map("VERSION" -> (if (isSnapshot.value) previousStableVersion.value else None).getOrElse(version.value))
   )
   .dependsOn(root)
-  .aggregate(core, lib, cats)
   .enablePlugins(ScalaUnidocPlugin, MdocPlugin)

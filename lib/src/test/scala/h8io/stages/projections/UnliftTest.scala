@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 
 class UnliftTest extends AnyFlatSpec with Matchers with MockFactory {
   "Unlift" should "return Yield.Some for Some input" in {
-    val value = mock[AnyRef]
+    val value = new AnyRef
     Unlift[AnyRef](Some(value)) shouldBe Yield.Some(`value`, Status.Success, Unlift)
   }
 

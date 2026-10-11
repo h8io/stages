@@ -5,8 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 `stages` is an experimental Scala library for building pipelines out of steps ("stages") that can evolve as they run.
-Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`, built with sbt 2. Cross-building still goes
-through `crossScalaVersions` and `+`, not `projectMatrix`.
+Scala 2.13, cross-built to 2.12 and to Scala 3.9 (LTS), built with sbt 2. Cross-building still goes through
+`crossScalaVersions` and `+`, not `projectMatrix`. 2.13 is the main version and the priority, being the one native to
+current Spark. All three share one source tree, written in Scala 2 style that Scala 3 also accepts; idiomatic Scala 3
+(`enum`, `extension`, no package objects) is planned for later, with version-specific source directories. Warnings
+are fatal on every version (`-Xfatal-warnings` on 2.x, `-Werror` on 3), except Scala 3's notice that a trailing `_`
+for eta-expansion is unnecessary — Scala 2 needs it. The site and its API docs are built for 2.12 and 2.13 only.
+
+Under Scala 3 a direct call of an untyped polymorphic singleton, such as `Identity(x)` or `Either.Left(in)`, is an
+ambiguous overload (see "Polymorphic Singletons" in `docs/lib/Overview.md`); tests name the type: `Identity[Int](x)`.
+ScalaMock cannot mock Java classes under Scala 3, so tests use `new AnyRef` for opaque values, not `mock[AnyRef]`.
 
 sbt 2 differs from sbt 1 in ways that matter here:
 - `sbt` starts a thin client that keeps a server running in the background. The client takes one command line, so
@@ -33,7 +41,7 @@ sbt testFull                      # run all tests (all modules); plain `test` sk
 sbt lib/testFull                  # run tests for one module (core / lib / cats / examples)
 sbt "lib/testOnly h8io.stages.cycles.LoopTest"             # single test suite
 sbt "lib/testOnly *LoopTest -- -z \"substring of test name\""  # single test case
-sbt +testFull                     # tests across both Scala versions (2.13 and 2.12)
+sbt +testFull                     # tests across all Scala versions (2.13, 2.12, 3.9)
 sbt "scalafmtAll; scalafmtSbt"    # format code and build files
 sbt "scalafmtCheckAll; scalafmtSbtCheck"  # check formatting (CI-style)
 ./test.sh                         # full CI check: format check, cross-build, coverage gate, docs, unidoc, site
