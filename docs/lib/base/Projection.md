@@ -27,6 +27,7 @@ OptionGet(None)
 ```
 
 For covariant binary type constructors `C[+_, +_]`, `LeftProjection[C]` and `RightProjection[C]` provide reusable
-singleton projections. Each is defined over the widened type `C[Any, ?]` or `C[?, Any]` and exposed as a concrete
-`Projection[C[T, ?], T]` via a typed `apply[T]` method. The cast is sound because `C` is covariant in both
-positions, so a `C[Any, ?]` can be read safely as a `C[T, ?]` for any `T`.
+singleton projections. Both are defined over the widened type `C[Any, Any]` and exposed as a concrete
+`Projection[C[T, Any], T]` or `Projection[C[Any, T], T]` via a typed `apply[T]` method. The cast is sound because `C`
+is covariant in both positions: `C[Any, Any]` is a supertype of every `C[A, B]`, so the side a projection does not read
+can stay `Any`, and the side it does read can be narrowed to any `T`.

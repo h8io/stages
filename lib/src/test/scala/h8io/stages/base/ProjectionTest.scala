@@ -9,13 +9,13 @@ class ProjectionTest extends AnyFlatSpec with Matchers with MockFactory {
 
   "LeftProjection" should "be cast to a specific type" in {
     val leftUntyped = mock[LeftProjection[Projectable]]
-    val left: Projection[Projectable[Int, ?], Int] = leftUntyped[Int]
+    val left: Projection[Projectable[Int, Any], Int] = leftUntyped[Int]
     left should be theSameInstanceAs leftUntyped
   }
 
   "RightProjection" should "be cast to a specific type" in {
     val rightUntyped = mock[RightProjection[Projectable]]
-    val right: Projection[Projectable[?, String], String] = rightUntyped[String]
+    val right: Projection[Projectable[Any, String], String] = rightUntyped[String]
     right should be theSameInstanceAs rightUntyped
   }
 }

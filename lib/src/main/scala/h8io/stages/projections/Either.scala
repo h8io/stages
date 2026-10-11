@@ -10,25 +10,25 @@ import h8io.stages.base.{LeftProjection, RightProjection, StaticYield}
   *
   * Example:
   * {{{
-  * val leftStage  = Either.Left[String]   // Stage[scala.util.Either[String, ?], String, Nothing]
-  * val rightStage = Either.Right[Int]     // Stage[scala.util.Either[?, Int], Int, Nothing]
+  * val leftStage  = Either.Left[String]   // Stage[scala.util.Either[String, Any], String, Nothing]
+  * val rightStage = Either.Right[Int]     // Stage[scala.util.Either[Any, Int], Int, Nothing]
   * }}}
   */
 object Either {
 
   /** Extracts the left value of an `Either[A, B]`, producing no output for `Right` values.
     *
-    * Use `Either.Left[T]` to get a typed `Projection[scala.util.Either[T, ?], T]`.
+    * Use `Either.Left[T]` to get a typed `Projection[scala.util.Either[T, Any], T]`.
     */
   object Left extends LeftProjection[Either] {
-    override def process(in: Either[Any, ?]): StaticYield[Any, Nothing] = in.fold(some, _ => none)
+    override def process(in: Either[Any, Any]): StaticYield[Any, Nothing] = in.fold(some, _ => none)
   }
 
   /** Extracts the right value of an `Either[A, B]`, producing no output for `Left` values.
     *
-    * Use `Either.Right[T]` to get a typed `Projection[scala.util.Either[?, T], T]`.
+    * Use `Either.Right[T]` to get a typed `Projection[scala.util.Either[Any, T], T]`.
     */
   object Right extends RightProjection[Either] {
-    override def process(in: Either[?, Any]): StaticYield[Any, Nothing] = in.fold(_ => none, some)
+    override def process(in: Either[Any, Any]): StaticYield[Any, Nothing] = in.fold(_ => none, some)
   }
 }

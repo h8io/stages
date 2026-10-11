@@ -9,25 +9,25 @@ import h8io.stages.base.{LeftProjection, RightProjection, StaticYield}
   *
   * Example:
   * {{{
-  * val fstStage = Tuple2.Left[String]   // Stage[(String, ?), String, Nothing]
-  * val sndStage = Tuple2.Right[Int]     // Stage[(?, Int), Int, Nothing]
+  * val fstStage = Tuple2.Left[String]   // Stage[(String, Any), String, Nothing]
+  * val sndStage = Tuple2.Right[Int]     // Stage[(Any, Int), Int, Nothing]
   * }}}
   */
 object Tuple2 {
 
   /** Extracts the first element (`_1`) of a `(A, B)` pair.
     *
-    * Use `Tuple2.Left[T]` to get a typed `Projection[(T, ?), T, Nothing]`.
+    * Use `Tuple2.Left[T]` to get a typed `Projection[(T, Any), T]`.
     */
   object Left extends LeftProjection[Tuple2] {
-    override def process(in: (Any, ?)): StaticYield.Some[Any, Nothing] = some(in._1)
+    override def process(in: (Any, Any)): StaticYield.Some[Any, Nothing] = some(in._1)
   }
 
   /** Extracts the second element (`_2`) of a `(A, B)` pair.
     *
-    * Use `Tuple2.Right[T]` to get a typed `Projection[(?, T), T, Nothing]`.
+    * Use `Tuple2.Right[T]` to get a typed `Projection[(Any, T), T]`.
     */
   object Right extends RightProjection[Tuple2] {
-    override def process(in: (?, Any)): StaticYield.Some[Any, Nothing] = some(in._2)
+    override def process(in: (Any, Any)): StaticYield.Some[Any, Nothing] = some(in._2)
   }
 }

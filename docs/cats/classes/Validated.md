@@ -8,7 +8,7 @@ holds an error value. The two projections route each side into the pipeline inde
 - `Validated.Invalid[T]` extracts the error value; yields nothing for `Valid`.
 
 Both are polymorphic singletons. Use `Validated.Valid[T]` and `Validated.Invalid[T]` to obtain typed
-`Projection[cats.data.Validated[?, T], T]` and `Projection[cats.data.Validated[T, ?], T]` respectively.
+`Projection[cats.data.Validated[Any, T], T]` and `Projection[cats.data.Validated[T, Any], T]` respectively.
 
 ```scala mdoc
 import h8io.stages.cats.*

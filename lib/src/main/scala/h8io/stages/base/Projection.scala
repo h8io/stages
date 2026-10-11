@@ -28,13 +28,13 @@ trait Projection[-I, O] extends StaticStage[I, O, Nothing] {
 
 /** A [[Projection]] for the left side of a covariant binary type constructor `C[+_, +_]`.
   *
-  * Instances operate on the widened `C[Any, ?]` and can be safely cast to any specific `Projection[C[T, ?], T]` via the
-  * `apply[T]` method.
+  * Instances operate on the widened `C[Any, Any]` and can be safely cast to any specific `Projection[C[T, Any], T]` via
+  * the `apply[T]` method.
   *
   * @tparam C
   *   the binary type constructor (must be covariant in both type parameters)
   */
-trait LeftProjection[C[+_, +_]] extends Projection[C[Any, ?], Any] {
+trait LeftProjection[C[+_, +_]] extends Projection[C[Any, Any], Any] {
 
   /** Returns a typed view of this projection for left-side values of type `T`.
     *
@@ -44,9 +44,9 @@ trait LeftProjection[C[+_, +_]] extends Projection[C[Any, ?], Any] {
     * @tparam T
     *   the concrete left-side type
     * @return
-    *   this projection typed as `Projection[C[T, ?], T]`
+    *   this projection typed as `Projection[C[T, Any], T]`
     */
-  final def apply[T]: Projection[C[T, ?], T] = asInstanceOf[Projection[C[T, ?], T]]
+  final def apply[T]: Projection[C[T, Any], T] = asInstanceOf[Projection[C[T, Any], T]]
 }
 
 /** A [[Projection]] for the right side of a covariant binary type constructor `C[+_, +_]`.
@@ -56,14 +56,14 @@ trait LeftProjection[C[+_, +_]] extends Projection[C[Any, ?], Any] {
   * @tparam C
   *   the binary type constructor (must be covariant in both type parameters)
   */
-trait RightProjection[C[+_, +_]] extends Projection[C[?, Any], Any] {
+trait RightProjection[C[+_, +_]] extends Projection[C[Any, Any], Any] {
 
   /** Returns a typed view of this projection for right-side values of type `T`.
     *
     * @tparam T
     *   the concrete right-side type
     * @return
-    *   this projection typed as `Projection[C[?, T], T]`
+    *   this projection typed as `Projection[C[Any, T], T]`
     */
-  final def apply[T]: Projection[C[?, T], T] = asInstanceOf[Projection[C[?, T], T]]
+  final def apply[T]: Projection[C[Any, T], T] = asInstanceOf[Projection[C[Any, T], T]]
 }
