@@ -4,46 +4,40 @@ import h8io.sbt.dependencies.*
 val ProjectName = "stages"
 val SiteRoot = s"https://stages.h8.io/"
 
-inThisBuild(
-  List(
-    organization := "io.h8",
-    organizationName := "H8IO",
-    organizationHomepage := Some(url("https://github.com/h8io/")),
-    homepage := Some(url(SiteRoot)),
-    scmInfo := Some(ScmInfo(url(s"https://github.com/h8io/$ProjectName"), s"scm:git@github.com:h8io/$ProjectName.git")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-    developers := List(
-      Developer(
-        id = "eshu",
-        name = "Pavel",
-        email = "tjano.xibalba@gmail.com",
-        url = url("https://github.com/eshu/")))
-  ))
+organization := "io.h8"
+organizationName := "H8IO"
+organizationHomepage := Some(uri("https://github.com/h8io/"))
+homepage := Some(uri(SiteRoot))
+scmInfo := Some(ScmInfo(uri(s"https://github.com/h8io/$ProjectName"), s"scm:git@github.com:h8io/$ProjectName.git"))
+licenses := List(License.Apache2)
+developers := List(
+  Developer(id = "eshu", name = "Pavel", email = "tjano.xibalba@gmail.com", url = uri("https://github.com/eshu/")))
 
-ThisBuild / scalaVersion := "2.13.18"
-ThisBuild / crossScalaVersions += "2.12.21"
-ThisBuild / javacOptions ++= Seq("--release", "11")
+scalaVersion := "2.13.18"
+crossScalaVersions += "2.12.21"
+javacOptions ++= Seq("--release", "11")
 
-ThisBuild / versionScheme := Some("semver-spec")
+versionScheme := Some("semver-spec")
+// sbt-dynver computes the version once for the whole build, from these two in ThisBuild
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-ThisBuild / scalacOptions ++=
+scalacOptions ++=
   Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
     "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings")
-ThisBuild / scalacOptions ++=
+scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 13)) => Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
     case Some((2, 12)) => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
     case _ => Nil
   })
 
-ThisBuild / coverageSummaryStmtLowThreshold := 100
-ThisBuild / coverageSummaryStmtHighThreshold := 100
-ThisBuild / coverageSummaryBranchLowThreshold := 100
-ThisBuild / coverageSummaryBranchHighThreshold := 100
+coverageSummaryStmtLowThreshold := 100
+coverageSummaryStmtHighThreshold := 100
+coverageSummaryBranchLowThreshold := 100
+coverageSummaryBranchHighThreshold := 100
 
-ThisBuild / libraryDependencies ++= TestBundle % Test
+libraryDependencies ++= TestBundle % Test
 
 val core = (project in file("core"))
   .settings(
@@ -67,6 +61,8 @@ val examples = (project in file("examples"))
     name := "stages-examples",
     publish / skip := true,
     publishLocal / skip := true,
+    // sbt 2 puts the packaged jar on the test classpath, and that jar is empty here
+    exportJars := false,
     Compile / packageBin / mappings := Nil,
     Compile / packageDoc / mappings := Nil,
     Compile / packageSrc / mappings := Nil,
@@ -85,11 +81,16 @@ val pages = (project in file("pages"))
     name := "stages-pages",
     publish / skip := true,
     publishLocal / skip := true,
+    // sbt 2 moves every target under the root's target/out; npm and release.sh expect the site's inputs here
+    cleanFiles += baseDirectory.value / "target",
+    ScalaUnidoc / unidoc / target := baseDirectory.value / "target" / s"scala-${scalaBinaryVersion.value}" / "unidoc",
     TestScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
     TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
-    tlSiteApiUrl := Some(url(s"${SiteRoot}api/scala-2.13/")),
-    tlSiteHelium ~= { _.site.mainNavigation(depth = 3) }
+    mdocIn := (ThisBuild / baseDirectory).value / "docs",
+    mdocOut := baseDirectory.value / "target" / "mdoc",
+    mdocVariables :=
+      Map("VERSION" -> (if (isSnapshot.value) previousStableVersion.value else None).getOrElse(version.value))
   )
   .dependsOn(root)
   .aggregate(core, lib, cats)
-  .enablePlugins(ScalaUnidocPlugin, TypelevelSitePlugin)
+  .enablePlugins(ScalaUnidocPlugin, MdocPlugin)

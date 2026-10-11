@@ -1,0 +1,18 @@
+{
+  "name": "stages-pages",
+  "private": true,
+  "scripts": {
+    "start": "docusaurus start",
+    "build": "docusaurus build --out-dir target/site",
+    "serve": "docusaurus serve --dir target/site"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "engines": {
+    "node": ">=20.0"
+  }
+}
