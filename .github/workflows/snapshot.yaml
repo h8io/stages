@@ -9,6 +9,6 @@ permissions:
 jobs:
   snapshot:
     secrets: inherit
-    uses: h8io/gha/.github/workflows/snapshot.yaml@v6
+    uses: h8io/gha/.github/workflows/snapshot.yaml@v7
     with:
       java-version: 17

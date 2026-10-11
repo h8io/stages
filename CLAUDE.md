@@ -9,9 +9,10 @@ Scala 2.13 (cross-built to 2.12) with `-Xsource:3` and `-Xfatal-warnings`. sbt 1
 lives on the `update/sbt-2.0.7` branch. Its blocker was `sbt-typelevel-site` (Laika), which had no sbt 2 support and has
 since been replaced by mdoc + Docusaurus.
 
-CI is `h8io/gha@v6` in all three workflows, and from that series it holds no build commands: each one runs a script
-from this repository named after it — `test.sh`, `release.sh`, `snapshot.sh`. Nothing about the sbt version leaks
-into shared CI any more, which is what used to pin the release workflow to an older series of `gha`.
+CI is `h8io/gha@v7` in all three workflows. Since v6 it holds no build commands: each one runs a script from this
+repository named after it — `test.sh`, `release.sh`, `snapshot.sh`. Nothing about the sbt version leaks into shared CI
+any more, which is what used to pin the release workflow to an older series of `gha`. v7 adds the latest Node.js LTS
+to the test and release workflows, which the Docusaurus build needs.
 
 ## Commands
 
