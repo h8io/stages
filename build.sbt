@@ -94,11 +94,7 @@ val core = (project in file("core"))
   .enablePlugins(TestKitPlugin)
 
 val lib = (project in file("lib"))
-  .settings(
-    name := "stages-lib",
-    libraryDependencies ++= TestBundle % TestKit,
-    testKitSettings)
-  .enablePlugins(TestKitPlugin)
+  .settings(name := "stages-lib")
   .dependsOn(core, core % "test->testkit")
 
 val cats = (project in file("cats"))
