@@ -131,14 +131,6 @@ val pages = (project in file("pages"))
     publish / skip := true,
     publishLocal / skip := true,
     scalacOptions ++= lenientScalacOptions(scalaVersion.value),
-    // The sources are shared, so the Scala 2 API docs cover Scala 3 as well
-    crossScalaVersions := crossScalaVersions.value.filter { version =>
-      CrossVersion.partialVersion(version) match {
-        case Some((2, 13)) | Some((2, 12)) => true
-        case Some((3, 9)) => false
-        case _ => unsupportedScala(version)
-      }
-    },
     // sbt 2 moves every target under the root's target/out; npm and release.sh expect the site's inputs here
     cleanFiles += baseDirectory.value / "target",
     ScalaUnidoc / unidoc / target := baseDirectory.value / "target" / s"scala-${scalaBinaryVersion.value}" / "unidoc",

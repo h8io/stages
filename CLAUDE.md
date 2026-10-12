@@ -14,7 +14,7 @@ for eta-expansion is unnecessary — Scala 2 needs it. Scala 3 takes `-Wall`, an
 including discarded values (`-Wvalue-discard`, `-Wnonunit-statement`; `-Ywarn-value-discard` on 2.12). Tests, testkit
 and the docs' mdoc snippets silence those two through `-Wconf` (`lenientScalacOptions` in `build.sbt`): a ScalaMock
 expectation, a ScalaTest assertion or an expression shown with its result is a statement whose value is dropped on
-purpose. Every branch on the Scala version lists the versions it knows and ends in `unsupportedScala`. The site and its API docs are built for 2.12 and 2.13 only.
+purpose. Every branch on the Scala version lists the versions it knows and ends in `unsupportedScala`. The site's API docs are built for every version, `scala-3`, `scala-2.13` and `scala-2.12` under `api/`, and the navbar's API menu lists them by hand.
 
 Under Scala 3 a direct call of an untyped polymorphic singleton, such as `Identity(x)` or `Either.Left(in)`, is an
 ambiguous overload (see "Polymorphic Singletons" in `docs/lib/Overview.md`); tests name the type: `Identity[Int](x)`.
