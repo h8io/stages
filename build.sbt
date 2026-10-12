@@ -142,8 +142,7 @@ val pages = (project in file("pages"))
     // sbt 2 moves every target under the root's target/out; npm and release.sh expect the site's inputs here
     cleanFiles += baseDirectory.value / "target",
     ScalaUnidoc / unidoc / target := baseDirectory.value / "target" / s"scala-${scalaBinaryVersion.value}" / "unidoc",
-    TestScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
-    TestScalaUnidoc / unidoc / unidocConfigurationFilter := inAnyConfiguration -- inConfigurations(TestKit),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(examples),
     mdocIn := (ThisBuild / baseDirectory).value / "docs",
     mdocOut := baseDirectory.value / "target" / "mdoc",
     mdocVariables :=
