@@ -84,7 +84,8 @@ object Evolution {
   /** Disposes every evolution given, in argument order, whatever any of them throws.
     *
     * The first non-fatal exception becomes the primary one: the rest are disposed all the same, further non-fatal
-    * exceptions are attached to the primary as suppressed, and the primary is rethrown at the end.
+    * exceptions are attached to the primary as suppressed, and the primary is rethrown at the end. An exception that is
+    * the primary itself, thrown again by a later disposal, is not attached: a throwable cannot suppress itself.
     *
     * This is the single disposal discipline for everything owning several evolutions at once — the composed evolution
     * here, the binary operators and the `h8io.stages.cycles` family in the lib module. The parameter list is positional
@@ -102,7 +103,7 @@ object Evolution {
         case NonFatal(e) =>
           primary match {
             case Some(p) =>
-              p.addSuppressed(e)
+              if (p ne e) p.addSuppressed(e)
               primary
             case None => Some(e)
           }
