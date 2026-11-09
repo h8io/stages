@@ -95,6 +95,21 @@ class EvolutionTest extends AnyFlatSpec with Matchers with MockFactory with Stag
     thrown.getSuppressed should contain only thirdException
   }
 
+  it should "not let the primary exception suppress itself and keep disposing" in {
+    val first = mock[Evolution[Instant, Long, Exception]]
+    val second = mock[Evolution[String, Instant, Exception]]
+    val third = mock[Evolution[Long, String, Exception]]
+    val sharedException = new Exception("shared")
+    inSequence {
+      (first.dispose _).expects().throws(sharedException)
+      (second.dispose _).expects().throws(sharedException)
+      (third.dispose _).expects()
+    }
+    val thrown = the[Exception] thrownBy Evolution.dispose(first, second, third)
+    thrown shouldBe sharedException
+    thrown.getSuppressed shouldBe empty
+  }
+
   it should "propagate a sole evolution's dispose exception" in {
     val sole = mock[Evolution[Instant, Long, Exception]]
     val soleException = new Exception("sole")
