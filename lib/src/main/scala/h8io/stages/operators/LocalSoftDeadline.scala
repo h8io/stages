@@ -2,7 +2,6 @@ package h8io.stages.operators
 
 import h8io.stages
 import h8io.stages.base.{Decoration, Decorator}
-import h8io.stages.std.DeadEnd
 import h8io.stages.{Stage, Status, Yield}
 
 import scala.concurrent.duration.FiniteDuration
@@ -20,8 +19,7 @@ import scala.concurrent.duration.FiniteDuration
   * `h8io.stages.Status.Success` in the current `h8io.stages.Yield` is upgraded to an errorless
   * `h8io.stages.Status.Complete`; any other status is left unchanged.
   *
-  * If `duration ≤ 0` the factory methods return [[h8io.stages.std.DeadEnd]] directly, ensuring the pipeline immediately
-  * terminates.
+  * A non-positive `duration` is no exception: every unit of work is then a single `apply` of the inner stage.
   *
   * @param tsSupplier
   *   a thunk that returns the timestamp of the start of the current deadline window
@@ -80,21 +78,15 @@ object LocalSoftDeadline {
     override def dispose(): Unit = evolution.dispose()
   }
 
-  /** Wraps `stage` with a local deadline of the given `scala.concurrent.duration.FiniteDuration`.
-    *
-    * Returns [[h8io.stages.std.DeadEnd]] if `duration` is non-positive.
-    */
+  /** Wraps `stage` with a local deadline of the given `scala.concurrent.duration.FiniteDuration`. */
   def apply[I, O, E](duration: FiniteDuration, stage: Stage[I, O, E]): Stage[I, O, E] = apply(duration.toNanos, stage)
 
-  /** Wraps `stage` with a local deadline of the given `java.time.Duration`.
-    *
-    * Returns [[h8io.stages.std.DeadEnd]] if `duration` is non-positive.
-    */
+  /** Wraps `stage` with a local deadline of the given `java.time.Duration`. */
   def apply[I, O, E](duration: java.time.Duration, stage: Stage[I, O, E]): Stage[I, O, E] =
     apply(duration.toNanos, stage)
 
   @inline private def apply[I, O, E](duration: Long, stage: Stage[I, O, E]): Stage[I, O, E] =
-    if (duration > 0) LocalSoftDeadline(now, now, duration, stage) else DeadEnd
+    LocalSoftDeadline(now, now, duration, stage)
 
   private val now: () => Long = System.nanoTime _
 

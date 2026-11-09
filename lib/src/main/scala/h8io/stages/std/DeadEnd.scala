@@ -8,8 +8,7 @@ import h8io.stages.base.{StaticStage, StaticYield}
   * Every invocation of `apply` returns a `h8io.stages.Yield.None` with `h8io.stages.Status.Complete`, immediately
   * signaling that the pipeline is finished.
   *
-  * `DeadEnd` is the natural "end-of-stream" marker and is also returned by [[Countdown.apply]] when `n ≤ 0` and by
-  * [[h8io.stages.operators.LocalSoftDeadline]] when the duration is non-positive.
+  * `DeadEnd` is the natural "end-of-stream" marker and is also returned by [[Countdown.apply]] when `n ≤ 0`.
   *
   * An optional `_dispose` hook can be supplied at construction to release resources when the stage is disposed; the
   * companion object [[DeadEnd]] uses a no-op hook.

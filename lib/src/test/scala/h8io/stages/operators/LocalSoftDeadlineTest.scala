@@ -1,7 +1,6 @@
 package h8io.stages.operators
 
 import h8io.stages.*
-import h8io.stages.std.DeadEnd
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -22,17 +21,8 @@ class LocalSoftDeadlineTest
     with ScalaCheckPropertyChecks
     with StagesCoreArbitraries
     with StagesCoreTestUtil {
-  "LocalSoftDeadline" should "return DeadEnd if Scala duration is not positive" in
-    forAll(Gen.choose(Long.MinValue, 0L)) { nanos =>
-      val stage = mock[Stage[Any, Nothing, Nothing]]
-      LocalSoftDeadline(FiniteDuration(nanos, TimeUnit.NANOSECONDS), stage) shouldBe DeadEnd
-      LocalSoftDeadline(jDuration.ofNanos(nanos), stage) shouldBe DeadEnd
-      LocalSoftDeadline(FiniteDuration(nanos, TimeUnit.NANOSECONDS))(stage) shouldBe DeadEnd
-      LocalSoftDeadline(jDuration.ofNanos(nanos))(stage) shouldBe DeadEnd
-    }
-
-  it should "return the initial stage (tsSupplier == now) if the duration is positive" in
-    forAll(Gen.choose(1L, Long.MaxValue)) { nanos =>
+  "LocalSoftDeadline" should "return the initial stage (tsSupplier == now) whatever the duration" in
+    forAll(Gen.choose(-Long.MaxValue, Long.MaxValue)) { nanos =>
       val stage = mock[Stage[Any, Nothing, Nothing]]
 
       def test(lsdStage: Stage[Any, Nothing, Nothing]): Assertion =
@@ -51,10 +41,11 @@ class LocalSoftDeadlineTest
     forAll(
       Gen.zip(
         Gen.long,
-        Gen.choose(1L, Int.MaxValue.toLong),
+        Gen.choose(Int.MinValue.toLong, Int.MaxValue.toLong),
         Gen.choose(1L, Int.MaxValue.toLong),
         Gen.uuid,
-        arbEvolutionToYield[UUID, Instant, Long].arbitrary)) {
+        arbEvolutionToYield[UUID, Instant, Long].arbitrary
+      )) {
       case (ts, duration, overdue, in, yieldSupplier) =>
         val tsSupplier = mock[() => Long]("timestamp supplier")
         val now = mock[() => Long]("now")

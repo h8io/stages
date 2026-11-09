@@ -8,7 +8,8 @@ happens after the deadline has been exceeded.
 
 The deadline is *soft*: it is checked after the inner stage has already been applied. If the elapsed time reaches
 `duration`, a `Success` status is upgraded to an error-free [`Status.Complete`](../../core/classes/Status.md); any
-other status is left unchanged. If `duration ≤ 0`, the factory returns [`DeadEnd`](../std/DeadEnd.md) directly.
+other status is left unchanged. A non-positive `duration` is no exception: every unit of work is then a single
+`apply` of the inner stage, which is still applied, skipped and disposed like any other.
 
 This contrasts with [`GlobalSoftDeadline`](../std/GlobalSoftDeadline.md), whose deadline is fixed at
 construction and never resets.
