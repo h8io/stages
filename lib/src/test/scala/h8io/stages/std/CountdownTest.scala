@@ -19,7 +19,7 @@ class CountdownTest
 
   it should "return a yield with status Complete when i == 1" in
     forAll(Gen.zip(Gen.choose(1L, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
-      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Status.complete, Countdown[Short](n, n))
+      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Status.complete, Countdown.Evolution(Countdown[Short](n, n)))
     }
 
   it should "return a yield with status Success if i > 1" in
@@ -34,6 +34,19 @@ class CountdownTest
       test(n)
       forAll(Gen.choose(2L, n))(i => test(i))
     }
+
+  "skip" should "keep the counter on Success and reset it on Complete" in
+    forAll(Gen.posNum[Long].flatMap(n => Gen.zip(Gen.choose(1L, n), Gen.const(n)))) { case (i, n) =>
+      val evolution = Countdown[String](i, n).skip()
+      evolution.evolve(Status.Success) shouldBe Countdown(i, n)
+      evolution.evolve(mockComplete()) shouldBe Countdown(n, n)
+      noException should be thrownBy evolution.dispose()
+    }
+
+  it should "not carry a partially used counter into the next cycle" in {
+    val evolution = Countdown[String](3)("a").evolve().skip()
+    evolution.evolve(Status.complete) shouldBe Countdown(3, 3)
+  }
 
   "Countdown constructor" should "fail if n == 0" in {
     an[AssertionError] should be thrownBy Countdown(1, 0)
