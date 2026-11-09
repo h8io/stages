@@ -12,7 +12,7 @@ import h8io.stages.{Stage, Status, Yield}
   *
   * `Countdown` is fully immutable: each state transition creates a new instance rather than mutating the current one.
   *
-  * Preconditions (checked at construction via `assume`):
+  * Preconditions (checked at construction via `require`, which throws an `IllegalArgumentException`):
   *   - `n > 0`
   *   - `1 ≤ i ≤ n`
   *
@@ -24,8 +24,8 @@ import h8io.stages.{Stage, Status, Yield}
   *   the value type passed through unchanged
   */
 final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing] {
-  assume(n > 0, s"n must be positive, got n = $n")
-  assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
+  require(n > 0, s"n must be positive, got n = $n")
+  require(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 
   override def apply(in: T): Yield.Some[T, T, Nothing] =
     if (i == 1) Yield.Some(in, Status.complete, Countdown.Evolution(Countdown(n, n)))
