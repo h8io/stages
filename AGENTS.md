@@ -10,7 +10,7 @@ sbt testFull                      # run all tests (all modules); plain `test` sk
 sbt lib/testFull                  # run tests for one module (core / lib / cats / examples)
 sbt "lib/testOnly h8io.stages.cycles.LoopTest"             # single test suite
 sbt "lib/testOnly *LoopTest -- -z \"substring of test name\""  # single test case
-sbt +testFull                     # tests across all Scala versions (2.13, 2.12, 3.9)
+sbt +testFull                     # tests across all Scala versions (2.13, 3.9)
 sbt "scalafmtAll; scalafmtSbt"    # format code and build files
 sbt "scalafmtCheckAll; scalafmtSbtCheck"  # check formatting (CI-style)
 ./test.sh                         # full CI check: format check, cross-build, coverage gate, docs, unidoc, site
@@ -118,23 +118,23 @@ sbt 2 differs from sbt 1 in ways that matter here:
 
 ## Conventions
 
-- Scala 2.13 is the main version and the priority, being the one native to current Spark; it is cross-built to 2.12 and
-  to Scala 3.9 (LTS), built with sbt 2. Cross-building still goes through `crossScalaVersions` and `+`, not
-  `projectMatrix`. All three share one source tree, written in Scala 2 style that Scala 3 also accepts; idiomatic
-  Scala 3 (`enum`, `extension`, no package objects) is planned for later, with version-specific source directories.
+- Scala 2.13 is the main version and the priority, being the one native to current Spark; it is cross-built to Scala 3.9
+  (LTS), built with sbt 2. Cross-building still goes through `crossScalaVersions` and `+`, not `projectMatrix`. Both
+  share one source tree, written in Scala 2 style that Scala 3 also accepts; idiomatic Scala 3 (`enum`, `extension`, no
+  package objects) is planned for later, with version-specific source directories.
   Every branch on the Scala version lists the versions it knows and ends in `unsupportedScala`.
-- Warnings are fatal on every version (`-Xfatal-warnings` on 2.x, `-Werror` on 3), except Scala 3's notice that a
+- Warnings are fatal on every version (`-Xfatal-warnings` on 2.13, `-Werror` on 3), except Scala 3's notice that a
   trailing `_` for eta-expansion is unnecessary — Scala 2 needs it. Scala 3 takes `-Wall`, and Scala 2 its counterparts,
-  including discarded values (`-Wvalue-discard`, `-Wnonunit-statement`; `-Ywarn-value-discard` on 2.12). Tests, testkit
-  and the docs' mdoc snippets silence those two through `-Wconf` (`lenientScalacOptions` in `build.sbt`): a ScalaMock
-  expectation, a ScalaTest assertion or an expression shown with its result is a statement whose value is dropped on
-  purpose. Unused-symbol warnings and scalafmt are fatal too; run `sbt scalafmtAll` before committing.
+  including discarded values (`-Wvalue-discard`, `-Wnonunit-statement`). Tests, testkit and the docs' mdoc snippets
+  silence those two through `-Wconf` (`lenientScalacOptions` in `build.sbt`): a ScalaMock expectation, a ScalaTest
+  assertion or an expression shown with its result is a statement whose value is dropped on purpose. Unused-symbol
+  warnings and scalafmt are fatal too; run `sbt scalafmtAll` before committing.
 - Scala 3 idioms in tests: a direct call of an untyped polymorphic singleton, such as `Identity(x)` or
   `Either.Left(in)`, is an ambiguous overload under Scala 3 (see "Polymorphic Singletons" in `docs/lib/Overview.md`);
   tests name the type: `Identity[Int](x)`. ScalaMock cannot mock Java classes under Scala 3, so tests use `new AnyRef`
   for opaque values, not `mock[AnyRef]`.
-- The site's API docs are built for every version, `scala-3`, `scala-2.13` and `scala-2.12` under `api/`, and the
-  navbar's API menu lists them by hand.
+- The site's API docs are built for every version, `scala-3` and `scala-2.13` under `api/`, and the navbar's
+  API menu lists them by hand.
 - Use Scala 3-style wildcard imports (`import foo.*`, `import Dependencies.*`), not `foo._` — the build enforces
   `-Xsource:3` and scalafmt uses the `scala213source3` dialect.
 - Scaladoc is extensive and normative in core — the comments document behavioral contracts (lifecycle, disposal order,
