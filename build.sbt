@@ -18,7 +18,7 @@ developers := List(
   Developer(id = "eshu", name = "Pavel", email = "tjano.xibalba@gmail.com", url = uri("https://github.com/eshu/")))
 
 scalaVersion := "2.13.18"
-crossScalaVersions ++= Seq("2.12.21", "3.9.0")
+crossScalaVersions += "3.9.0"
 javacOptions ++= Seq("--release", "11")
 
 versionScheme := Some("semver-spec")
@@ -26,16 +26,25 @@ versionScheme := Some("semver-spec")
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-scalacOptions ++= {
-  val scala2 = Seq("-Xsource:3", "--deprecation", "--feature", "--unchecked", "-Xlint:_", "-Xfatal-warnings",
-    "-opt:l:inline", "-opt-warnings")
-  CrossVersion.partialVersion(scalaVersion.value) match {
+scalacOptions ++=
+  (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 13)) =>
-      scala2 ++ Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code", "-Wvalue-discard",
-        "-Wnonunit-statement")
-    case Some((2, 12)) =>
-      scala2 ++ Seq("-language:higherKinds", "-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn",
-        "-Ywarn-value-discard", "-Ypartial-unification")
+      Seq(
+        "-Xsource:3",
+        "--deprecation",
+        "--feature",
+        "--unchecked",
+        "-Xlint:_",
+        "-Xfatal-warnings",
+        "-opt:l:inline",
+        "-opt-warnings",
+        "--explain-types",
+        "--language:_",
+        "-Wunused:_",
+        "-Wdead-code",
+        "-Wvalue-discard",
+        "-Wnonunit-statement"
+      )
     case Some((3, 9)) =>
       Seq(
         "-deprecation",
@@ -50,8 +59,7 @@ scalacOptions ++= {
         "-Wconf:msg=eta-expansion is unnecessary:s"
       )
     case _ => unsupportedScala(scalaVersion.value)
-  }
-}
+  })
 
 // For code whose statements are values on purpose: a ScalaMock expectation or a ScalaTest assertion in tests and
 // testkit, an expression shown with its result in the docs. Those are spared the warnings about discarded values. On
@@ -60,7 +68,6 @@ scalacOptions ++= {
 def lenientScalacOptions(scalaVersion: String): Seq[String] =
   CrossVersion.partialVersion(scalaVersion) match {
     case Some((2, 13)) => Seq("-Wconf:cat=w-flag-value-discard:s,cat=other-pure-statement:s")
-    case Some((2, 12)) => Seq("-Wconf:cat=w-flag-value-discard:s")
     case Some((3, 9)) => Seq("-Wconf:name=ValueDiscarding:s,name=UnusedNonUnitValue:s")
     case _ => unsupportedScala(scalaVersion)
   }
@@ -80,7 +87,7 @@ val testKitSettings = Seq(
   // link in their docs that it cannot resolve
   TestKit / doc / scalacOptions ++=
     (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 13)) | Some((2, 12)) => Nil
+      case Some((2, 13)) => Nil
       case Some((3, 9)) => Seq("-nowarn")
       case _ => unsupportedScala(scalaVersion.value)
     })

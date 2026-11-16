@@ -1,7 +1,5 @@
 package h8io.stages
 
-import scala.annotation.nowarn
-
 /** The execution status produced by a [[Stage]].
   *
   * A `Status` travels alongside the output (or absence of output) in a [[Yield]] and is accumulated as stages are
@@ -88,8 +86,7 @@ object Status {
 
     override def isEmpty: Boolean = errors.isEmpty
 
-    @nowarn("cat=deprecation")
-    override def stringPrefix: String = "Complete"
+    override protected def className: String = "Complete"
   }
 
   /** A [[Complete]] with no errors, representing clean pipeline termination. */
